@@ -1,0 +1,42 @@
+body {
+  font-size: 18px;
+  padding-top: 20px;
+  padding-left: 50px;
+}
+
+/* Prevent a horizontal scrollbar */
+.row {
+  margin-right: 0px;
+}
+
+/* Bootstrap bold form labels are too much. */
+label {
+  font-weight: normal;
+}
+
+.alert.focused {
+  border-color: #333; /* Less intense alternative to #000. */
+  border-width: 2px;
+}
+
+/*
+   SVG
+*/
+
+svg {
+  width: 750px;
+  height: 600px;
+  overflow: hidden;
+}
+
+text {
+  font-family: monospace;
+}
+
+polygon {
+  stroke: black;
+}
+
+g {
+  cursor: pointer;
+}
