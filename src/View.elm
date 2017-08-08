@@ -16,8 +16,8 @@ import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
-import Svg exposing (Svg, text, text_, polygon, g)
-import Svg.Attributes as Sattr exposing (x, y)
+import Svg exposing (Svg)
+import Svg.Attributes as Sattr
 import Svg.Events as Sevent exposing (onClick, onMouseOver, onMouseOut)
 
 
@@ -149,7 +149,7 @@ renderPoint bi ( point, tile ) =
         corners =
             HexGrid.polygonCorners bi.layout point
     in
-        g
+        Svg.g
             [ onClick <|
                 case bi.selectedUnit of
                     Nothing ->
@@ -210,7 +210,7 @@ viewPolygon :
     -> Point
     -> Html msg
 viewPolygon model tile friendlyPlannedMoves corners point =
-    polygon
+    Svg.polygon
         [ Sattr.points (cornersToStr corners)
         , Sattr.fill <|
             showColor <|
@@ -282,9 +282,9 @@ tileText centerX centerY upperText lowerText mColor =
                     _ ->
                         15
     in
-        [ text_
-            ([ x (toString (centerHorizontally upperText))
-             , y (toString (centerY - 5))
+        [ Svg.text_
+            ([ Sattr.x <| toString (centerHorizontally upperText)
+             , Sattr.y <| toString (centerY - 5)
              ]
                 ++ case mColor of
                     Just color ->
@@ -293,13 +293,12 @@ tileText centerX centerY upperText lowerText mColor =
                     Nothing ->
                         []
             )
-            [ text upperText
+            [ Svg.text upperText ]
+        , Svg.text_
+            [ Sattr.x <| toString (centerHorizontally lowerText)
+            , Sattr.y <| toString (centerY + 10)
             ]
-        , text_
-            [ x (toString (centerHorizontally lowerText))
-            , y (toString (centerY + 10))
-            ]
-            [ text <| lowerText ]
+            [ Svg.text lowerText ]
         ]
 
 
@@ -318,14 +317,14 @@ viewHabitat point hab =
         , productionForm hab
         , Html.p
             []
-            [ Html.text <| "Production: "
+            [ Html.text "Production: "
             , badge
                 [ Html.text <| toString (Building.production hab.buildings)
                 ]
             ]
         , Html.p
             []
-            [ Html.text <| "Population: "
+            [ Html.text "Population: "
             , badge
                 [ Html.text <| toString (Building.population hab.buildings) ]
             ]
@@ -361,9 +360,9 @@ viewHabitatNameForm (HabitatEditor editor) =
                 [ class "form-group" ]
                 [ Html.label
                     [ Hattr.for "habitatName" ]
-                    [ text "Full name:" ]
+                    [ Svg.text "Full name:" ]
                 , Html.input
-                    [ Hattr.class "form-control"
+                    [ class "form-control"
                     , Hattr.type_ "text"
                     , Hattr.id "habitatName"
                     , Hevent.onInput NameEditorFull
@@ -375,9 +374,9 @@ viewHabitatNameForm (HabitatEditor editor) =
                 [ class "form-group" ]
                 [ Html.label
                     [ Hattr.for "habitatAbbreviation" ]
-                    [ text "Abbreviation (1-3 letters):" ]
+                    [ Svg.text "Abbreviation (1-3 letters):" ]
                 , Html.input
-                    [ Hattr.class "form-control"
+                    [ class "form-control"
                     , Hattr.type_ "text"
                     , Hattr.id "habitatAbbreviation"
                     , Hevent.onInput NameEditorAbbreviation
@@ -387,7 +386,7 @@ viewHabitatNameForm (HabitatEditor editor) =
                 ]
             , Html.button
                 [ Hattr.type_ "submit" ]
-                [ text "Found" ]
+                [ Svg.text "Found" ]
             ]
         ]
 
@@ -426,7 +425,7 @@ productionForm hab =
                 [ class "form-group" ]
                 [ Html.label
                     [ Hattr.for "constructing" ]
-                    [ text <|
+                    [ Svg.text <|
                         "Constructing"
                             ++ (case Model.productionUntilCompletion hab of
                                     Nothing ->
@@ -442,7 +441,7 @@ productionForm hab =
                                 ": "
                     ]
                 , Html.select
-                    [ Hattr.class "form-control"
+                    [ class "form-control"
                     , Hattr.id "constructing"
                     , Hevent.onInput
                         (\s ->
@@ -503,7 +502,7 @@ viewUnit selection unit =
                 []
                 [ Html.b
                     []
-                    [ Html.text <| stats.name ]
+                    [ Html.text stats.name ]
                 ]
             , case stats.helpText of
                 Nothing ->
@@ -515,19 +514,19 @@ viewUnit selection unit =
                         [ Html.text help ]
             , Html.p
                 []
-                [ Html.text <| "Sensors: "
+                [ Html.text "Sensors: "
                 , badge
                     [ Html.text <| toString stats.sensors ]
                 ]
             , Html.p
                 []
-                [ Html.text <| "Stealth: "
+                [ Html.text "Stealth: "
                 , badge
                     [ Html.text <| toString stats.stealth ]
                 ]
             , Html.p
                 []
-                [ Html.text <| "Firepower: "
+                [ Html.text "Firepower: "
                 , badge
                     [ Html.text <| toString stats.firepower ]
                 ]
@@ -551,9 +550,14 @@ view model =
                         []
                         [ Html.a
                             [ Hattr.href "https://github.com/seagreen/fpg-depths#user-guide" ]
-                            [ Html.button
-                                [ Hattr.type_ "button"
-                                , class "btn btn-default"
+                            -- Use label instead of button to prevent button from staying focused after
+                            -- (a) right clicking it to open the link in a new window
+                            -- or (b) clicking it and then hitting the back button.
+                            --
+                            -- Idea from: https://stackoverflow.com/a/34051869
+                            [ Html.label
+                                [ class "btn btn-default"
+                                , Hattr.type_ "button"
                                 ]
                                 [ Html.text "User Guide (on GitHub)" ]
                             ]
