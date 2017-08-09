@@ -340,57 +340,6 @@ viewHabitat point hab =
         ]
 
 
-viewHabitatNameForm : HabitatEditor -> Svg Msg
-viewHabitatNameForm (HabitatEditor editor) =
-    Html.div
-        [ class "alert alert-warning" ]
-        [ Html.form
-            [ Hevent.onWithOptions
-                "submit"
-                { preventDefault = True, stopPropagation = False }
-                (Json.Decode.succeed NameEditorSubmit)
-            ]
-            [ Html.h4
-                []
-                [ Html.b
-                    []
-                    [ Html.text "Name Habitat" ]
-                ]
-            , Html.div
-                [ class "form-group" ]
-                [ Html.label
-                    [ Hattr.for "habitatName" ]
-                    [ Svg.text "Full name:" ]
-                , Html.input
-                    [ class "form-control"
-                    , Hattr.type_ "text"
-                    , Hattr.id "habitatName"
-                    , Hevent.onInput NameEditorFull
-                    , Hattr.value editor.full
-                    ]
-                    []
-                ]
-            , Html.div
-                [ class "form-group" ]
-                [ Html.label
-                    [ Hattr.for "habitatAbbreviation" ]
-                    [ Svg.text "Abbreviation (1-3 letters):" ]
-                , Html.input
-                    [ class "form-control"
-                    , Hattr.type_ "text"
-                    , Hattr.id "habitatAbbreviation"
-                    , Hevent.onInput NameEditorAbbreviation
-                    , Hattr.value editor.abbreviation
-                    ]
-                    []
-                ]
-            , Html.button
-                [ Hattr.type_ "submit" ]
-                [ Svg.text "Found" ]
-            ]
-        ]
-
-
 productionForm : Habitat -> Html Msg
 productionForm hab =
     let
@@ -479,6 +428,57 @@ productionForm hab =
                     ]
                 ]
             ]
+
+
+viewHabitatNameForm : HabitatEditor -> Svg Msg
+viewHabitatNameForm (HabitatEditor editor) =
+    Html.div
+        [ class "alert alert-warning" ]
+        [ Html.form
+            [ Hevent.onWithOptions
+                "submit"
+                { preventDefault = True, stopPropagation = False }
+                (Json.Decode.succeed NameEditorSubmit)
+            ]
+            [ Html.h4
+                []
+                [ Html.b
+                    []
+                    [ Html.text "Name Habitat" ]
+                ]
+            , Html.div
+                [ class "form-group" ]
+                [ Html.label
+                    [ Hattr.for "habitatName" ]
+                    [ Svg.text "Full name:" ]
+                , Html.input
+                    [ class "form-control"
+                    , Hattr.type_ "text"
+                    , Hattr.id "habitatName"
+                    , Hevent.onInput NameEditorFull
+                    , Hattr.value editor.full
+                    ]
+                    []
+                ]
+            , Html.div
+                [ class "form-group" ]
+                [ Html.label
+                    [ Hattr.for "habitatAbbreviation" ]
+                    [ Svg.text "Abbreviation (1-3 letters):" ]
+                , Html.input
+                    [ class "form-control"
+                    , Hattr.type_ "text"
+                    , Hattr.id "habitatAbbreviation"
+                    , Hevent.onInput NameEditorAbbreviation
+                    , Hattr.value editor.abbreviation
+                    ]
+                    []
+                ]
+            , Html.button
+                [ Hattr.type_ "submit" ]
+                [ Svg.text "Found" ]
+            ]
+        ]
 
 
 viewUnit : Maybe Selection -> Unit -> Html Msg
