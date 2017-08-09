@@ -195,7 +195,7 @@ renderPoint bi ( point, tile ) =
             )
 
 
-cornersToStr : List ( a, b ) -> String
+cornersToStr : List ( Float, Float ) -> String
 cornersToStr corners =
     corners
         |> List.map (\( x, y ) -> toString x ++ "," ++ toString y)
@@ -394,11 +394,16 @@ viewHabitatNameForm (HabitatEditor editor) =
 productionForm : Habitat -> Html Msg
 productionForm hab =
     let
-        option selected building =
+        option : Maybe Buildable -> Html Msg
+        option buildable =
             Html.option
-                [ Hattr.selected selected ]
+                (if buildable == hab.producing then
+                    [ Hattr.selected True ]
+                 else
+                    []
+                )
                 [ Html.text <|
-                    case building of
+                    case buildable of
                         Nothing ->
                             "<None>"
 
@@ -409,18 +414,27 @@ productionForm hab =
                             toString building
                 ]
 
-        buildingOptions =
-            List.map
-                (\building -> option (building == hab.producing) building)
-                (List.map (Just << BuildBuilding) <| Building.buildable hab.buildings)
+        fromString : String -> Msg
+        fromString s =
+            if s == "<None>" then
+                BuildOrder Nothing
+            else
+                case Building.fromString s of
+                    Just building ->
+                        BuildOrder (Just (BuildBuilding building))
 
-        subOptions =
-            List.map
-                (\sub -> option (sub == hab.producing) sub)
-                (List.map (Just << BuildSubmarine) <| Unit.buildable hab.buildings)
+                    Nothing ->
+                        case Unit.fromString s of
+                            Nothing ->
+                                NoOp
+
+                            Just sub ->
+                                BuildOrder (Just (BuildSubmarine sub))
     in
         Html.form
-            [ class "form-inline" ]
+            [ class "form-inline"
+            , Hattr.name "foo"
+            ]
             [ Html.div
                 [ class "form-group" ]
                 [ Html.label
@@ -443,41 +457,25 @@ productionForm hab =
                 , Html.select
                     [ class "form-control"
                     , Hattr.id "constructing"
-                    , Hevent.onInput
-                        (\s ->
-                            if s == "<None>" then
-                                BuildOrder Nothing
-                            else
-                                case Building.fromString s of
-                                    Just building ->
-                                        BuildOrder (Just (BuildBuilding building))
-
-                                    Nothing ->
-                                        case Unit.fromString s of
-                                            Nothing ->
-                                                NoOp
-
-                                            Just sub ->
-                                                BuildOrder (Just (BuildSubmarine sub))
-                        )
+                    , Hevent.onInput fromString
                     ]
-                    [ option False Nothing
-                    , case subOptions of
+                    [ option Nothing
+                    , case Unit.buildable hab.buildings of
                         [] ->
                             Html.text ""
 
-                        _ ->
+                        unitChoices ->
                             Html.optgroup
                                 [ label_ "Units" ]
-                                subOptions
-                    , case buildingOptions of
+                                (List.map (option << Just << BuildSubmarine) unitChoices)
+                    , case Building.buildable hab.buildings of
                         [] ->
                             Html.text ""
 
-                        _ ->
+                        buildingChoices ->
                             Html.optgroup
                                 [ label_ "Buildings" ]
-                                buildingOptions
+                                (List.map (option << Just << BuildBuilding) buildingChoices)
                     ]
                 ]
             ]
