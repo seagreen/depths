@@ -3,6 +3,7 @@ module Update exposing (..)
 -- Core
 
 import Dict exposing (Dict)
+import Random
 
 
 -- 3rd
@@ -35,8 +36,8 @@ update msg model =
         NoOp ->
             model
 
-        SetRandomSeed seed ->
-            { model | randomSeed = seed }
+        SetRandomSeed (Model.NewSeed new) ->
+            { model | randomSeed = Random.initialSeed new }
 
         EndTurn ->
             ResolveTurn.resolveTurn model

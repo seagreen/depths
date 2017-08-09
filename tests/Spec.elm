@@ -27,14 +27,19 @@ msgFuzzer =
     Fuzz.custom msgGenerator Shrink.noShrink
 
 
+intGenerator : Generator Int
+intGenerator =
+    Random.int Random.minInt Random.maxInt
+
+
 pointGenerator : Generator ( Int, Int )
 pointGenerator =
-    Random.pair (Random.int 0 5) (Random.int 0 5)
+    Random.pair intGenerator intGenerator
 
 
 idGenerator : Generator Id
 idGenerator =
-    Random.map Id (Random.int 0 5)
+    Random.map Id intGenerator
 
 
 buildableGenerator : Generator Model.Buildable
@@ -49,8 +54,7 @@ msgGenerator : Generator Msg
 msgGenerator =
     Random.choices
         [ Random.constant NoOp
-          -- TODO: make SetRandomSeed comparable and exportable.
-          -- , SetRandomSeed a -> a == a
+        , Random.map (SetRandomSeed << Model.NewSeed) intGenerator
         , Random.constant EndTurn
         , Random.map SelectPoint pointGenerator
         , Random.map SelectUnit idGenerator

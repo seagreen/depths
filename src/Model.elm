@@ -22,7 +22,7 @@ import Id exposing (Id(..), IdSeed(..))
 
 type Msg
     = NoOp
-    | SetRandomSeed Random.Seed
+    | SetRandomSeed NewSeed
     | EndTurn
       -- When a point is click on the board.
       --
@@ -427,10 +427,14 @@ friendlyUnitList =
         << unitList
 
 
-setRandomSeed : Cmd Msg
-setRandomSeed =
+type NewSeed
+    = NewSeed Int
+
+
+newRandomSeed : Cmd Msg
+newRandomSeed =
     Random.generate
-        (SetRandomSeed << Random.initialSeed)
+        (SetRandomSeed << NewSeed)
         -- Using 999999 instead of Random.maxInt here for more human-sized values
         -- (to make them more readable in the debugger and that kind of thing).
         (Random.int 0 999999)

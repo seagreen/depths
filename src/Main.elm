@@ -20,7 +20,7 @@ import View
 main : Program Never Model.Model Model.Msg
 main =
     Html.program
-        { init = ( Model.init, Model.setRandomSeed )
+        { init = ( Model.init, Model.newRandomSeed )
         , update = \a b -> ( Update.update a b, Cmd.none )
         , view = View.view
         , subscriptions =
