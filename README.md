@@ -10,7 +10,7 @@ FPG stands for Functional Propaganda Games.
 
 # User Guide
 
-**Goal**: establish four colonies or survive until turn 200.
+**Goal**: establish four habitats or survive until turn 200.
 
 **Disclaimer**: the game's a work-in-progress and (probably) not yet fun. Without enemy bases to attack there isn't much strategy, but I want to get the mechanics nailed down before I do anything else.
 

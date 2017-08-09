@@ -3,7 +3,6 @@ module View exposing (..)
 -- Core
 
 import Dict exposing (Dict)
-import Json.Decode
 import Json.Encode
 import Set exposing (Set)
 import String
@@ -363,8 +362,8 @@ productionForm hab =
                             toString building
                 ]
 
-        fromString : String -> Msg
-        fromString s =
+        msgFromString : String -> Msg
+        msgFromString s =
             if s == "<None>" then
                 BuildOrder Nothing
             else
@@ -406,7 +405,7 @@ productionForm hab =
                 , Html.select
                     [ class "form-control"
                     , Hattr.id "constructing"
-                    , Hevent.onInput fromString
+                    , Hevent.onInput msgFromString
                     ]
                     [ option Nothing
                     , case Unit.buildable hab.buildings of
@@ -435,11 +434,7 @@ viewHabitatNameForm (HabitatEditor editor) =
     Html.div
         [ class "alert alert-warning" ]
         [ Html.form
-            [ Hevent.onWithOptions
-                "submit"
-                { preventDefault = True, stopPropagation = False }
-                (Json.Decode.succeed NameEditorSubmit)
-            ]
+            [ Hevent.onSubmit NameEditorSubmit ]
             [ Html.h4
                 []
                 [ Html.b
