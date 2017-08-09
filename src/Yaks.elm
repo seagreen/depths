@@ -1,8 +1,12 @@
 module Yaks exposing (..)
 
--- 1st
+-- Core
 
 import Dict exposing (Dict)
+
+
+-- 3rd
+
 import State exposing (State(..))
 
 
