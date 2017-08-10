@@ -45,7 +45,6 @@ type alias BoardInfo =
     { model : Model
     , layout : HexGrid.Layout
     , friendlyPlannedMoves : Set ( Int, Int )
-    , distanceCounts : Dict Point Int
     , pointsReachable : Set Point
     , selectedUnit : Maybe ( Point, Unit )
     }
@@ -95,23 +94,15 @@ viewBoard model =
                     Set.empty
 
                 Just ( point, unit ) ->
-                    HexGrid.reachable point (Unit.stats unit.class).speed Set.empty
-
-        distanceCounts : Dict Point Int
-        distanceCounts =
-            case selectedUnit of
-                Nothing ->
-                    Dict.empty
-
-                Just ( point, unit ) ->
-                    HexGrid.stepCounts (Unit.stats unit.class).speed Set.empty point
+                    Set.empty
+                        |> HexGrid.reachable point (Unit.stats unit.class).speed
+                        |> Set.remove point
 
         boardInfo : BoardInfo
         boardInfo =
             { model = model
             , layout = layout
             , friendlyPlannedMoves = friendlyPlannedMoves
-            , distanceCounts = distanceCounts
             , pointsReachable = pointsReachable
             , selectedUnit = selectedUnit
             }
@@ -176,12 +167,10 @@ renderPoint bi ( point, tile ) =
                                         toString remaining
 
                             _ ->
-                                case Dict.get point bi.distanceCounts of
-                                    Nothing ->
-                                        ""
-
-                                    Just count ->
-                                        toString count
+                                if Set.member point bi.pointsReachable then
+                                    "1"
+                                else
+                                    ""
                         )
                         (case tile.fixed of
                             Depths ->
