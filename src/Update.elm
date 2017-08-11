@@ -14,6 +14,7 @@ import HexGrid exposing (HexGrid(..), Point)
 
 -- Local
 
+import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Model
     exposing
         ( Msg(..)
@@ -27,7 +28,6 @@ import Model
         , Selection(..)
         )
 import ResolveTurn
-import Id exposing (Id(..), IdSeed(..))
 
 
 update : Msg -> Model -> Model

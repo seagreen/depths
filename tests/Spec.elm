@@ -16,10 +16,10 @@ import Random.Pcg as Random exposing (Generator)
 
 -- Local
 
-import Building
-import Id exposing (Id(..))
+import Game.Building
+import Game.Id exposing (Id(..))
+import Game.Unit
 import Model exposing (Msg(..))
-import Unit
 
 
 msgFuzzer : Fuzzer Msg
@@ -46,8 +46,8 @@ buildableGenerator : Generator Model.Buildable
 buildableGenerator =
     Random.choices <|
         List.map Random.constant <|
-            List.map Model.BuildSubmarine Unit.all
-                ++ List.map Model.BuildBuilding Building.all
+            List.map Model.BuildSubmarine Game.Unit.all
+                ++ List.map Model.BuildBuilding Game.Building.all
 
 
 msgGenerator : Generator Msg

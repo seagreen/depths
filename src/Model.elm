@@ -15,9 +15,9 @@ import State
 
 -- Local
 
-import Building exposing (Building(..))
-import Unit exposing (Unit, Player(..), Submarine(..))
-import Id exposing (Id(..), IdSeed(..))
+import Game.Building as Building exposing (Building(..))
+import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
+import Game.Id as Id exposing (Id(..), IdSeed(..))
 
 
 type Msg

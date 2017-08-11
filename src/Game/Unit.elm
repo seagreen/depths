@@ -1,4 +1,4 @@
-module Unit exposing (..)
+module Game.Unit exposing (..)
 
 -- 3rd
 
@@ -7,8 +7,8 @@ import HexGrid exposing (Point)
 
 -- Local
 
-import Building exposing (Building(..))
-import Id exposing (Id(..))
+import Game.Building exposing (Building(..))
+import Game.Id exposing (Id(..))
 
 
 type Player

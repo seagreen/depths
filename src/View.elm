@@ -22,7 +22,8 @@ import Svg.Events as Sevent exposing (onClick, onMouseOver, onMouseOut)
 
 -- Local
 
-import Building exposing (Building(..))
+import Game.Building as Building exposing (Building(..))
+import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
 import Model
     exposing
         ( Msg(..)
@@ -38,7 +39,6 @@ import Model
         , Geology(..)
         , Selection(..)
         )
-import Unit exposing (Unit, Player(..), Submarine(..))
 
 
 type alias BoardInfo =
