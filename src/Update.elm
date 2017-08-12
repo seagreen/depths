@@ -26,13 +26,13 @@ import Game
         , Turn(..)
         )
 import Game.Id as Id exposing (Id(..), IdSeed(..))
+import Game.ResolveTurn
 import Model
     exposing
         ( Msg(..)
         , Model
         , Selection(..)
         )
-import ResolveTurn
 
 
 update : Msg -> Model -> Model
@@ -49,7 +49,7 @@ update msg model =
                 { model | game = { oldGame | randomSeed = Random.initialSeed new } }
 
         EndTurn ->
-            ResolveTurn.resolveTurn model
+            Game.ResolveTurn.resolveTurn model
 
         HoverPoint point ->
             { model | hoverPoint = Just point }

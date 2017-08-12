@@ -1,4 +1,4 @@
-module ResolveTurn exposing (..)
+module Game.ResolveTurn exposing (..)
 
 -- Core
 
