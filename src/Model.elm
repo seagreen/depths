@@ -13,10 +13,11 @@ import HexGrid exposing (HexGrid(..), Direction, Point)
 
 -- Local
 
-import Game exposing (Buildable(..), Tile)
+import Game exposing (Commands(..), Buildable(..), Tile)
 import Game.Building as Building exposing (Building(..))
 import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
+import Util
 
 
 type Msg
@@ -35,7 +36,7 @@ type Msg
     | SelectTile Point
     | HoverPoint Point
     | EndHover
-    | PlanMove Point Id Point
+    | PlanMove Id Point
     | BuildOrder (Maybe Buildable)
     | NameEditorFull String
     | NameEditorAbbreviation String
@@ -44,6 +45,7 @@ type Msg
 
 type alias Model =
     { game : Game.State
+    , plannedMoves : Commands
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
     , gameLog : List BattleReport
@@ -53,6 +55,7 @@ type alias Model =
 init : Model
 init =
     { game = Game.init
+    , plannedMoves = Commands Dict.empty
     , selection = Nothing
     , hoverPoint = Nothing
     , gameLog = []
@@ -125,7 +128,7 @@ focusPoint model =
                         Just point
 
                     SelectedId id ->
-                        Maybe.map Tuple.first (findUnit id model.game.grid)
+                        Maybe.map Tuple.first (findUnit id (Util.unHexGrid model.game.grid))
             )
 
 
@@ -189,8 +192,8 @@ combatantFirepower combatant =
             Building.firepower building
 
 
-findUnit : Id -> HexGrid Tile -> Maybe ( Point, Unit )
-findUnit id (HexGrid _ grid) =
+findUnit : Id -> Dict Point Tile -> Maybe ( Point, Unit )
+findUnit id grid =
     let
         f point tile acc =
             case Dict.get (Id.unId id) tile.units of

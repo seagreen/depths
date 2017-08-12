@@ -18,6 +18,7 @@ import Random.List
 import Game
     exposing
         ( Buildable(..)
+        , Commands(..)
         , Geology(..)
         , Habitat
         , HabitatEditor(..)
@@ -38,7 +39,7 @@ import Model
         , Outcome(..)
         , Selection(..)
         )
-import Yaks
+import Util
 
 
 resolveTurn : Model -> Model
@@ -107,7 +108,7 @@ newSelection : Model -> Maybe Selection
 newSelection model =
     let
         findUnit id =
-            Model.findUnit id model.game.grid
+            Model.findUnit id (Util.unHexGrid model.game.grid)
                 |> Maybe.andThen (\_ -> model.selection)
 
         maybeBecameHabitat id =
@@ -142,39 +143,37 @@ newSelection model =
 wrapResolveMoves : Model -> Model
 wrapResolveMoves model =
     let
-        (HexGrid a dict) =
+        (HexGrid a grid) =
             model.game.grid
 
         oldGame =
             model.game
     in
-        { model | game = { oldGame | grid = HexGrid a (resolveMoves dict) } }
+        { model
+            | game =
+                { oldGame | grid = HexGrid a (resolveMoves model.plannedMoves grid) }
+        }
 
 
-resolveMoves : Dict Point Tile -> Dict Point Tile
-resolveMoves dict =
-    Dict.foldr resolvePoint dict (Model.unitDict dict)
+resolveMoves : Commands -> Dict Point Tile -> Dict Point Tile
+resolveMoves (Commands commands) grid =
+    Dict.foldr (resolveUnit << Id) grid commands
 
 
-resolvePoint : Point -> Dict Int Unit -> Dict Point Tile -> Dict Point Tile
-resolvePoint point units acc =
-    Dict.foldr (\_ -> resolveUnit point) acc units
-
-
-resolveUnit : Point -> Unit -> Dict Point Tile -> Dict Point Tile
-resolveUnit point unit acc =
-    case unit.plannedMove of
+resolveUnit : Id -> Point -> Dict Point Tile -> Dict Point Tile
+resolveUnit id newPoint acc =
+    case Model.findUnit id acc of
         Nothing ->
             acc
 
-        Just new ->
+        Just ( oldPoint, unit ) ->
             let
+                -- TODO: Make sure the unit can actually get there
+                -- (currently this is only checked in the view code).
                 standardMove tile =
                     { tile
                         | units =
-                            Dict.insert (Id.unId unit.id)
-                                { unit | plannedMove = Nothing }
-                                tile.units
+                            Dict.insert (Id.unId id) unit tile.units
                     }
 
                 newTile tile =
@@ -183,19 +182,17 @@ resolveUnit point unit acc =
                             Mountain Nothing ->
                                 case unit.class of
                                     ColonySubmarine ->
-                                        { tile | fixed = Mountain (Just (Game.newHabitat unit.id)) }
+                                        { tile | fixed = Mountain (Just (Game.newHabitat id)) }
 
                                     _ ->
                                         standardMove tile
 
-                            Mountain _ ->
-                                standardMove tile
-
-                            Depths ->
+                            _ ->
                                 standardMove tile
             in
-                Dict.update new (Maybe.andThen newTile) <|
-                    Dict.update point (Maybe.map (removeUnit unit.id)) acc
+                acc
+                    |> Dict.update oldPoint (Maybe.map (removeUnit id))
+                    |> Dict.update newPoint (Maybe.andThen newTile)
 
 
 wrapResolveProduction : Model -> Model
@@ -206,7 +203,7 @@ wrapResolveProduction model =
 
         ( newDict, newIdSeed ) =
             State.run model.game.idSeed <|
-                Yaks.traverseStateDict resolveProduction dict
+                Util.traverseStateDict resolveProduction dict
 
         oldGame =
             model.game
@@ -264,7 +261,6 @@ completeSubmarine sub tile hab =
             { id = id
             , player = Human
             , class = sub
-            , plannedMove = Nothing
             }
 
         complete id =
@@ -306,7 +302,7 @@ wrapResolveBattles model =
 
         ( newDict, ( newRandomSeed, battleReports ) ) =
             State.run ( model.game.randomSeed, [] ) <|
-                Yaks.traverseStateDict (resolveBattle model.game.turn) dict
+                Util.traverseStateDict (resolveBattle model.game.turn) dict
 
         oldGame =
             model.game
@@ -750,10 +746,10 @@ newEnemies model dict =
         placeEnemies point idA idB idC =
             let
                 enemy id =
-                    (Unit id Computer AttackSubmarine Nothing)
+                    (Unit id Computer AttackSubmarine)
 
                 smallEnemy id =
-                    (Unit id Computer RemotelyOperatedVehicle Nothing)
+                    (Unit id Computer RemotelyOperatedVehicle)
             in
                 Dict.update
                     point

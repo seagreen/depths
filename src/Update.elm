@@ -17,6 +17,7 @@ import HexGrid exposing (HexGrid(..), Point)
 import Game
     exposing
         ( Buildable(..)
+        , Commands(..)
         , Geology(..)
         , Habitat
         , HabitatEditor(..)
@@ -65,8 +66,12 @@ update msg model =
         SelectTile point ->
             { model | selection = Just (SelectedPoint point) }
 
-        PlanMove selected id new ->
-            planMove model selected id new
+        PlanMove id point ->
+            let
+                (Commands moves) =
+                    model.plannedMoves
+            in
+                { model | plannedMoves = Commands (Dict.insert (Id.unId id) point moves) }
 
         BuildOrder mBuilding ->
             buildOrder model mBuilding
@@ -182,30 +187,6 @@ setHabitatName updateName model =
 
             _ ->
                 model
-
-
-planMove : Model -> Point -> Id -> Point -> Model
-planMove model selected id new =
-    let
-        (HexGrid _ grid) =
-            model.game.grid
-
-        updateUnits =
-            Dict.update
-                (Id.unId id)
-                (Maybe.andThen (\sub -> Just { sub | plannedMove = Just new }))
-
-        newGrid =
-            HexGrid.update selected
-                (\tile ->
-                    { tile | units = updateUnits tile.units }
-                )
-                model.game.grid
-
-        oldGame =
-            model.game
-    in
-        { model | game = { oldGame | grid = newGrid } }
 
 
 buildOrder : Model -> Maybe Buildable -> Model

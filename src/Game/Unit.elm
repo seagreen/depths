@@ -1,12 +1,5 @@
 module Game.Unit exposing (..)
 
--- 3rd
-
-import HexGrid exposing (Point)
-
-
--- Local
-
 import Game.Building exposing (Building(..))
 import Game.Id exposing (Id(..))
 
@@ -16,14 +9,10 @@ type Player
     | Computer
 
 
-{-| Be aware that even if plannedMove is Just, if it's set
-to the current location of the sub it's not really a move at all.
--}
 type alias Unit =
     { id : Id
     , player : Player
     , class : Submarine
-    , plannedMove : Maybe Point
     }
 
 

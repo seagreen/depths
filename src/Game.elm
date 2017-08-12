@@ -49,7 +49,7 @@ init =
                   , Tile
                         (Dict.singleton
                             (Id.unId idA)
-                            (Unit idA Human ColonySubmarine Nothing)
+                            (Unit idA Human ColonySubmarine)
                         )
                         Depths
                   )
@@ -57,7 +57,7 @@ init =
                   , Tile
                         (Dict.singleton
                             (Id.unId idB)
-                            (Unit idB Computer AttackSubmarine Nothing)
+                            (Unit idB Computer AttackSubmarine)
                         )
                         Depths
                   )
@@ -214,3 +214,17 @@ cost buildable =
 
         BuildBuilding building ->
             (Building.stats building).cost
+
+
+{-| Keys are the IDs of units.
+--
+-- At some point we should add the restriction that units can't
+-- "move" to their current tile.
+-}
+type Commands
+    = Commands (Dict Int Point)
+
+
+unCommands : Commands -> Dict Int Point
+unCommands (Commands dict) =
+    dict

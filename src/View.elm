@@ -32,6 +32,7 @@ import Game
         , Tile
         )
 import Game.Building as Building exposing (Building(..))
+import Game.Id as Id
 import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
 import Model
     exposing
@@ -42,12 +43,13 @@ import Model
         , Outcome(..)
         , Selection(..)
         )
+import Util
 
 
 type alias BoardInfo =
     { model : Model
     , layout : HexGrid.Layout
-    , friendlyPlannedMoves : Set ( Int, Int )
+    , friendlyPlannedMoves : Set Point
     , pointsReachable : Set Point
     , selectedUnit : Maybe ( Point, Unit )
     }
@@ -63,19 +65,12 @@ viewBoard model =
         layout =
             HexGrid.mkPointyTop 30 30 (750 / 2) (600 / 2)
 
-        friendlyPlannedMoves : Set ( Int, Int )
+        friendlyPlannedMoves : Set Point
         friendlyPlannedMoves =
-            Set.fromList <|
-                List.filterMap
-                    (\( _, sub ) ->
-                        case sub.player of
-                            Computer ->
-                                Nothing
-
-                            Human ->
-                                sub.plannedMove
-                    )
-                    (Model.unitList dict)
+            model.plannedMoves
+                |> Game.unCommands
+                |> Dict.values
+                |> Set.fromList
 
         selectedUnit : Maybe ( Point, Unit )
         selectedUnit =
@@ -84,7 +79,7 @@ viewBoard model =
                     (\selection ->
                         case selection of
                             SelectedId id ->
-                                Model.findUnit id model.game.grid
+                                Model.findUnit id (Util.unHexGrid model.game.grid)
 
                             _ ->
                                 Nothing
@@ -148,9 +143,9 @@ renderPoint bi ( point, tile ) =
                     Nothing ->
                         SelectPoint point
 
-                    Just ( unitPoint, unit ) ->
+                    Just ( _, unit ) ->
                         if Set.member point bi.pointsReachable then
-                            PlanMove unitPoint unit.id point
+                            PlanMove unit.id point
                         else
                             SelectPoint point
             , onMouseOut EndHover
@@ -193,10 +188,22 @@ cornersToStr corners =
         |> String.join " "
 
 
+friendlyMoved : Model -> Tile -> Bool
+friendlyMoved model tile =
+    tile
+        |> Model.friendlyUnits
+        |> List.any
+            (\unit ->
+                Dict.member
+                    (Id.unId unit.id)
+                    (Game.unCommands model.plannedMoves)
+            )
+
+
 viewPolygon :
     Model
     -> Tile
-    -> Set ( Int, Int )
+    -> Set Point
     -> List ( Float, Float )
     -> Point
     -> Html msg
@@ -214,21 +221,14 @@ viewPolygon model tile friendlyPlannedMoves corners point =
 
                                 _ ->
                                     Red
+                        else if friendlyMoved model tile then
+                            Red
+                        else if Set.member point friendlyPlannedMoves then
+                            Red
+                        else if Just point == model.hoverPoint then
+                            Yellow
                         else
-                            case
-                                List.filter (\unit -> unit.plannedMove /= Nothing)
-                                    (Model.friendlyUnits tile)
-                            of
-                                [] ->
-                                    if Set.member point friendlyPlannedMoves then
-                                        Red
-                                    else if Just point == model.hoverPoint then
-                                        Yellow
-                                    else
-                                        Blue
-
-                                _ ->
-                                    Red
+                            Blue
 
                     Mountain Nothing ->
                         if Just (SelectedPoint point) == model.selection then

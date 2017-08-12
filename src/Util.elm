@@ -1,4 +1,4 @@
-module Yaks exposing (..)
+module Util exposing (..)
 
 -- Core
 
@@ -7,7 +7,13 @@ import Dict exposing (Dict)
 
 -- 3rd
 
+import HexGrid exposing (HexGrid(..), Point)
 import State exposing (State(..))
+
+
+unHexGrid : HexGrid a -> Dict Point a
+unHexGrid (HexGrid _ grid) =
+    grid
 
 
 traverseStateDict :
