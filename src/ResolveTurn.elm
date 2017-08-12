@@ -15,24 +15,28 @@ import Random.List
 
 -- Local
 
+import Game
+    exposing
+        ( Buildable(..)
+        , Geology(..)
+        , Habitat
+        , HabitatEditor(..)
+        , HabitatName
+        , Tile
+        , Turn(..)
+        )
 import Game.Building as Building exposing (Building(..))
 import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Model
     exposing
-        ( Msg(..)
-        , Model
-        , Habitat
-        , HabitatName
-        , HabitatEditor(..)
-        , Buildable(..)
-        , Tile
-        , Geology(..)
-        , Selection(..)
+        ( BattleEvent(..)
         , BattleReport
-        , BattleEvent(..)
         , Combatant(..)
-        , Turn(..)
+        , Model
+        , Msg(..)
+        , Outcome(..)
+        , Selection(..)
         )
 import Yaks
 
@@ -45,46 +49,57 @@ resolveTurn oldModel =
 
         Nothing ->
             let
-                (HexGrid a dict) =
-                    oldModel.grid
-
                 newModel =
-                    { oldModel | grid = HexGrid a (resolveMoves dict) }
+                    oldModel
+                        |> wrapResolveMoves
                         |> wrapResolveBattles
                         |> destroyHabitats
                         |> wrapResolveProduction
                         |> wrapNewEnemies
+                        |> incrementTurn
             in
-                { newModel
-                    | selection = newSelection newModel
-                    , turn = Turn (Model.unTurn newModel.turn + 1)
-                }
+                { newModel | selection = newSelection newModel }
+
+
+incrementTurn : Model -> Model
+incrementTurn model =
+    let
+        oldGame =
+            model.game
+    in
+        { model | game = { oldGame | turn = Turn (Game.unTurn model.game.turn + 1) } }
 
 
 destroyHabitats : Model -> Model
 destroyHabitats model =
     let
         (HexGrid a dict) =
-            model.grid
+            model.game.grid
 
         habitats =
-            Model.habitatDict model.grid
+            Game.habitatDict model.game.grid
 
         remove mTile =
             mTile |> Maybe.andThen (\tile -> Just { tile | fixed = Mountain Nothing })
+
+        oldGame =
+            model.game
     in
         { model
-            | grid =
-                HexGrid a <|
-                    Dict.foldr
-                        (\point hab acc ->
-                            if Building.population hab.buildings > 0 then
-                                acc
-                            else
-                                Dict.update point remove acc
-                        )
-                        dict
-                        habitats
+            | game =
+                { oldGame
+                    | grid =
+                        HexGrid a <|
+                            Dict.foldr
+                                (\point hab acc ->
+                                    if Building.population hab.buildings > 0 then
+                                        acc
+                                    else
+                                        Dict.update point remove acc
+                                )
+                                dict
+                                habitats
+                }
         }
 
 
@@ -92,11 +107,11 @@ newSelection : Model -> Maybe Selection
 newSelection model =
     let
         findUnit id =
-            Model.findUnit id model.grid
+            Model.findUnit id model.game.grid
                 |> Maybe.andThen (\_ -> model.selection)
 
         maybeBecameHabitat id =
-            Model.habitatDict model.grid
+            Game.habitatDict model.game.grid
                 |> Dict.toList
                 |> (\habList ->
                         case List.filter (\( _, hab ) -> hab.createdBy == id) habList of
@@ -122,6 +137,18 @@ newSelection model =
                                 unit ->
                                     unit
                 )
+
+
+wrapResolveMoves : Model -> Model
+wrapResolveMoves model =
+    let
+        (HexGrid a dict) =
+            model.game.grid
+
+        oldGame =
+            model.game
+    in
+        { model | game = { oldGame | grid = HexGrid a (resolveMoves dict) } }
 
 
 resolveMoves : Dict Point Tile -> Dict Point Tile
@@ -156,7 +183,7 @@ resolveUnit point unit acc =
                             Mountain Nothing ->
                                 case unit.class of
                                     ColonySubmarine ->
-                                        { tile | fixed = Mountain (Just (Model.newHabitat unit.id)) }
+                                        { tile | fixed = Mountain (Just (Game.newHabitat unit.id)) }
 
                                     _ ->
                                         standardMove tile
@@ -175,15 +202,21 @@ wrapResolveProduction : Model -> Model
 wrapResolveProduction model =
     let
         (HexGrid a dict) =
-            model.grid
+            model.game.grid
 
         ( newDict, newIdSeed ) =
-            State.run model.idSeed <|
+            State.run model.game.idSeed <|
                 Yaks.traverseStateDict resolveProduction dict
+
+        oldGame =
+            model.game
     in
         { model
-            | grid = HexGrid a newDict
-            , idSeed = newIdSeed
+            | game =
+                { oldGame
+                    | grid = HexGrid a newDict
+                    , idSeed = newIdSeed
+                }
         }
 
 
@@ -200,7 +233,7 @@ resolveProduction tile =
                         State.state tile
 
                     Just producing ->
-                        if newProduced < Model.cost producing then
+                        if newProduced < Game.cost producing then
                             let
                                 newHabitat =
                                     { hab | produced = newProduced }
@@ -269,16 +302,22 @@ wrapResolveBattles : Model -> Model
 wrapResolveBattles model =
     let
         (HexGrid a dict) =
-            model.grid
+            model.game.grid
 
         ( newDict, ( newRandomSeed, battleReports ) ) =
-            State.run ( model.randomSeed, [] ) <|
-                Yaks.traverseStateDict (resolveBattle model.turn) dict
+            State.run ( model.game.randomSeed, [] ) <|
+                Yaks.traverseStateDict (resolveBattle model.game.turn) dict
+
+        oldGame =
+            model.game
     in
         { model
-            | grid = HexGrid a newDict
+            | game =
+                { oldGame
+                    | grid = HexGrid a newDict
+                    , randomSeed = newRandomSeed
+                }
             , gameLog = battleReports ++ model.gameLog
-            , randomSeed = newRandomSeed
         }
 
 
@@ -670,7 +709,7 @@ resolveBattle turn tile =
                                             ( newTile
                                             , ( newSeed
                                               , { turn = turn
-                                                , habitat = Model.habitatFullName hab
+                                                , habitat = Game.habitatFullName hab
                                                 , events = nonEmpty
                                                 }
                                                     :: reports
@@ -686,16 +725,22 @@ wrapNewEnemies : Model -> Model
 wrapNewEnemies model =
     let
         (HexGrid a dict) =
-            model.grid
+            model.game.grid
 
         ( newDict, ( newRandomSeed, newIdSeed ) ) =
-            State.run ( model.randomSeed, model.idSeed ) <|
+            State.run ( model.game.randomSeed, model.game.idSeed ) <|
                 newEnemies model dict
+
+        oldGame =
+            model.game
     in
         { model
-            | grid = HexGrid a newDict
-            , randomSeed = newRandomSeed
-            , idSeed = newIdSeed
+            | game =
+                { oldGame
+                    | grid = HexGrid a newDict
+                    , randomSeed = newRandomSeed
+                    , idSeed = newIdSeed
+                }
         }
 
 
@@ -726,10 +771,10 @@ newEnemies model dict =
                     dict
     in
         -- TODO: Place enemies at random times; make them increasingly challenging.
-        if Model.unTurn model.turn > 25 && Model.unTurn model.turn % 20 == 0 then
+        if Game.unTurn model.game.turn > 25 && Game.unTurn model.game.turn % 20 == 0 then
             let
                 pointsAndHabs =
-                    Dict.toList (Model.habitatDict model.grid)
+                    Dict.toList (Game.habitatDict model.game.grid)
             in
                 State <|
                     (\( randomSeed, idSeed ) ->

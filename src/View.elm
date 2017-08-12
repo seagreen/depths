@@ -22,21 +22,24 @@ import Svg.Events as Sevent exposing (onClick, onMouseOver, onMouseOut)
 
 -- Local
 
+import Game
+    exposing
+        ( Buildable(..)
+        , Geology(..)
+        , Habitat
+        , HabitatEditor(..)
+        , HabitatName
+        , Tile
+        )
 import Game.Building as Building exposing (Building(..))
 import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
 import Model
     exposing
-        ( Msg(..)
-        , Model
-        , Outcome(..)
-        , Habitat
-        , HabitatName
-        , HabitatEditor(..)
-        , Buildable(..)
+        ( BattleEvent(..)
         , BattleReport
-        , BattleEvent(..)
-        , Tile
-        , Geology(..)
+        , Model
+        , Msg(..)
+        , Outcome(..)
         , Selection(..)
         )
 
@@ -54,7 +57,7 @@ viewBoard : Model -> Svg Msg
 viewBoard model =
     let
         (HexGrid _ dict) =
-            model.grid
+            model.game.grid
 
         layout : HexGrid.Layout
         layout =
@@ -81,7 +84,7 @@ viewBoard model =
                     (\selection ->
                         case selection of
                             SelectedId id ->
-                                Model.findUnit id model.grid
+                                Model.findUnit id model.game.grid
 
                             _ ->
                                 Nothing
@@ -114,9 +117,9 @@ viewBoard model =
 
 getAbbreviation : Tile -> String
 getAbbreviation tile =
-    case Model.habitatFromTile tile of
+    case Game.habitatFromTile tile of
         Just hab ->
-            Model.habitatAbbreviation hab
+            Game.habitatAbbreviation hab
 
         Nothing ->
             case Model.friendlyUnits tile of
@@ -159,7 +162,7 @@ renderPoint bi ( point, tile ) =
                         (getAbbreviation tile)
                         (case tile.fixed of
                             Mountain (Just hab) ->
-                                case Model.productionUntilCompletion hab of
+                                case Game.productionUntilCompletion hab of
                                     Nothing ->
                                         ""
 
@@ -300,7 +303,7 @@ viewHabitat point hab =
             []
             [ Html.b
                 []
-                [ Html.text <| Model.habitatFullName hab ]
+                [ Html.text <| Game.habitatFullName hab ]
             ]
         , productionForm hab
         , Html.p
@@ -378,7 +381,7 @@ productionForm hab =
                     [ Hattr.for "constructing" ]
                     [ Svg.text <|
                         "Constructing"
-                            ++ (case Model.productionUntilCompletion hab of
+                            ++ (case Game.productionUntilCompletion hab of
                                     Nothing ->
                                         ""
 
@@ -519,7 +522,7 @@ view : Model -> Svg Msg
 view model =
     let
         (HexGrid _ dict) =
-            model.grid
+            model.game.grid
     in
         Html.div
             []
@@ -548,7 +551,7 @@ view model =
                         []
                         [ Html.text "Turn "
                         , badge
-                            [ Html.text (toString (Model.unTurn model.turn)) ]
+                            [ Html.text (toString (Game.unTurn model.game.turn)) ]
                         ]
                     , displayOutcome model
                     , displayBattleReports model
@@ -645,7 +648,7 @@ displayBattleReports model =
                     DetectionEvent enemy buildable ->
                         Html.text <|
                             "Our "
-                                ++ Model.name buildable
+                                ++ Game.name buildable
                                 ++ (case enemy of
                                         BuildSubmarine sub ->
                                             " detected an enemy "
@@ -666,7 +669,7 @@ displayBattleReports model =
                                 Computer ->
                                     "Enemy "
                             )
-                                ++ Model.name destroyed
+                                ++ Game.name destroyed
                                 ++ " was destroyed by "
                                 ++ attackDescription mDestroyer
                 ]
@@ -690,7 +693,7 @@ displayBattleReports model =
             []
             (List.map displayReport
                 (List.filter
-                    (\entry -> Model.unTurn entry.turn == Model.unTurn model.turn - 1)
+                    (\entry -> Game.unTurn entry.turn == Game.unTurn model.game.turn - 1)
                     model.gameLog
                 )
             )
@@ -714,7 +717,7 @@ endTurnButton model =
 startingHelpMessage : Model -> Html Msg
 startingHelpMessage model =
     if
-        Model.unTurn model.turn
+        Game.unTurn model.game.turn
             == 1
             && case model.selection of
                 Just (SelectedId _) ->

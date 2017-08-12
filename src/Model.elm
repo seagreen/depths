@@ -8,13 +8,12 @@ import Random
 
 -- 3rd
 
-import Either exposing (Either(..))
 import HexGrid exposing (HexGrid(..), Direction, Point)
-import State
 
 
 -- Local
 
+import Game exposing (Buildable(..), Tile)
 import Game.Building as Building exposing (Building(..))
 import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
@@ -44,59 +43,20 @@ type Msg
 
 
 type alias Model =
-    { grid : HexGrid Tile
+    { game : Game.State
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
     , gameLog : List BattleReport
-    , turn : Turn
-    , idSeed : IdSeed
-    , randomSeed : Random.Seed
     }
 
 
 init : Model
 init =
-    let
-        ( ( idA, idB ), idSeed ) =
-            State.run (IdSeed 1) <|
-                State.map2 (,) Id.next Id.next
-    in
-        { grid =
-            HexGrid.fromList 6
-                (Tile Dict.empty Depths)
-                [ ( ( -4, 1 ), emptyMountain )
-                , ( ( -1, -3 ), emptyMountain )
-                , ( ( 2, -4 ), emptyMountain )
-                , ( ( 3, -1 ), emptyMountain )
-                , ( ( 2, 2 ), emptyMountain )
-                , ( ( -3, 3 ), emptyMountain )
-                , ( ( -2, 4 ), emptyMountain )
-                , ( ( -4, -2 )
-                  , Tile
-                        (Dict.singleton
-                            (Id.unId idA)
-                            (Unit idA Human ColonySubmarine Nothing)
-                        )
-                        Depths
-                  )
-                , ( ( 0, 0 )
-                  , Tile
-                        (Dict.singleton
-                            (Id.unId idB)
-                            (Unit idB Computer AttackSubmarine Nothing)
-                        )
-                        Depths
-                  )
-                ]
-        , selection = Nothing
-        , hoverPoint = Nothing
-        , gameLog = []
-        , turn = Turn 1
-        , idSeed = idSeed
-        , randomSeed =
-            -- The Main module randomizes this at startup.
-            Random.initialSeed 0
-        }
+    { game = Game.init
+    , selection = Nothing
+    , hoverPoint = Nothing
+    , gameLog = []
+    }
 
 
 type Outcome
@@ -106,20 +66,20 @@ type Outcome
 
 outcome : Model -> Maybe Outcome
 outcome model =
-    if unTurn model.turn >= 200 then
+    if Game.unTurn model.game.turn >= 200 then
         Just Victory
     else
         let
             habitats =
-                habitatDict model.grid
+                Game.habitatDict model.game.grid
 
             (HexGrid _ dict) =
-                model.grid
+                model.game.grid
         in
             if Dict.size habitats >= 4 then
                 Just Victory
             else if
-                Dict.isEmpty (habitatDict model.grid)
+                Dict.isEmpty habitats
                     && List.isEmpty (friendlyUnitList dict)
             then
                 Just Defeat
@@ -127,129 +87,8 @@ outcome model =
                 Nothing
 
 
-type Turn
-    = Turn Int
-
-
-unTurn : Turn -> Int
-unTurn (Turn n) =
-    n
-
-
-{-| Dict keys are the subs' Ids.
--}
-type alias Tile =
-    { units : Dict Int Unit
-    , fixed : Geology
-    }
-
-
-emptyMountain : Tile
-emptyMountain =
-    Tile Dict.empty (Mountain Nothing)
-
-
-type Geology
-    = Depths
-    | Mountain (Maybe Habitat)
-
-
-type alias Habitat =
-    { name : Either HabitatEditor HabitatName
-    , createdBy : Id
-    , buildings : List Building
-    , producing : Maybe Buildable
-    , produced : Int
-    }
-
-
-productionUntilCompletion : Habitat -> Maybe Int
-productionUntilCompletion hab =
-    Maybe.map
-        (\producing -> cost producing - hab.produced)
-        hab.producing
-
-
-newHabitat : Id -> Habitat
-newHabitat colonySubId =
-    { name = Left emptyNameEditor
-    , createdBy = colonySubId
-    , buildings = [ PrefabHabitat ]
-    , producing = Nothing
-    , produced = 0
-    }
-
-
-habitatFullName : Habitat -> String
-habitatFullName hab =
-    case hab.name of
-        Left _ ->
-            "<New habitat>"
-
-        Right name ->
-            name.full
-
-
-habitatAbbreviation : Habitat -> String
-habitatAbbreviation hab =
-    case hab.name of
-        Left _ ->
-            "<N>"
-
-        Right name ->
-            name.abbreviation
-
-
-habitatDict : HexGrid Tile -> Dict Point Habitat
-habitatDict (HexGrid _ grid) =
-    Dict.foldr
-        (\point tile acc ->
-            case tile.fixed of
-                Mountain (Just hab) ->
-                    Dict.insert point hab acc
-
-                _ ->
-                    acc
-        )
-        Dict.empty
-        grid
-
-
-habitatFromTile : Tile -> Maybe Habitat
-habitatFromTile tile =
-    case tile.fixed of
-        Mountain (Just hab) ->
-            Just hab
-
-        _ ->
-            Nothing
-
-
-type alias HabitatName =
-    { full : String
-    , abbreviation : String
-    }
-
-
-type HabitatEditor
-    = HabitatEditor HabitatName
-
-
-unHabitatEditor : HabitatEditor -> HabitatName
-unHabitatEditor (HabitatEditor editor) =
-    editor
-
-
-emptyNameEditor : HabitatEditor
-emptyNameEditor =
-    HabitatEditor
-        { full = ""
-        , abbreviation = ""
-        }
-
-
 type alias BattleReport =
-    { turn : Turn
+    { turn : Game.Turn
     , habitat : String
     , events : List BattleEvent
     }
@@ -286,7 +125,7 @@ focusPoint model =
                         Just point
 
                     SelectedId id ->
-                        Maybe.map Tuple.first (findUnit id model.grid)
+                        Maybe.map Tuple.first (findUnit id model.game.grid)
             )
 
 
@@ -294,7 +133,7 @@ focus : Model -> Maybe ( Point, Tile )
 focus model =
     let
         (HexGrid _ dict) =
-            model.grid
+            model.game.grid
     in
         focusPoint model
             |> Maybe.andThen
@@ -303,31 +142,6 @@ focus model =
                         (\tile -> ( point, tile ))
                         (Dict.get point dict)
                 )
-
-
-type Buildable
-    = BuildSubmarine Submarine
-    | BuildBuilding Building
-
-
-name : Buildable -> String
-name buildable =
-    case buildable of
-        BuildSubmarine sub ->
-            (Unit.stats sub).name
-
-        BuildBuilding building ->
-            (Building.stats building).name
-
-
-cost : Buildable -> Int
-cost buildable =
-    case buildable of
-        BuildSubmarine sub ->
-            (Unit.stats sub).cost
-
-        BuildBuilding building ->
-            (Building.stats building).cost
 
 
 type Combatant

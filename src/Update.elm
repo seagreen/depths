@@ -14,17 +14,21 @@ import HexGrid exposing (HexGrid(..), Point)
 
 -- Local
 
+import Game
+    exposing
+        ( Buildable(..)
+        , Geology(..)
+        , Habitat
+        , HabitatEditor(..)
+        , HabitatName
+        , Tile
+        , Turn(..)
+        )
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Model
     exposing
         ( Msg(..)
         , Model
-        , Habitat
-        , HabitatName
-        , HabitatEditor(..)
-        , Buildable(..)
-        , Tile
-        , Geology(..)
         , Selection(..)
         )
 import ResolveTurn
@@ -37,7 +41,11 @@ update msg model =
             model
 
         SetRandomSeed (Model.NewSeed new) ->
-            { model | randomSeed = Random.initialSeed new }
+            let
+                oldGame =
+                    model.game
+            in
+                { model | game = { oldGame | randomSeed = Random.initialSeed new } }
 
         EndTurn ->
             ResolveTurn.resolveTurn model
@@ -110,7 +118,7 @@ newSelection model newPoint =
     let
         newPointOrId : Maybe Selection
         newPointOrId =
-            HexGrid.valueAt newPoint model.grid
+            HexGrid.valueAt newPoint model.game.grid
                 |> Maybe.andThen
                     (\tile ->
                         case tile.fixed of
@@ -161,10 +169,16 @@ setHabitatName updateName model =
 
                 _ ->
                     tile
+
+        oldGame =
+            model.game
     in
         case Model.focusPoint model of
             Just point ->
-                { model | grid = HexGrid.update point updatePoint model.grid }
+                { model
+                    | game =
+                        { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
+                }
 
             _ ->
                 model
@@ -174,7 +188,7 @@ planMove : Model -> Point -> Id -> Point -> Model
 planMove model selected id new =
     let
         (HexGrid _ grid) =
-            model.grid
+            model.game.grid
 
         updateUnits =
             Dict.update
@@ -186,9 +200,12 @@ planMove model selected id new =
                 (\tile ->
                     { tile | units = updateUnits tile.units }
                 )
-                model.grid
+                model.game.grid
+
+        oldGame =
+            model.game
     in
-        { model | grid = newGrid }
+        { model | game = { oldGame | grid = newGrid } }
 
 
 buildOrder : Model -> Maybe Buildable -> Model
@@ -210,13 +227,19 @@ buildOrder model mBuildable =
 
                 _ ->
                     tile
+
+        oldGame =
+            model.game
     in
         { model
-            | grid =
-                case Model.focusPoint model of
-                    Nothing ->
-                        model.grid
+            | game =
+                { oldGame
+                    | grid =
+                        case Model.focusPoint model of
+                            Nothing ->
+                                oldGame.grid
 
-                    Just point ->
-                        HexGrid.update point setProduction model.grid
+                            Just point ->
+                                HexGrid.update point setProduction oldGame.grid
+                }
         }

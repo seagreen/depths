@@ -16,6 +16,7 @@ import Random.Pcg as Random exposing (Generator)
 
 -- Local
 
+import Game
 import Game.Building
 import Game.Id exposing (Id(..))
 import Game.Unit
@@ -42,12 +43,12 @@ idGenerator =
     Random.map Id intGenerator
 
 
-buildableGenerator : Generator Model.Buildable
+buildableGenerator : Generator Game.Buildable
 buildableGenerator =
     Random.choices <|
         List.map Random.constant <|
-            List.map Model.BuildSubmarine Game.Unit.all
-                ++ List.map Model.BuildBuilding Game.Building.all
+            List.map Game.BuildSubmarine Game.Unit.all
+                ++ List.map Game.BuildBuilding Game.Building.all
 
 
 msgGenerator : Generator Msg
