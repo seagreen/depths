@@ -16,9 +16,9 @@ import Random.Pcg as Random exposing (Generator)
 
 -- Local
 
-import Game
 import Game.Building
 import Game.Id exposing (Id(..))
+import Game.State
 import Game.Unit
 import Model exposing (Msg(..))
 
@@ -43,12 +43,12 @@ idGenerator =
     Random.map Id intGenerator
 
 
-buildableGenerator : Generator Game.Buildable
+buildableGenerator : Generator Game.State.Buildable
 buildableGenerator =
     Random.choices <|
         List.map Random.constant <|
-            List.map Game.BuildSubmarine Game.Unit.all
-                ++ List.map Game.BuildBuilding Game.Building.all
+            List.map Game.State.BuildSubmarine Game.Unit.all
+                ++ List.map Game.State.BuildBuilding Game.Building.all
 
 
 msgGenerator : Generator Msg
@@ -62,7 +62,7 @@ msgGenerator =
         , Random.map SelectTile pointGenerator
         , Random.map HoverPoint pointGenerator
         , Random.constant EndHover
-        , Random.map3 PlanMove pointGenerator idGenerator pointGenerator
+        , Random.map2 PlanMove idGenerator pointGenerator
         , Random.map BuildOrder (Random.maybe Random.bool buildableGenerator)
         , Random.map NameEditorFull asciiGenerator
         , Random.map NameEditorAbbreviation asciiGenerator

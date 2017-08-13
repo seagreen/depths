@@ -1,4 +1,3 @@
 elm-make src/Main.elm --output=./site/main.js --warn
 elm-format ./src --yes
-elm-format ./tests --yes
 cp ./elm-stuff/exact-dependencies.json ./
