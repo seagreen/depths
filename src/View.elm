@@ -164,13 +164,6 @@ renderPoint bi ( point, tile ) =
                                 else
                                     ""
                         )
-                        (case tile.fixed of
-                            Depths ->
-                                Just DarkGreen
-
-                            _ ->
-                                Nothing
-                        )
                    )
             )
 
@@ -250,9 +243,8 @@ tileText :
     -> Float
     -> String
     -> String
-    -> Maybe Color
     -> List (Svg msg)
-tileText centerX centerY upperText lowerText mColor =
+tileText centerX centerY upperText lowerText =
     let
         centerHorizontally : String -> Float
         centerHorizontally str =
@@ -268,16 +260,9 @@ tileText centerX centerY upperText lowerText mColor =
                         15
     in
         [ Svg.text_
-            ([ Sattr.x <| toString (centerHorizontally upperText)
-             , Sattr.y <| toString (centerY - 5)
-             ]
-                ++ case mColor of
-                    Just color ->
-                        [ Sattr.fill (showColor color) ]
-
-                    Nothing ->
-                        []
-            )
+            [ Sattr.x <| toString (centerHorizontally upperText)
+            , Sattr.y <| toString (centerY - 5)
+            ]
             [ Svg.text upperText ]
         , Svg.text_
             [ Sattr.x <| toString (centerHorizontally lowerText)
