@@ -20,7 +20,7 @@ Note that to de-select a unit you have to click outside of its move range. If yo
 
 To learn more you'll have to look at the source. I suggest:
 
-+ [src/Game/Unit.elm](./src/Game/Unit.elm
++ [src/Game/Unit.elm](./src/Game/Unit.elm)
 + [src/Game/Building.elm](./src/Game/Building.elm)
 
 If you want to try adding your own units, install `elm-make` (`elmPackages.elm` in Nixpkgs) and run:
