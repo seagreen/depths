@@ -22,27 +22,21 @@ import Svg.Events as Sevent exposing (onClick, onMouseOver, onMouseOut)
 
 -- Local
 
-import Game
+import Game exposing (BattleEvent(..), BattleReport, Outcome(..))
+import Game.Building as Building exposing (Building(..))
+import Game.Id as Id
+import Game.State as Game
     exposing
         ( Buildable(..)
+        , Game
         , Geology(..)
         , Habitat
         , HabitatEditor(..)
         , HabitatName
         , Tile
         )
-import Game.Building as Building exposing (Building(..))
-import Game.Id as Id
 import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
-import Model
-    exposing
-        ( BattleEvent(..)
-        , BattleReport
-        , Model
-        , Msg(..)
-        , Outcome(..)
-        , Selection(..)
-        )
+import Model exposing (Model, Msg(..), Selection(..))
 import Util
 
 
@@ -79,7 +73,7 @@ viewBoard model =
                     (\selection ->
                         case selection of
                             SelectedId id ->
-                                Model.findUnit id (Util.unHexGrid model.game.grid)
+                                Game.findUnit id (Util.unHexGrid model.game.grid)
 
                             _ ->
                                 Nothing
@@ -117,7 +111,7 @@ getAbbreviation tile =
             Game.habitatAbbreviation hab
 
         Nothing ->
-            case Model.friendlyUnits tile of
+            case Game.friendlyUnits tile of
                 [] ->
                     ""
 
@@ -191,7 +185,7 @@ cornersToStr corners =
 friendlyMoved : Model -> Tile -> Bool
 friendlyMoved model tile =
     tile
-        |> Model.friendlyUnits
+        |> Game.friendlyUnits
         |> List.any
             (\unit ->
                 Dict.member
@@ -215,7 +209,7 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                 case tile.fixed of
                     Depths ->
                         if Just point == Model.focusPoint model then
-                            case Model.friendlyUnits tile of
+                            case Game.friendlyUnits tile of
                                 [] ->
                                     White
 
@@ -553,7 +547,7 @@ view model =
                         , badge
                             [ Html.text (toString (Game.unTurn model.game.turn)) ]
                         ]
-                    , displayOutcome model
+                    , displayOutcome model.game
                     , displayBattleReports model
                     , case Model.focus model of
                         Nothing ->
@@ -579,7 +573,7 @@ view model =
                                         Html.text ""
                                 , Html.div
                                     []
-                                    (List.map (viewUnit model.selection) <| Model.friendlyUnits tile)
+                                    (List.map (viewUnit model.selection) <| Game.friendlyUnits tile)
                                 ]
                     , startingHelpMessage model
                     ]
@@ -595,9 +589,9 @@ view model =
             ]
 
 
-displayOutcome : Model -> Html Msg
-displayOutcome model =
-    case Model.outcome model of
+displayOutcome : Game -> Html Msg
+displayOutcome game =
+    case Game.outcome game of
         Just Victory ->
             Html.div
                 [ class "alert alert-success" ]
@@ -701,7 +695,7 @@ displayBattleReports model =
 
 endTurnButton : Model -> Html Msg
 endTurnButton model =
-    case Model.outcome model of
+    case Game.outcome model.game of
         Just _ ->
             Html.text ""
 
