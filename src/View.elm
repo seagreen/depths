@@ -220,8 +220,6 @@ viewPolygon model tile friendlyPlannedMoves corners point =
 
                                 _ ->
                                     Red
-                        else if friendlyMoved model tile then
-                            Red
                         else if Set.member point friendlyPlannedMoves then
                             DarkBlue
                         else if Just point == model.hoverPoint then
