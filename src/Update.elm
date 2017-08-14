@@ -224,7 +224,7 @@ newSelection model newPoint =
                 |> Maybe.andThen
                     (\tile ->
                         case tile.fixed of
-                            Mountain _ ->
+                            Mountain (Just _) ->
                                 Just (SelectedPoint newPoint)
 
                             _ ->
