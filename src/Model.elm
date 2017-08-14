@@ -35,7 +35,7 @@ type Msg
     | SelectTile Point
     | HoverPoint Point
     | EndHover
-    | PlanMove Id Point
+    | PlanMoves Id (List Point)
     | BuildOrder (Maybe Buildable)
     | NameEditorFull String
     | NameEditorAbbreviation String
@@ -44,7 +44,9 @@ type Msg
 
 type alias Model =
     { game : Game
-    , plannedMoves : Commands
+    , plannedMoves :
+        Dict Int (List Point)
+        -- Keys are unit IDs.
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
     , gameLog : List Game.BattleReport
@@ -54,7 +56,7 @@ type alias Model =
 init : Model
 init =
     { game = Game.State.init
-    , plannedMoves = Commands Dict.empty
+    , plannedMoves = Dict.empty
     , selection = Nothing
     , hoverPoint = Nothing
     , gameLog = []

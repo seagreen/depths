@@ -212,42 +212,48 @@ resolveMoves (Commands commands) game =
         (HexGrid a grid) =
             game.grid
     in
-        { game | grid = HexGrid a <| Dict.foldr (resolveUnit << Id) grid commands }
+        { game | grid = HexGrid a <| Dict.foldr (resolveSingleMove << Id) grid commands }
 
 
-resolveUnit : Id -> Point -> Dict Point Tile -> Dict Point Tile
-resolveUnit id newPoint acc =
-    case Game.State.findUnit id acc of
+resolveSingleMove : Id -> Point -> Dict Point Tile -> Dict Point Tile
+resolveSingleMove id newPoint grid =
+    case Game.State.findUnit id grid of
         Nothing ->
-            acc
+            grid
 
         Just ( oldPoint, unit ) ->
-            let
-                -- TODO: Make sure the unit can actually get there
-                -- (currently this is only checked in the view code).
-                standardMove tile =
-                    { tile
-                        | units =
-                            Dict.insert (Id.unId id) unit tile.units
-                    }
+            if HexGrid.distance oldPoint newPoint <= (Unit.stats unit.class).speed then
+                moveUnit oldPoint unit newPoint grid
+            else
+                grid
 
-                newTile tile =
-                    Just <|
-                        case tile.fixed of
-                            Mountain Nothing ->
-                                case unit.class of
-                                    ColonySubmarine ->
-                                        { tile | fixed = Mountain (Just (Game.State.newHabitat id)) }
 
-                                    _ ->
-                                        standardMove tile
+moveUnit : Point -> Unit -> Point -> Dict Point Tile -> Dict Point Tile
+moveUnit oldPoint unit newPoint grid =
+    let
+        moveTo tile =
+            { tile
+                | units =
+                    Dict.insert (Id.unId unit.id) unit tile.units
+            }
+
+        newTile tile =
+            Just <|
+                case tile.fixed of
+                    Mountain Nothing ->
+                        case unit.class of
+                            ColonySubmarine ->
+                                { tile | fixed = Mountain (Just (Game.State.newHabitat unit.id)) }
 
                             _ ->
-                                standardMove tile
-            in
-                acc
-                    |> Dict.update oldPoint (Maybe.map (removeUnit id))
-                    |> Dict.update newPoint (Maybe.andThen newTile)
+                                moveTo tile
+
+                    _ ->
+                        moveTo tile
+    in
+        grid
+            |> Dict.update oldPoint (Maybe.map (removeUnit unit.id))
+            |> Dict.update newPoint (Maybe.andThen newTile)
 
 
 wrapResolveProduction : Game -> Game

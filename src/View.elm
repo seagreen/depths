@@ -3,6 +3,7 @@ module View exposing (..)
 -- Core
 
 import Dict exposing (Dict)
+import Json.Decode
 import Json.Encode
 import Set exposing (Set)
 import String
@@ -44,7 +45,6 @@ type alias BoardInfo =
     { model : Model
     , layout : HexGrid.Layout
     , friendlyPlannedMoves : Set Point
-    , pointsReachable : Set Point
     , selectedUnit : Maybe ( Point, Unit )
     }
 
@@ -62,8 +62,8 @@ viewBoard model =
         friendlyPlannedMoves : Set Point
         friendlyPlannedMoves =
             model.plannedMoves
-                |> Game.unCommands
                 |> Dict.values
+                |> List.concat
                 |> Set.fromList
 
         selectedUnit : Maybe ( Point, Unit )
@@ -79,23 +79,11 @@ viewBoard model =
                                 Nothing
                     )
 
-        pointsReachable : Set Point
-        pointsReachable =
-            case selectedUnit of
-                Nothing ->
-                    Set.empty
-
-                Just ( point, unit ) ->
-                    Set.empty
-                        |> HexGrid.reachable point (Unit.stats unit.class).speed
-                        |> Set.remove point
-
         boardInfo : BoardInfo
         boardInfo =
             { model = model
             , layout = layout
             , friendlyPlannedMoves = friendlyPlannedMoves
-            , pointsReachable = pointsReachable
             , selectedUnit = selectedUnit
             }
     in
@@ -122,6 +110,27 @@ getAbbreviation tile =
                     "**"
 
 
+movesToPoint : Point -> Point -> Int -> List Point
+movesToPoint start end speed =
+    let
+        maybeStopHere : Int -> Point -> Maybe Point
+        maybeStopHere ix point =
+            if ix == 0 then
+                Nothing
+            else if ix % speed == 0 then
+                Just point
+            else if point == end then
+                -- We still want to reach our destination even if the final move
+                -- doesn't use our full move speed:
+                Just point
+            else
+                Nothing
+    in
+        HexGrid.line start end
+            |> List.indexedMap maybeStopHere
+            |> List.filterMap identity
+
+
 renderPoint : BoardInfo -> ( Point, Tile ) -> Html Msg
 renderPoint bi ( point, tile ) =
     let
@@ -132,16 +141,19 @@ renderPoint bi ( point, tile ) =
             HexGrid.polygonCorners bi.layout point
     in
         Svg.g
-            [ onClick <|
+            [ onClick <| SelectPoint point
+            , onRightClick <|
                 case bi.selectedUnit of
                     Nothing ->
-                        SelectPoint point
+                        NoOp
 
-                    Just ( _, unit ) ->
-                        if Set.member point bi.pointsReachable then
-                            PlanMove unit.id point
-                        else
-                            SelectPoint point
+                    Just ( oldPoint, unit ) ->
+                        case movesToPoint oldPoint point ((Unit.stats unit.class).speed) of
+                            [] ->
+                                NoOp
+
+                            moves ->
+                                PlanMoves unit.id moves
             , onMouseOut EndHover
             , onMouseOver (HoverPoint point)
             ]
@@ -159,10 +171,7 @@ renderPoint bi ( point, tile ) =
                                         toString remaining
 
                             _ ->
-                                if Set.member point bi.pointsReachable then
-                                    "1"
-                                else
-                                    ""
+                                ""
                         )
                    )
             )
@@ -183,7 +192,7 @@ friendlyMoved model tile =
             (\unit ->
                 Dict.member
                     (Id.unId unit.id)
-                    (Game.unCommands model.plannedMoves)
+                    model.plannedMoves
             )
 
 
@@ -211,7 +220,7 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                         else if friendlyMoved model tile then
                             Red
                         else if Set.member point friendlyPlannedMoves then
-                            Red
+                            DarkBlue
                         else if Just point == model.hoverPoint then
                             Yellow
                         else
@@ -221,7 +230,7 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                         if Just (SelectedPoint point) == model.selection then
                             White
                         else if Set.member point friendlyPlannedMoves then
-                            Red
+                            DarkGray
                         else if Just point == model.hoverPoint then
                             Yellow
                         else
@@ -230,6 +239,8 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                     Mountain (Just _) ->
                         if Just (SelectedPoint point) == model.selection then
                             Red
+                        else if Set.member point friendlyPlannedMoves then
+                            DarkGreen
                         else if Just point == model.hoverPoint then
                             Yellow
                         else
@@ -468,14 +479,7 @@ viewUnit selection unit =
                     []
                     [ Html.text stats.name ]
                 ]
-            , case stats.helpText of
-                Nothing ->
-                    Html.text ""
-
-                Just help ->
-                    Html.p
-                        []
-                        [ Html.text help ]
+            , Maybe.withDefault (Html.text "") (Unit.helpText unit.class)
             , Html.p
                 []
                 [ Html.text "Sensors: "
@@ -712,15 +716,12 @@ startingHelpMessage model =
         Html.text ""
 
 
-type Color
-    = Red
-    | Green
-    | DarkGreen
-    | Blue
-    | Yellow
-    | Black
-    | White
-    | Gray
+onRightClick : msg -> Html.Attribute msg
+onRightClick msg =
+    Hevent.onWithOptions
+        "contextmenu"
+        { stopPropagation = True, preventDefault = True }
+        (Json.Decode.succeed msg)
 
 
 {-| https://github.com/elm-lang/html/issues/136
@@ -735,6 +736,20 @@ badge =
     Html.span [ class "badge" ]
 
 
+type Color
+    = Red
+    | DarkRed
+    | Green
+    | DarkGreen
+    | Blue
+    | DarkBlue
+    | Yellow
+    | Black
+    | White
+    | Gray
+    | DarkGray
+
+
 {-| Be careful not to use toString instead.
 -}
 showColor : Color -> String
@@ -742,6 +757,9 @@ showColor a =
     case a of
         Red ->
             "#e74c3c"
+
+        DarkRed ->
+            "darkred"
 
         Green ->
             "green"
@@ -751,6 +769,9 @@ showColor a =
 
         Blue ->
             "#3498db"
+
+        DarkBlue ->
+            "#3468db"
 
         Yellow ->
             "#f1c40f"
@@ -763,3 +784,6 @@ showColor a =
 
         Gray ->
             "darkgrey"
+
+        DarkGray ->
+            "#636363"

@@ -50,16 +50,7 @@ update msg model =
                 { model | game = { oldGame | randomSeed = Random.initialSeed new } }
 
         EndTurn ->
-            let
-                ( reports, newGameState ) =
-                    Game.resolveTurn model.plannedMoves model.game
-            in
-                { model
-                    | game = newGameState
-                    , plannedMoves = Commands (Dict.empty)
-                    , selection = updateSelection newGameState model.selection
-                    , gameLog = reports ++ model.gameLog
-                }
+            endTurn model
 
         HoverPoint point ->
             { model | hoverPoint = Just point }
@@ -76,12 +67,8 @@ update msg model =
         SelectTile point ->
             { model | selection = Just (SelectedPoint point) }
 
-        PlanMove id point ->
-            let
-                (Commands moves) =
-                    model.plannedMoves
-            in
-                { model | plannedMoves = Commands (Dict.insert (Id.unId id) point moves) }
+        PlanMoves id points ->
+            { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }
 
         BuildOrder mBuilding ->
             buildOrder model mBuilding
@@ -121,6 +108,68 @@ update msg model =
                             Right editor
                 )
                 model
+
+
+endTurn : Model -> Model
+endTurn model =
+    let
+        ( immediateMoves, laterMoves ) =
+            splitPlannedMoves model.plannedMoves
+
+        ( reports, newGameState ) =
+            Game.resolveTurn immediateMoves model.game
+    in
+        { model
+            | game = newGameState
+            , plannedMoves = cleanPlannedMoves newGameState laterMoves
+            , selection = updateSelection newGameState model.selection
+            , gameLog = reports ++ model.gameLog
+        }
+
+
+{-| Remove plans to move units that are no longer on the board.
+-}
+cleanPlannedMoves : Game -> Dict Int (List Point) -> Dict Int (List Point)
+cleanPlannedMoves game moveDict =
+    let
+        friendlies =
+            Game.friendlyUnitDict (Util.unHexGrid game.grid)
+
+        go id movePoint acc =
+            if Dict.member id friendlies then
+                Dict.insert id movePoint acc
+            else
+                acc
+    in
+        Dict.foldr go Dict.empty moveDict
+
+
+{-| Split planned moves into those to be executed this turn and those for later.
+-}
+splitPlannedMoves : Dict Int (List Point) -> ( Commands, Dict Int (List Point) )
+splitPlannedMoves moves =
+    let
+        go :
+            Int
+            -> List Point
+            -> ( Commands, Dict Int (List Point) )
+            -> ( Commands, Dict Int (List Point) )
+        go id moves ( Commands immediate, forLater ) =
+            case moves of
+                [] ->
+                    ( Commands immediate, forLater )
+
+                x :: xs ->
+                    ( Commands (Dict.insert id x immediate)
+                    , case xs of
+                        [] ->
+                            forLater
+
+                        _ ->
+                            Dict.insert id xs forLater
+                    )
+    in
+        Dict.foldr go ( Commands Dict.empty, Dict.empty ) moves
 
 
 {-| Update the selection after the end of a turn.

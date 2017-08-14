@@ -243,12 +243,15 @@ friendlyUnits tile =
         (Dict.values tile.units)
 
 
-unitDict : Dict Point Tile -> Dict Point (Dict Int Unit)
-unitDict =
-    Dict.map
-        (\_ tile ->
-            tile.units
-        )
+{-| Get all friendly units in the game and their locations.
+
+Returned `Int` keys are unit IDs.
+-}
+friendlyUnitDict : Dict Point Tile -> Dict Int Point
+friendlyUnitDict grid =
+    friendlyUnitList grid
+        |> List.map (\( point, unit ) -> ( Id.unId unit.id, point ))
+        |> Dict.fromList
 
 
 unitList : Dict Point Tile -> List ( Point, Unit )

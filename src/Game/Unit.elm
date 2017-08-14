@@ -1,5 +1,12 @@
 module Game.Unit exposing (..)
 
+-- 3rd
+
+import Html exposing (Html)
+
+
+-- Local
+
 import Game.Building exposing (Building(..))
 import Game.Id exposing (Id(..))
 
@@ -28,7 +35,6 @@ type alias Stats =
         Int
         -- Named "firepower" instead of "attack" to clarify that it
         -- works the same on both offence and defense.
-    , helpText : Maybe String
     }
 
 
@@ -58,7 +64,6 @@ stats sub =
             , sensors = 2
             , stealth = 0
             , firepower = 0
-            , helpText = Just "To move click a neighboring tile then press enter. Move over an undersea mountain to create a habitat."
             }
 
         RemotelyOperatedVehicle ->
@@ -70,7 +75,6 @@ stats sub =
             , sensors = 2
             , stealth = 0
             , firepower = 2
-            , helpText = Nothing
             }
 
         AttackSubmarine ->
@@ -82,7 +86,6 @@ stats sub =
             , sensors = 4
             , stealth = 3
             , firepower = 3
-            , helpText = Nothing
             }
 
 
@@ -97,6 +100,25 @@ fromString s =
 
         "AttackSubmarine" ->
             Just AttackSubmarine
+
+        _ ->
+            Nothing
+
+
+helpText : Submarine -> Maybe (Html a)
+helpText sub =
+    case sub of
+        ColonySubmarine ->
+            Just <|
+                Html.div
+                    []
+                    [ Html.p
+                        []
+                        [ Html.text "To move right-click a tile and then press enter until the unit reaches it." ]
+                    , Html.p
+                        []
+                        [ Html.text "Move over an undersea mountain (a gray tile) to create a habitat." ]
+                    ]
 
         _ ->
             Nothing
