@@ -70,6 +70,9 @@ update msg model =
         PlanMoves id points ->
             { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }
 
+        CancelMove id ->
+            { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }
+
         BuildOrder mBuilding ->
             buildOrder model mBuilding
 

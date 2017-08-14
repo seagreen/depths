@@ -148,12 +148,15 @@ renderPoint bi ( point, tile ) =
                         NoOp
 
                     Just ( oldPoint, unit ) ->
-                        case movesToPoint oldPoint point ((Unit.stats unit.class).speed) of
-                            [] ->
-                                NoOp
+                        if point == oldPoint then
+                            CancelMove unit.id
+                        else
+                            case movesToPoint oldPoint point ((Unit.stats unit.class).speed) of
+                                [] ->
+                                    NoOp
 
-                            moves ->
-                                PlanMoves unit.id moves
+                                moves ->
+                                    PlanMoves unit.id moves
             , onMouseOut EndHover
             , onMouseOver (HoverPoint point)
             ]

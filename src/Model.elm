@@ -36,6 +36,7 @@ type Msg
     | HoverPoint Point
     | EndHover
     | PlanMoves Id (List Point)
+    | CancelMove Id
     | BuildOrder (Maybe Buildable)
     | NameEditorFull String
     | NameEditorAbbreviation String
