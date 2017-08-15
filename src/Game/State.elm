@@ -59,11 +59,11 @@ init =
                         )
                         Depths
                   )
-                , ( ( 0, 0 )
+                , ( ( 6, 0 )
                   , Tile
                         (Dict.singleton
                             (Id.unId idB)
-                            (Unit idB Computer AttackSubmarine)
+                            (Unit idB Computer ColonySubmarine)
                         )
                         Depths
                   )
@@ -110,13 +110,6 @@ type alias Habitat =
     , producing : Maybe Buildable
     , produced : Int
     }
-
-
-productionUntilCompletion : Habitat -> Maybe Int
-productionUntilCompletion hab =
-    Maybe.map
-        (\producing -> cost producing - hab.produced)
-        hab.producing
 
 
 newHabitat : Id -> Habitat
@@ -172,6 +165,30 @@ habitatFromTile tile =
 
         _ ->
             Nothing
+
+
+habitatFromPoint : Point -> Dict Point Tile -> Maybe Habitat
+habitatFromPoint point grid =
+    Dict.get point grid |> Maybe.andThen habitatFromTile
+
+
+updateHabitat : Point -> (Habitat -> Habitat) -> Dict Point Tile -> Dict Point Tile
+updateHabitat point update grid =
+    let
+        updateHab mTile =
+            mTile
+                |> Maybe.andThen
+                    (\tile ->
+                        Just <|
+                            case tile.fixed of
+                                Mountain (Just hab) ->
+                                    { tile | fixed = Mountain (Just (update hab)) }
+
+                                _ ->
+                                    tile
+                    )
+    in
+        Dict.update point updateHab grid
 
 
 type alias HabitatName =

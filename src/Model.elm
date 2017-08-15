@@ -13,7 +13,7 @@ import HexGrid exposing (HexGrid(..), Direction, Point)
 
 -- Local
 
-import Game exposing (Commands(..))
+import Game exposing (Commands)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State exposing (Buildable(..), Game, Tile)
 import Util
@@ -48,6 +48,7 @@ type alias Model =
     , plannedMoves :
         Dict Int (List Point)
         -- Keys are unit IDs.
+    , buildOrders : Dict Point (Maybe Buildable)
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
     , gameLog : List Game.BattleReport
@@ -58,6 +59,7 @@ init : Model
 init =
     { game = Game.State.init
     , plannedMoves = Dict.empty
+    , buildOrders = Dict.empty
     , selection = Nothing
     , hoverPoint = Nothing
     , gameLog = []

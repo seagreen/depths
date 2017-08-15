@@ -48,7 +48,8 @@ resolveTurn commands game =
 
         Nothing ->
             game
-                |> resolveMoves commands
+                |> resolveBuildOrders commands.buildOrders
+                >> resolveMoves commands.moves
                 >> resolveBattles
                 >> Tuple.mapSecond
                     (destroyHabitats
@@ -89,18 +90,15 @@ outcome game =
                 Nothing
 
 
-{-| Keys are the IDs of units.
+{-| The keys in `moves` are the IDs of units.
 
 At some point we should add the restriction that units can't
 "move" to their current tile.
 -}
-type Commands
-    = Commands (Dict Int Point)
-
-
-unCommands : Commands -> Dict Int Point
-unCommands (Commands dict) =
-    dict
+type alias Commands =
+    { moves : Dict Int Point
+    , buildOrders : Dict Point (Maybe Buildable)
+    }
 
 
 type alias BattleReport =
@@ -206,13 +204,39 @@ destroyHabitats game =
         }
 
 
-resolveMoves : Commands -> Game -> Game
-resolveMoves (Commands commands) game =
+resolveBuildOrders : Dict Point (Maybe Buildable) -> Game -> Game
+resolveBuildOrders orders game =
+    Dict.foldr singleBuildOrder game orders
+
+
+singleBuildOrder : Point -> Maybe Buildable -> Game -> Game
+singleBuildOrder point mBuildable game =
+    let
+        setProduction hab =
+            if mBuildable == hab.producing then
+                hab
+            else
+                { hab
+                    | producing = mBuildable
+                    , produced = 0
+                }
+
+        (HexGrid a grid) =
+            game.grid
+    in
+        { game
+            | grid =
+                HexGrid a (Game.State.updateHabitat point setProduction grid)
+        }
+
+
+resolveMoves : Dict Int Point -> Game -> Game
+resolveMoves moves game =
     let
         (HexGrid a grid) =
             game.grid
     in
-        { game | grid = HexGrid a <| Dict.foldr (resolveSingleMove << Id) grid commands }
+        { game | grid = HexGrid a <| Dict.foldr (resolveSingleMove << Id) grid moves }
 
 
 resolveSingleMove : Id -> Point -> Dict Point Tile -> Dict Point Tile

@@ -14,7 +14,7 @@ import HexGrid exposing (HexGrid(..), Point)
 
 -- Local
 
-import Game exposing (Commands(..))
+import Game exposing (Commands)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State as Game
     exposing
@@ -73,8 +73,8 @@ update msg model =
         CancelMove id ->
             { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }
 
-        BuildOrder mBuilding ->
-            buildOrder model mBuilding
+        BuildOrder mBuildable ->
+            buildOrder model mBuildable
 
         NameEditorFull new ->
             setHabitatName
@@ -120,11 +120,16 @@ endTurn model =
             splitPlannedMoves model.plannedMoves
 
         ( reports, newGameState ) =
-            Game.resolveTurn immediateMoves model.game
+            Game.resolveTurn
+                { moves = immediateMoves
+                , buildOrders = model.buildOrders
+                }
+                model.game
     in
         { model
             | game = newGameState
             , plannedMoves = cleanPlannedMoves newGameState laterMoves
+            , buildOrders = Dict.empty
             , selection = updateSelection newGameState model.selection
             , gameLog = reports ++ model.gameLog
         }
@@ -149,30 +154,30 @@ cleanPlannedMoves game moveDict =
 
 {-| Split planned moves into those to be executed this turn and those for later.
 -}
-splitPlannedMoves : Dict Int (List Point) -> ( Commands, Dict Int (List Point) )
-splitPlannedMoves moves =
+splitPlannedMoves : Dict Int (List Point) -> ( Dict Int Point, Dict Int (List Point) )
+splitPlannedMoves allMoves =
     let
         go :
             Int
             -> List Point
-            -> ( Commands, Dict Int (List Point) )
-            -> ( Commands, Dict Int (List Point) )
-        go id moves ( Commands immediate, forLater ) =
-            case moves of
+            -> ( Dict Int Point, Dict Int (List Point) )
+            -> ( Dict Int Point, Dict Int (List Point) )
+        go unitId unitMoves ( commands, futureMoves ) =
+            case unitMoves of
                 [] ->
-                    ( Commands immediate, forLater )
+                    ( commands, futureMoves )
 
                 x :: xs ->
-                    ( Commands (Dict.insert id x immediate)
+                    ( Dict.insert unitId x commands
                     , case xs of
                         [] ->
-                            forLater
+                            futureMoves
 
                         _ ->
-                            Dict.insert id xs forLater
+                            Dict.insert unitId xs futureMoves
                     )
     in
-        Dict.foldr go ( Commands Dict.empty, Dict.empty ) moves
+        Dict.foldr go ( Dict.empty, Dict.empty ) allMoves
 
 
 {-| Update the selection after the end of a turn.
@@ -291,36 +296,17 @@ setHabitatName updateName model =
 
 buildOrder : Model -> Maybe Buildable -> Model
 buildOrder model mBuildable =
-    let
-        setProduction tile =
-            case tile.fixed of
-                Mountain (Just hab) ->
-                    { tile
-                        | fixed =
-                            Mountain
-                                (Just
-                                    { hab
-                                        | producing = mBuildable
-                                        , produced = 0
-                                    }
-                                )
-                    }
+    case Model.focusPoint model of
+        Nothing ->
+            model
 
-                _ ->
-                    tile
+        Just point ->
+            case Game.habitatFromPoint point (Util.unHexGrid model.game.grid) of
+                Nothing ->
+                    model
 
-        oldGame =
-            model.game
-    in
-        { model
-            | game =
-                { oldGame
-                    | grid =
-                        case Model.focusPoint model of
-                            Nothing ->
-                                oldGame.grid
-
-                            Just point ->
-                                HexGrid.update point setProduction oldGame.grid
-                }
-        }
+                Just hab ->
+                    if mBuildable == hab.producing then
+                        { model | buildOrders = Dict.remove point model.buildOrders }
+                    else
+                        { model | buildOrders = Dict.insert point mBuildable model.buildOrders }

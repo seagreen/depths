@@ -166,7 +166,7 @@ renderPoint bi ( point, tile ) =
                         (getAbbreviation tile)
                         (case tile.fixed of
                             Mountain (Just hab) ->
-                                case Game.productionUntilCompletion hab of
+                                case viewRemainingProduction bi.model point hab of
                                     Nothing ->
                                         ""
 
@@ -178,6 +178,29 @@ renderPoint bi ( point, tile ) =
                         )
                    )
             )
+
+
+viewRemainingProduction : Model -> Point -> Habitat -> Maybe Int
+viewRemainingProduction model point hab =
+    let
+        choiceChanged =
+            Dict.get point model.buildOrders
+                |> Maybe.andThen
+                    (\new ->
+                        if new == hab.producing then
+                            Nothing
+                        else
+                            Just new
+                    )
+    in
+        case choiceChanged of
+            Nothing ->
+                Maybe.map
+                    (\producing -> Game.cost producing - hab.produced)
+                    hab.producing
+
+            Just changed ->
+                Maybe.map Game.cost changed
 
 
 cornersToStr : List ( Float, Float ) -> String
@@ -284,8 +307,8 @@ tileText centerX centerY upperText lowerText =
         ]
 
 
-viewHabitat : Point -> Habitat -> Html Msg
-viewHabitat point hab =
+viewHabitat : Model -> Point -> Habitat -> Html Msg
+viewHabitat model point hab =
     Html.div
         [ onClick (SelectTile point)
         , class "alert alert-success"
@@ -296,7 +319,7 @@ viewHabitat point hab =
                 []
                 [ Html.text <| Game.habitatFullName hab ]
             ]
-        , productionForm hab
+        , productionForm model point hab
         , Html.p
             []
             [ Html.text "Production: "
@@ -322,8 +345,8 @@ viewHabitat point hab =
         ]
 
 
-productionForm : Habitat -> Html Msg
-productionForm hab =
+productionForm : Model -> Point -> Habitat -> Html Msg
+productionForm model point hab =
     let
         option : Maybe Buildable -> Html Msg
         option buildable =
@@ -372,7 +395,7 @@ productionForm hab =
                     [ Hattr.for "constructing" ]
                     [ Svg.text <|
                         "Constructing"
-                            ++ (case Game.productionUntilCompletion hab of
+                            ++ (case viewRemainingProduction model point hab of
                                     Nothing ->
                                         ""
 
@@ -550,7 +573,7 @@ view model =
                                     Mountain (Just hab) ->
                                         Html.div
                                             []
-                                            [ viewHabitat point hab
+                                            [ viewHabitat model point hab
                                             , case hab.name of
                                                 Right _ ->
                                                     Html.text ""
