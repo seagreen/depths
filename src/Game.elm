@@ -9,10 +9,6 @@ Types that are part of the game's state are imported from `Game.State`.
 
 -}
 
--- Core
--- 3rd
--- Local
-
 import Dict exposing (Dict)
 import Game.Building as Building exposing (Building(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
@@ -93,7 +89,7 @@ At some point we should add the restriction that units can't
 -}
 type alias Commands =
     { moves : Dict Int Point
-    , buildOrders : Dict Point (Maybe Buildable)
+    , buildOrders : Dict Point Buildable
     }
 
 
@@ -200,20 +196,20 @@ destroyHabitats game =
     }
 
 
-resolveBuildOrders : Dict Point (Maybe Buildable) -> Game -> Game
+resolveBuildOrders : Dict Point Buildable -> Game -> Game
 resolveBuildOrders orders game =
     Dict.foldr singleBuildOrder game orders
 
 
-singleBuildOrder : Point -> Maybe Buildable -> Game -> Game
-singleBuildOrder point mBuildable game =
+singleBuildOrder : Point -> Buildable -> Game -> Game
+singleBuildOrder point buildable game =
     let
         setProduction hab =
-            if mBuildable == hab.producing then
+            if Just buildable == hab.producing then
                 hab
             else
                 { hab
-                    | producing = mBuildable
+                    | producing = Just buildable
                     , produced = 0
                 }
 

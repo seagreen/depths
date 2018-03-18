@@ -1,9 +1,5 @@
 module View exposing (..)
 
--- Core
--- 3rd
--- Local
-
 import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game exposing (BattleEvent(..), BattleReport, Outcome(..))
@@ -175,25 +171,21 @@ renderPoint bi ( point, tile ) =
 
 viewRemainingProduction : Model -> Point -> Habitat -> Maybe Int
 viewRemainingProduction model point hab =
-    let
-        choiceChanged =
-            Dict.get point model.buildOrders
-                |> Maybe.andThen
-                    (\new ->
-                        if new == hab.producing then
-                            Nothing
-                        else
-                            Just new
-                    )
-    in
-    case choiceChanged of
-        Nothing ->
-            Maybe.map
-                (\producing -> Game.cost producing - hab.produced)
-                hab.producing
+    case ( hab.producing, Dict.get point model.buildOrders ) of
+        ( Just producing, Just buildOrder ) ->
+            if buildOrder == producing then
+                Just (Game.cost buildOrder - hab.produced)
+            else
+                Just (Game.cost buildOrder)
 
-        Just changed ->
-            Maybe.map Game.cost changed
+        ( Just producing, Nothing ) ->
+            Just (Game.cost producing - hab.produced)
+
+        ( Nothing, Just buildOrder ) ->
+            Just (Game.cost buildOrder)
+
+        ( Nothing, Nothing ) ->
+            Nothing
 
 
 cornersToStr : List ( Float, Float ) -> String
@@ -365,11 +357,11 @@ productionForm model point hab =
         msgFromString : String -> Msg
         msgFromString s =
             if s == "<None>" then
-                BuildOrder Nothing
+                StopBuilding
             else
                 case Building.fromString s of
                     Just building ->
-                        BuildOrder (Just (BuildBuilding building))
+                        BuildOrder (BuildBuilding building)
 
                     Nothing ->
                         case Unit.fromString s of
@@ -377,7 +369,7 @@ productionForm model point hab =
                                 NoOp
 
                             Just sub ->
-                                BuildOrder (Just (BuildSubmarine sub))
+                                BuildOrder (BuildSubmarine sub)
     in
     Html.form
         [ class "form-inline"

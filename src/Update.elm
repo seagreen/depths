@@ -67,8 +67,11 @@ update msg model =
         CancelMove id ->
             { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }
 
-        BuildOrder mBuildable ->
-            buildOrder model mBuildable
+        StopBuilding ->
+            stopBuilding model
+
+        BuildOrder buildable ->
+            buildOrder model buildable
 
         NameEditorFull new ->
             setHabitatName
@@ -289,8 +292,22 @@ setHabitatName updateName model =
             model
 
 
-buildOrder : Model -> Maybe Buildable -> Model
-buildOrder model mBuildable =
+stopBuilding : Model -> Model
+stopBuilding model =
+    case Model.focusPoint model of
+        Nothing ->
+            model
+
+        Just point ->
+            { model
+                | buildOrders =
+                    Dict.remove point
+                        model.buildOrders
+            }
+
+
+buildOrder : Model -> Buildable -> Model
+buildOrder model buildable =
     case Model.focusPoint model of
         Nothing ->
             model
@@ -301,7 +318,4 @@ buildOrder model mBuildable =
                     model
 
                 Just hab ->
-                    if mBuildable == hab.producing then
-                        { model | buildOrders = Dict.remove point model.buildOrders }
-                    else
-                        { model | buildOrders = Dict.insert point mBuildable model.buildOrders }
+                    { model | buildOrders = Dict.insert point buildable model.buildOrders }

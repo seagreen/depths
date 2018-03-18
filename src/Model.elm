@@ -31,7 +31,8 @@ type Msg
     | EndHover
     | PlanMoves Id (List Point)
     | CancelMove Id
-    | BuildOrder (Maybe Buildable)
+    | BuildOrder Buildable
+    | StopBuilding
     | NameEditorFull String
     | NameEditorAbbreviation String
     | NameEditorSubmit
@@ -43,7 +44,7 @@ type alias Model =
         Dict Int (List Point)
 
     -- Keys are unit IDs.
-    , buildOrders : Dict Point (Maybe Buildable)
+    , buildOrders : Dict Point Buildable
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
     , gameLog : List Game.BattleReport
