@@ -1,8 +1,5 @@
 module Util exposing (..)
 
--- Core
--- 3rd
-
 import Dict exposing (Dict)
 import HexGrid exposing (HexGrid(..), Point)
 import State exposing (State(..))

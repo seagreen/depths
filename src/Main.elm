@@ -1,9 +1,5 @@
 module Main exposing (..)
 
--- Core
--- 3rd
--- Local
-
 import Html
 import Keyboard
 import Model

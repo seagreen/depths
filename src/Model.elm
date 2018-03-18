@@ -1,9 +1,5 @@
 module Model exposing (..)
 
--- Core
--- 3rd
--- Local
-
 import Dict exposing (Dict)
 import Game exposing (Commands)
 import Game.Id as Id exposing (Id(..), IdSeed(..))

@@ -1,8 +1,5 @@
 module Game.Unit exposing (..)
 
--- 3rd
--- Local
-
 import Game.Building exposing (Building(..))
 import Game.Id exposing (Id(..))
 import Html exposing (Html)

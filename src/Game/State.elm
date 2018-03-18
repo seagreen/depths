@@ -1,9 +1,5 @@
 module Game.State exposing (..)
 
--- Core
--- 3rd
--- Local
-
 import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game.Building as Building exposing (Building(..))
