@@ -1,17 +1,11 @@
 module Main exposing (..)
 
 -- Core
-
-import Keyboard
-
-
 -- 3rd
-
-import Html
-
-
 -- Local
 
+import Html
+import Keyboard
 import Model
 import Update
 import View

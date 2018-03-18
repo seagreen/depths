@@ -1,21 +1,15 @@
 module Model exposing (..)
 
 -- Core
-
-import Dict exposing (Dict)
-import Random
-
-
 -- 3rd
-
-import HexGrid exposing (HexGrid(..), Direction, Point)
-
-
 -- Local
 
+import Dict exposing (Dict)
 import Game exposing (Commands)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State exposing (Buildable(..), Game, Tile)
+import HexGrid exposing (Direction, HexGrid(..), Point)
+import Random
 import Util
 
 
@@ -47,7 +41,8 @@ type alias Model =
     { game : Game
     , plannedMoves :
         Dict Int (List Point)
-        -- Keys are unit IDs.
+
+    -- Keys are unit IDs.
     , buildOrders : Dict Point (Maybe Buildable)
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
@@ -96,13 +91,13 @@ focus model =
         (HexGrid _ dict) =
             model.game.grid
     in
-        focusPoint model
-            |> Maybe.andThen
-                (\point ->
-                    Maybe.map
-                        (\tile -> ( point, tile ))
-                        (Dict.get point dict)
-                )
+    focusPoint model
+        |> Maybe.andThen
+            (\point ->
+                Maybe.map
+                    (\tile -> ( point, tile ))
+                    (Dict.get point dict)
+            )
 
 
 type NewSeed

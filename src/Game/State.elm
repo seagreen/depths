@@ -1,23 +1,17 @@
 module Game.State exposing (..)
 
 -- Core
-
-import Dict exposing (Dict)
-import Random
-
-
 -- 3rd
-
-import Either exposing (Either(..))
-import HexGrid exposing (HexGrid(..), Direction, Point)
-import State
-
-
 -- Local
 
+import Dict exposing (Dict)
+import Either exposing (Either(..))
 import Game.Building as Building exposing (Building(..))
-import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
+import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import HexGrid exposing (Direction, HexGrid(..), Point)
+import Random
+import State
 
 
 {-| The game's state.
@@ -25,6 +19,7 @@ import Game.Id as Id exposing (Id(..), IdSeed(..))
 I considered naming this `State`, but the turn resolution
 code uses it alongside `State` from `folkertdev/elm-state`
 so much that things got confusing.
+
 -}
 type alias Game =
     { grid : HexGrid Tile
@@ -41,39 +36,39 @@ init =
             State.run (IdSeed 1) <|
                 State.map2 (,) Id.next Id.next
     in
-        { grid =
-            HexGrid.fromList 6
-                (Tile Dict.empty Depths)
-                [ ( ( -4, 1 ), emptyMountain )
-                , ( ( -1, -3 ), emptyMountain )
-                , ( ( 2, -4 ), emptyMountain )
-                , ( ( 3, -1 ), emptyMountain )
-                , ( ( 2, 2 ), emptyMountain )
-                , ( ( -3, 3 ), emptyMountain )
-                , ( ( -2, 4 ), emptyMountain )
-                , ( ( -4, -2 )
-                  , Tile
-                        (Dict.singleton
-                            (Id.unId idA)
-                            (Unit idA Human ColonySubmarine)
-                        )
-                        Depths
-                  )
-                , ( ( 6, 0 )
-                  , Tile
-                        (Dict.singleton
-                            (Id.unId idB)
-                            (Unit idB Computer ColonySubmarine)
-                        )
-                        Depths
-                  )
-                ]
-        , turn = Turn 1
-        , idSeed = idSeed
-        , randomSeed =
-            -- The Main module randomizes this at startup.
-            Random.initialSeed 0
-        }
+    { grid =
+        HexGrid.fromList 6
+            (Tile Dict.empty Depths)
+            [ ( ( -4, 1 ), emptyMountain )
+            , ( ( -1, -3 ), emptyMountain )
+            , ( ( 2, -4 ), emptyMountain )
+            , ( ( 3, -1 ), emptyMountain )
+            , ( ( 2, 2 ), emptyMountain )
+            , ( ( -3, 3 ), emptyMountain )
+            , ( ( -2, 4 ), emptyMountain )
+            , ( ( -4, -2 )
+              , Tile
+                    (Dict.singleton
+                        (Id.unId idA)
+                        (Unit idA Human ColonySubmarine)
+                    )
+                    Depths
+              )
+            , ( ( 6, 0 )
+              , Tile
+                    (Dict.singleton
+                        (Id.unId idB)
+                        (Unit idB Computer ColonySubmarine)
+                    )
+                    Depths
+              )
+            ]
+    , turn = Turn 1
+    , idSeed = idSeed
+    , randomSeed =
+        -- The Main module randomizes this at startup.
+        Random.initialSeed 0
+    }
 
 
 type Turn
@@ -188,7 +183,7 @@ updateHabitat point update grid =
                                     tile
                     )
     in
-        Dict.update point updateHab grid
+    Dict.update point updateHab grid
 
 
 type alias HabitatName =
@@ -250,7 +245,7 @@ findUnit id grid =
                 Just sub ->
                     Just ( point, sub )
     in
-        Dict.foldr f Nothing grid
+    Dict.foldr f Nothing grid
 
 
 friendlyUnits : Tile -> List Unit
@@ -263,6 +258,7 @@ friendlyUnits tile =
 {-| Get all friendly units in the game and their locations.
 
 Returned `Int` keys are unit IDs.
+
 -}
 friendlyUnitDict : Dict Point Tile -> Dict Int Point
 friendlyUnitDict grid =

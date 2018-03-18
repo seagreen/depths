@@ -6,24 +6,16 @@ Also contains the types to support `resolveTurn` (such as `BattleReport`)
 that aren't part of the game state itself.
 
 Types that are part of the game's state are imported from `Game.State`.
+
 -}
 
 -- Core
-
-import Dict exposing (Dict)
-import Random
-
-
 -- 3rd
-
-import HexGrid exposing (HexGrid(..), Point)
-import State exposing (State(..))
-import Random.List
-
-
 -- Local
 
+import Dict exposing (Dict)
 import Game.Building as Building exposing (Building(..))
+import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State
     exposing
         ( Buildable(..)
@@ -35,8 +27,11 @@ import Game.State
         , Tile
         , Turn(..)
         )
-import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
-import Game.Id as Id exposing (Id(..), IdSeed(..))
+import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import HexGrid exposing (HexGrid(..), Point)
+import Random
+import Random.List
+import State exposing (State(..))
 import Util
 
 
@@ -79,21 +74,22 @@ outcome game =
             habitats =
                 Game.State.habitatDict game.grid
         in
-            if Dict.size habitats >= 4 then
-                Just Victory
-            else if
-                Dict.isEmpty habitats
-                    && List.isEmpty (Game.State.friendlyUnitList (Util.unHexGrid game.grid))
-            then
-                Just Defeat
-            else
-                Nothing
+        if Dict.size habitats >= 4 then
+            Just Victory
+        else if
+            Dict.isEmpty habitats
+                && List.isEmpty (Game.State.friendlyUnitList (Util.unHexGrid game.grid))
+        then
+            Just Defeat
+        else
+            Nothing
 
 
 {-| The keys in `moves` are the IDs of units.
 
 At some point we should add the restriction that units can't
 "move" to their current tile.
+
 -}
 type alias Commands =
     { moves : Dict Int Point
@@ -189,19 +185,19 @@ destroyHabitats game =
         remove mTile =
             mTile |> Maybe.andThen (\tile -> Just { tile | fixed = Mountain Nothing })
     in
-        { game
-            | grid =
-                HexGrid a <|
-                    Dict.foldr
-                        (\point hab acc ->
-                            if Building.population hab.buildings > 0 then
-                                acc
-                            else
-                                Dict.update point remove acc
-                        )
-                        grid
-                        habitats
-        }
+    { game
+        | grid =
+            HexGrid a <|
+                Dict.foldr
+                    (\point hab acc ->
+                        if Building.population hab.buildings > 0 then
+                            acc
+                        else
+                            Dict.update point remove acc
+                    )
+                    grid
+                    habitats
+    }
 
 
 resolveBuildOrders : Dict Point (Maybe Buildable) -> Game -> Game
@@ -224,10 +220,10 @@ singleBuildOrder point mBuildable game =
         (HexGrid a grid) =
             game.grid
     in
-        { game
-            | grid =
-                HexGrid a (Game.State.updateHabitat point setProduction grid)
-        }
+    { game
+        | grid =
+            HexGrid a (Game.State.updateHabitat point setProduction grid)
+    }
 
 
 resolveMoves : Dict Int Point -> Game -> Game
@@ -236,7 +232,7 @@ resolveMoves moves game =
         (HexGrid a grid) =
             game.grid
     in
-        { game | grid = HexGrid a <| Dict.foldr (resolveSingleMove << Id) grid moves }
+    { game | grid = HexGrid a <| Dict.foldr (resolveSingleMove << Id) grid moves }
 
 
 resolveSingleMove : Id -> Point -> Dict Point Tile -> Dict Point Tile
@@ -275,9 +271,9 @@ moveUnit oldPoint unit newPoint grid =
                     _ ->
                         moveTo tile
     in
-        grid
-            |> Dict.update oldPoint (Maybe.map (removeUnit unit.id))
-            |> Dict.update newPoint (Maybe.andThen newTile)
+    grid
+        |> Dict.update oldPoint (Maybe.map (removeUnit unit.id))
+        |> Dict.update newPoint (Maybe.andThen newTile)
 
 
 wrapResolveProduction : Game -> Game
@@ -290,10 +286,10 @@ wrapResolveProduction game =
             State.run game.idSeed <|
                 Util.traverseStateDict resolveProduction oldGrid
     in
-        { game
-            | grid = HexGrid a newGrid
-            , idSeed = newIdSeed
-        }
+    { game
+        | grid = HexGrid a newGrid
+        , idSeed = newIdSeed
+    }
 
 
 resolveProduction : Tile -> State IdSeed Tile
@@ -304,24 +300,24 @@ resolveProduction tile =
                 newProduced =
                     hab.produced + Building.production hab.buildings
             in
-                case hab.producing of
-                    Nothing ->
-                        State.state tile
+            case hab.producing of
+                Nothing ->
+                    State.state tile
 
-                    Just producing ->
-                        if newProduced < Game.State.cost producing then
-                            let
-                                newHabitat =
-                                    { hab | produced = newProduced }
-                            in
-                                State.state { tile | fixed = Mountain (Just newHabitat) }
-                        else
-                            case producing of
-                                BuildSubmarine sub ->
-                                    completeSubmarine sub tile hab
+                Just producing ->
+                    if newProduced < Game.State.cost producing then
+                        let
+                            newHabitat =
+                                { hab | produced = newProduced }
+                        in
+                        State.state { tile | fixed = Mountain (Just newHabitat) }
+                    else
+                        case producing of
+                            BuildSubmarine sub ->
+                                completeSubmarine sub tile hab
 
-                                BuildBuilding building ->
-                                    State.state <| completeBuilding building tile hab
+                            BuildBuilding building ->
+                                State.state <| completeBuilding building tile hab
 
         _ ->
             State.state tile
@@ -352,7 +348,7 @@ completeSubmarine sub tile hab =
                         tile.units
             }
     in
-        State.map complete Id.next
+    State.map complete Id.next
 
 
 completeBuilding : Building -> Tile -> Habitat -> Tile
@@ -365,7 +361,7 @@ completeBuilding building tile hab =
                 , produced = 0
             }
     in
-        { tile | fixed = Mountain (Just newHabitat) }
+    { tile | fixed = Mountain (Just newHabitat) }
 
 
 removeUnit : Id -> Tile -> Tile
@@ -383,12 +379,12 @@ resolveBattles game =
             State.run ( game.randomSeed, [] ) <|
                 Util.traverseStateDict (resolveSingleBattle game.turn) oldGrid
     in
-        ( battleReports
-        , { game
-            | grid = HexGrid a newGrid
-            , randomSeed = newRandomSeed
-          }
-        )
+    ( battleReports
+    , { game
+        | grid = HexGrid a newGrid
+        , randomSeed = newRandomSeed
+      }
+    )
 
 
 {-| `List Buildable` is a list of the ships and buildings that scored sensor hits.
@@ -410,9 +406,9 @@ countSensorHits searcherList =
                         (Random.int 1 6)
                     )
     in
-        State.map
-            (List.filterMap identity)
-            (State.traverse rollSensors searcherList)
+    State.map
+        (List.filterMap identity)
+        (State.traverse rollSensors searcherList)
 
 
 type alias Detected =
@@ -465,9 +461,9 @@ canceledByStealth detectedList =
                         (Random.int 1 6)
                     )
     in
-        State.map
-            (List.filterMap identity)
-            (State.traverse rollStealth detectedList)
+    State.map
+        (List.filterMap identity)
+        (State.traverse rollStealth detectedList)
 
 
 {-| `List Buildable` are the ships and buildings that scored weapon hits.
@@ -489,9 +485,9 @@ countFirepowerHits firing =
                         (Random.int 1 4)
                     )
     in
-        State.map
-            (List.filterMap identity)
-            (State.traverse rollFirepower firing)
+    State.map
+        (List.filterMap identity)
+        (State.traverse rollFirepower firing)
 
 
 {-| `List Buildable` are the ships and buildings that scored weapon hits.
@@ -530,15 +526,14 @@ enemiesDetected defenders enemies =
             , List.map .dtTarget detectedUnits
             )
     in
-        State <|
-            (\oldSeed ->
-                State.run oldSeed
-                    (countSensorHits defenders
-                        |> State.andThen (detectedCombatants (List.map CMUnit enemies))
-                        |> State.andThen canceledByStealth
-                        |> State.map report
-                    )
-            )
+    State <|
+        \oldSeed ->
+            State.run oldSeed
+                (countSensorHits defenders
+                    |> State.andThen (detectedCombatants (List.map CMUnit enemies))
+                    |> State.andThen canceledByStealth
+                    |> State.map report
+                )
 
 
 enemiesDestroyed :
@@ -555,19 +550,18 @@ enemiesDestroyed defenders enemies tile =
                 (buildableFromCombatant destruction.dsTarget)
                 (Just destruction.dsBy)
     in
-        State <|
-            (\oldSeed ->
-                State.run oldSeed
-                    (countFirepowerHits defenders
-                        |> State.andThen (destroyedByFirepower enemies)
-                        |> State.map
-                            (\destroyed ->
-                                ( List.map reportEvent destroyed
-                                , removeDestroyed destroyed Nothing tile
-                                )
+    State <|
+        \oldSeed ->
+            State.run oldSeed
+                (countFirepowerHits defenders
+                    |> State.andThen (destroyedByFirepower enemies)
+                    |> State.map
+                        (\destroyed ->
+                            ( List.map reportEvent destroyed
+                            , removeDestroyed destroyed Nothing tile
                             )
-                    )
-            )
+                        )
+                )
 
 
 {-| If the caller doesn't have access to the `Habitat`
@@ -624,14 +618,14 @@ removeBuildings hab destroyed =
                 )
                 destroyed
     in
-        { hab
-            | buildings =
-                List.filter
-                    (\building ->
-                        not (List.member building destroyedBuildings)
-                    )
-                    hab.buildings
-        }
+    { hab
+        | buildings =
+            List.filter
+                (\building ->
+                    not (List.member building destroyedBuildings)
+                )
+                hab.buildings
+    }
 
 
 friendliesDestroyed :
@@ -649,35 +643,34 @@ friendliesDestroyed hab defenders enemies tile =
                 (buildableFromCombatant destruction.dsTarget)
                 (Just destruction.dsBy)
     in
-        State <|
-            (\oldSeed ->
-                (State.run oldSeed
-                    (countSensorHits (List.map CMUnit enemies)
-                        |> State.andThen (detectedCombatants defenders)
-                        |> State.andThen canceledByStealth
-                        |> State.andThen
-                            (\defendersDetected ->
-                                countFirepowerHits (List.map CMUnit enemies)
-                                    |> State.andThen
-                                        (destroyedByFirepower
-                                            (List.map .dtTarget defendersDetected)
+    State <|
+        \oldSeed ->
+            State.run oldSeed
+                (countSensorHits (List.map CMUnit enemies)
+                    |> State.andThen (detectedCombatants defenders)
+                    |> State.andThen canceledByStealth
+                    |> State.andThen
+                        (\defendersDetected ->
+                            countFirepowerHits (List.map CMUnit enemies)
+                                |> State.andThen
+                                    (destroyedByFirepower
+                                        (List.map .dtTarget defendersDetected)
+                                    )
+                                |> State.map
+                                    (\destroyed ->
+                                        ( List.map reportEvent destroyed
+                                        , removeDestroyed destroyed (Just hab) tile
                                         )
-                                    |> State.map
-                                        (\destroyed ->
-                                            ( List.map reportEvent destroyed
-                                            , removeDestroyed destroyed (Just hab) tile
-                                            )
-                                        )
-                            )
-                    )
+                                    )
+                        )
                 )
-            )
 
 
 {-| When there aren't any defenders at all:
 
-+ Non-combat buildings can be targeted.
-+ These buildings are automatically detected.
+  - Non-combat buildings can be targeted.
+  - These buildings are automatically detected.
+
 -}
 bombard : List Unit -> Habitat -> Tile -> State Random.Seed ( List BattleEvent, Tile )
 bombard firing hab tile =
@@ -687,7 +680,7 @@ bombard firing hab tile =
             DestructionEvent
                 Human
                 (buildableFromCombatant destruction.dsTarget)
-                (Just (destruction.dsBy))
+                (Just destruction.dsBy)
 
         reportAndRemove : List Destroyed -> ( List BattleEvent, Tile )
         reportAndRemove destroyed =
@@ -698,16 +691,14 @@ bombard firing hab tile =
               }
             )
     in
-        State <|
-            (\oldSeed ->
-                (State.run oldSeed
-                    (countFirepowerHits (List.map CMUnit firing)
-                        |> State.andThen
-                            (destroyedByFirepower (List.map CMBuilding hab.buildings))
-                        |> State.map reportAndRemove
-                    )
+    State <|
+        \oldSeed ->
+            State.run oldSeed
+                (countFirepowerHits (List.map CMUnit firing)
+                    |> State.andThen
+                        (destroyedByFirepower (List.map CMBuilding hab.buildings))
+                    |> State.map reportAndRemove
                 )
-            )
 
 
 twoSidedBattle :
@@ -751,44 +742,44 @@ resolveSingleBattle turn tile =
                     List.map CMBuilding (Building.combatBuildings hab.buildings)
                         ++ List.map CMUnit friendlyUnits
             in
-                case defenders of
-                    [] ->
-                        bombard enemies hab tile
+            case defenders of
+                [] ->
+                    bombard enemies hab tile
 
-                    _ ->
-                        twoSidedBattle defenders enemies hab tile
+                _ ->
+                    twoSidedBattle defenders enemies hab tile
     in
-        case tile.fixed of
-            Mountain (Just hab) ->
-                case enemies of
-                    [] ->
-                        State.state tile
+    case tile.fixed of
+        Mountain (Just hab) ->
+            case enemies of
+                [] ->
+                    State.state tile
 
-                    _ ->
-                        State
-                            (\( oldSeed, reports ) ->
-                                let
-                                    ( ( events, newTile ), newSeed ) =
-                                        State.run oldSeed (resolve tile hab)
-                                in
-                                    case events of
-                                        [] ->
-                                            ( tile, ( newSeed, reports ) )
+                _ ->
+                    State
+                        (\( oldSeed, reports ) ->
+                            let
+                                ( ( events, newTile ), newSeed ) =
+                                    State.run oldSeed (resolve tile hab)
+                            in
+                            case events of
+                                [] ->
+                                    ( tile, ( newSeed, reports ) )
 
-                                        nonEmpty ->
-                                            ( newTile
-                                            , ( newSeed
-                                              , { turn = turn
-                                                , habitat = Game.State.habitatFullName hab
-                                                , events = nonEmpty
-                                                }
-                                                    :: reports
-                                              )
-                                            )
-                            )
+                                nonEmpty ->
+                                    ( newTile
+                                    , ( newSeed
+                                      , { turn = turn
+                                        , habitat = Game.State.habitatFullName hab
+                                        , events = nonEmpty
+                                        }
+                                            :: reports
+                                      )
+                                    )
+                        )
 
-            _ ->
-                State.state tile
+        _ ->
+            State.state tile
 
 
 wrapNewEnemies : Game -> Game
@@ -802,11 +793,11 @@ wrapNewEnemies game =
                 -- TODO: Don't pass both game and grid.
                 newEnemies game oldGrid
     in
-        { game
-            | grid = HexGrid a newGrid
-            , randomSeed = newRandomSeed
-            , idSeed = newIdSeed
-        }
+    { game
+        | grid = HexGrid a newGrid
+        , randomSeed = newRandomSeed
+        , idSeed = newIdSeed
+    }
 
 
 newEnemies : Game -> Dict Point Tile -> State ( Random.Seed, IdSeed ) (Dict Point Tile)
@@ -815,57 +806,56 @@ newEnemies game dict =
         placeEnemies point idA idB idC =
             let
                 enemy id =
-                    (Unit id Computer AttackSubmarine)
+                    Unit id Computer AttackSubmarine
 
                 smallEnemy id =
-                    (Unit id Computer RemotelyOperatedVehicle)
+                    Unit id Computer RemotelyOperatedVehicle
             in
-                Dict.update
-                    point
-                    (Maybe.andThen
-                        (\tile ->
-                            Just
-                                { tile
-                                    | units =
-                                        Dict.insert (Id.unId idA) (enemy idA) tile.units
-                                            |> Dict.insert (Id.unId idB) (enemy idB)
-                                            |> Dict.insert (Id.unId idC) (smallEnemy idC)
-                                }
-                        )
+            Dict.update
+                point
+                (Maybe.andThen
+                    (\tile ->
+                        Just
+                            { tile
+                                | units =
+                                    Dict.insert (Id.unId idA) (enemy idA) tile.units
+                                        |> Dict.insert (Id.unId idB) (enemy idB)
+                                        |> Dict.insert (Id.unId idC) (smallEnemy idC)
+                            }
                     )
-                    dict
+                )
+                dict
     in
-        -- TODO: Place enemies at random times; make them increasingly challenging.
-        if
-            Game.State.unTurn game.turn
-                > 25
-                && Game.State.unTurn game.turn
-                % 20
-                == 0
-        then
-            let
-                pointsAndHabs =
-                    Dict.toList (Game.State.habitatDict game.grid)
-            in
-                State <|
-                    (\( randomSeed, idSeed ) ->
+    -- TODO: Place enemies at random times; make them increasingly challenging.
+    if
+        Game.State.unTurn game.turn
+            > 25
+            && Game.State.unTurn game.turn
+            % 20
+            == 0
+    then
+        let
+            pointsAndHabs =
+                Dict.toList (Game.State.habitatDict game.grid)
+        in
+        State <|
+            \( randomSeed, idSeed ) ->
+                let
+                    ( shuffledPoints, newRandomSeed ) =
+                        -- PERFORMANCE: Don't need to shuffle the whole list.
+                        -- Get a `select` function added to random-extra.
+                        Random.step (Random.List.shuffle pointsAndHabs) randomSeed
+                in
+                case shuffledPoints of
+                    ( point, _ ) :: _ ->
                         let
-                            ( shuffledPoints, newRandomSeed ) =
-                                -- PERFORMANCE: Don't need to shuffle the whole list.
-                                -- Get a `select` function added to random-extra.
-                                Random.step (Random.List.shuffle pointsAndHabs) randomSeed
+                            ( newDict, newIdSeed ) =
+                                State.run idSeed <|
+                                    State.map3 (placeEnemies point) Id.next Id.next Id.next
                         in
-                            case shuffledPoints of
-                                ( point, _ ) :: _ ->
-                                    let
-                                        ( newDict, newIdSeed ) =
-                                            State.run idSeed <|
-                                                State.map3 (placeEnemies point) Id.next Id.next Id.next
-                                    in
-                                        ( newDict, ( newRandomSeed, newIdSeed ) )
+                        ( newDict, ( newRandomSeed, newIdSeed ) )
 
-                                _ ->
-                                    ( dict, ( newRandomSeed, idSeed ) )
-                    )
-        else
-            State.state dict
+                    _ ->
+                        ( dict, ( newRandomSeed, idSeed ) )
+    else
+        State.state dict

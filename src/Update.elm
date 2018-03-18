@@ -1,19 +1,11 @@
 module Update exposing (..)
 
 -- Core
-
-import Dict exposing (Dict)
-import Random
-
-
 -- 3rd
-
-import Either exposing (Either(..))
-import HexGrid exposing (HexGrid(..), Point)
-
-
 -- Local
 
+import Dict exposing (Dict)
+import Either exposing (Either(..))
 import Game exposing (Commands)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State as Game
@@ -27,12 +19,14 @@ import Game.State as Game
         , Tile
         , Turn(..)
         )
+import HexGrid exposing (HexGrid(..), Point)
 import Model
     exposing
-        ( Msg(..)
-        , Model
+        ( Model
+        , Msg(..)
         , Selection(..)
         )
+import Random
 import Util
 
 
@@ -47,7 +41,7 @@ update msg model =
                 oldGame =
                     model.game
             in
-                { model | game = { oldGame | randomSeed = Random.initialSeed new } }
+            { model | game = { oldGame | randomSeed = Random.initialSeed new } }
 
         EndTurn ->
             endTurn model
@@ -126,13 +120,13 @@ endTurn model =
                 }
                 model.game
     in
-        { model
-            | game = newGameState
-            , plannedMoves = cleanPlannedMoves newGameState laterMoves
-            , buildOrders = Dict.empty
-            , selection = updateSelection newGameState model.selection
-            , gameLog = reports ++ model.gameLog
-        }
+    { model
+        | game = newGameState
+        , plannedMoves = cleanPlannedMoves newGameState laterMoves
+        , buildOrders = Dict.empty
+        , selection = updateSelection newGameState model.selection
+        , gameLog = reports ++ model.gameLog
+    }
 
 
 {-| Remove plans to move units that are no longer on the board.
@@ -149,7 +143,7 @@ cleanPlannedMoves game moveDict =
             else
                 acc
     in
-        Dict.foldr go Dict.empty moveDict
+    Dict.foldr go Dict.empty moveDict
 
 
 {-| Split planned moves into those to be executed this turn and those for later.
@@ -177,7 +171,7 @@ splitPlannedMoves allMoves =
                             Dict.insert unitId xs futureMoves
                     )
     in
-        Dict.foldr go ( Dict.empty, Dict.empty ) allMoves
+    Dict.foldr go ( Dict.empty, Dict.empty ) allMoves
 
 
 {-| Update the selection after the end of a turn.
@@ -200,21 +194,21 @@ updateSelection game oldSelection =
                                 Nothing
                    )
     in
-        oldSelection
-            |> Maybe.andThen
-                (\selection ->
-                    case selection of
-                        SelectedPoint _ ->
-                            oldSelection
+    oldSelection
+        |> Maybe.andThen
+            (\selection ->
+                case selection of
+                    SelectedPoint _ ->
+                        oldSelection
 
-                        SelectedId id ->
-                            case stillActive id of
-                                Nothing ->
-                                    maybeBecameHabitat id
+                    SelectedId id ->
+                        case stillActive id of
+                            Nothing ->
+                                maybeBecameHabitat id
 
-                                Just _ ->
-                                    oldSelection
-                )
+                            Just _ ->
+                                oldSelection
+            )
 
 
 {-| Update the selection after a user clicks on the grid.
@@ -222,6 +216,7 @@ updateSelection game oldSelection =
 This is a little complex, since (eg) if the click is on empty water
 we select the water tile itself, but if the click is on water and it
 contains a single naval unit we go ahead and select that unit by id.
+
 -}
 newSelection : Model -> Point -> Maybe Selection
 newSelection model newPoint =
@@ -244,22 +239,22 @@ newSelection model newPoint =
                                         Just (SelectedId sub.id)
                     )
     in
-        case model.selection of
-            Nothing ->
-                newPointOrId
+    case model.selection of
+        Nothing ->
+            newPointOrId
 
-            Just selection ->
-                case selection of
-                    SelectedId _ ->
+        Just selection ->
+            case selection of
+                SelectedId _ ->
+                    newPointOrId
+
+                SelectedPoint oldPoint ->
+                    -- If the user clicked on a tile that's currently selected,
+                    -- unselect it.
+                    if newPoint == oldPoint then
+                        Nothing
+                    else
                         newPointOrId
-
-                    SelectedPoint oldPoint ->
-                        -- If the user clicked on a tile that's currently selected,
-                        -- unselect it.
-                        if newPoint == oldPoint then
-                            Nothing
-                        else
-                            newPointOrId
 
 
 setHabitatName :
@@ -275,7 +270,7 @@ setHabitatName updateName model =
                         newFixed =
                             Mountain (Just { hab | name = updateName hab.name })
                     in
-                        { tile | fixed = newFixed }
+                    { tile | fixed = newFixed }
 
                 _ ->
                     tile
@@ -283,15 +278,15 @@ setHabitatName updateName model =
         oldGame =
             model.game
     in
-        case Model.focusPoint model of
-            Just point ->
-                { model
-                    | game =
-                        { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
-                }
+    case Model.focusPoint model of
+        Just point ->
+            { model
+                | game =
+                    { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
+            }
 
-            _ ->
-                model
+        _ ->
+            model
 
 
 buildOrder : Model -> Maybe Buildable -> Model

@@ -1,12 +1,9 @@
 module Util exposing (..)
 
 -- Core
-
-import Dict exposing (Dict)
-
-
 -- 3rd
 
+import Dict exposing (Dict)
 import HexGrid exposing (HexGrid(..), Point)
 import State exposing (State(..))
 
@@ -32,4 +29,4 @@ traverseStateDict f dict =
                 State.map (\v2 -> Dict.insert k v2 accDict)
                     (f v)
     in
-        State <| \state -> Dict.foldr g ( Dict.empty, state ) dict
+    State <| \state -> Dict.foldr g ( Dict.empty, state ) dict

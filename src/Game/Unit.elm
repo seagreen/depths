@@ -1,14 +1,11 @@
 module Game.Unit exposing (..)
 
 -- 3rd
-
-import Html exposing (Html)
-
-
 -- Local
 
 import Game.Building exposing (Building(..))
 import Game.Id exposing (Id(..))
+import Html exposing (Html)
 
 
 type Player
@@ -33,8 +30,9 @@ type alias Stats =
     , stealth : Int
     , firepower :
         Int
-        -- Named "firepower" instead of "attack" to clarify that it
-        -- works the same on both offence and defense.
+
+    -- Named "firepower" instead of "attack" to clarify that it
+    -- works the same on both offence and defense.
     }
 
 

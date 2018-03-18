@@ -1,28 +1,11 @@
 module View exposing (..)
 
 -- Core
-
-import Dict exposing (Dict)
-import Json.Decode
-import Json.Encode
-import Set exposing (Set)
-import String
-
-
 -- 3rd
-
-import Either exposing (Either(..))
-import HexGrid exposing (HexGrid(..), Point)
-import Html exposing (Html)
-import Html.Attributes as Hattr exposing (class)
-import Html.Events as Hevent
-import Svg exposing (Svg)
-import Svg.Attributes as Sattr
-import Svg.Events as Sevent exposing (onClick, onMouseOver, onMouseOut)
-
-
 -- Local
 
+import Dict exposing (Dict)
+import Either exposing (Either(..))
 import Game exposing (BattleEvent(..), BattleReport, Outcome(..))
 import Game.Building as Building exposing (Building(..))
 import Game.Id as Id
@@ -36,8 +19,19 @@ import Game.State as Game
         , HabitatName
         , Tile
         )
-import Game.Unit as Unit exposing (Unit, Player(..), Submarine(..))
+import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import HexGrid exposing (HexGrid(..), Point)
+import Html exposing (Html)
+import Html.Attributes as Hattr exposing (class)
+import Html.Events as Hevent
+import Json.Decode
+import Json.Encode
 import Model exposing (Model, Msg(..), Selection(..))
+import Set exposing (Set)
+import String
+import Svg exposing (Svg)
+import Svg.Attributes as Sattr
+import Svg.Events as Sevent exposing (onClick, onMouseOut, onMouseOver)
 import Util
 
 
@@ -87,9 +81,9 @@ viewBoard model =
             , selectedUnit = selectedUnit
             }
     in
-        Svg.svg
-            []
-            (List.map (renderPoint boardInfo) (Dict.toList dict))
+    Svg.svg
+        []
+        (List.map (renderPoint boardInfo) (Dict.toList dict))
 
 
 getAbbreviation : Tile -> String
@@ -126,9 +120,9 @@ movesToPoint start end speed =
             else
                 Nothing
     in
-        HexGrid.line start end
-            |> List.indexedMap maybeStopHere
-            |> List.filterMap identity
+    HexGrid.line start end
+        |> List.indexedMap maybeStopHere
+        |> List.filterMap identity
 
 
 renderPoint : BoardInfo -> ( Point, Tile ) -> Html Msg
@@ -140,44 +134,43 @@ renderPoint bi ( point, tile ) =
         corners =
             HexGrid.polygonCorners bi.layout point
     in
-        Svg.g
-            [ onClick <| SelectPoint point
-            , onRightClick <|
-                case bi.selectedUnit of
-                    Nothing ->
-                        NoOp
+    Svg.g
+        [ onClick <| SelectPoint point
+        , onRightClick <|
+            case bi.selectedUnit of
+                Nothing ->
+                    NoOp
 
-                    Just ( oldPoint, unit ) ->
-                        if point == oldPoint then
-                            CancelMove unit.id
-                        else
-                            case movesToPoint oldPoint point ((Unit.stats unit.class).speed) of
-                                [] ->
-                                    NoOp
+                Just ( oldPoint, unit ) ->
+                    if point == oldPoint then
+                        CancelMove unit.id
+                    else
+                        case movesToPoint oldPoint point (Unit.stats unit.class).speed of
+                            [] ->
+                                NoOp
 
-                                moves ->
-                                    PlanMoves unit.id moves
-            , onMouseOut EndHover
-            , onMouseOver (HoverPoint point)
-            ]
-            (viewPolygon bi.model tile bi.friendlyPlannedMoves corners point
-                :: (tileText centerX
-                        centerY
-                        (getAbbreviation tile)
-                        (case tile.fixed of
-                            Mountain (Just hab) ->
-                                case viewRemainingProduction bi.model point hab of
-                                    Nothing ->
-                                        ""
-
-                                    Just remaining ->
-                                        toString remaining
-
-                            _ ->
+                            moves ->
+                                PlanMoves unit.id moves
+        , onMouseOut EndHover
+        , onMouseOver (HoverPoint point)
+        ]
+        (viewPolygon bi.model tile bi.friendlyPlannedMoves corners point
+            :: tileText centerX
+                centerY
+                (getAbbreviation tile)
+                (case tile.fixed of
+                    Mountain (Just hab) ->
+                        case viewRemainingProduction bi.model point hab of
+                            Nothing ->
                                 ""
-                        )
-                   )
-            )
+
+                            Just remaining ->
+                                toString remaining
+
+                    _ ->
+                        ""
+                )
+        )
 
 
 viewRemainingProduction : Model -> Point -> Habitat -> Maybe Int
@@ -193,14 +186,14 @@ viewRemainingProduction model point hab =
                             Just new
                     )
     in
-        case choiceChanged of
-            Nothing ->
-                Maybe.map
-                    (\producing -> Game.cost producing - hab.produced)
-                    hab.producing
+    case choiceChanged of
+        Nothing ->
+            Maybe.map
+                (\producing -> Game.cost producing - hab.produced)
+                hab.producing
 
-            Just changed ->
-                Maybe.map Game.cost changed
+        Just changed ->
+            Maybe.map Game.cost changed
 
 
 cornersToStr : List ( Float, Float ) -> String
@@ -284,7 +277,7 @@ tileText centerX centerY upperText lowerText =
         centerHorizontally : String -> Float
         centerHorizontally str =
             centerX
-                - case String.length str of
+                - (case String.length str of
                     1 ->
                         5
 
@@ -293,18 +286,19 @@ tileText centerX centerY upperText lowerText =
 
                     _ ->
                         15
+                  )
     in
-        [ Svg.text_
-            [ Sattr.x <| toString (centerHorizontally upperText)
-            , Sattr.y <| toString (centerY - 5)
-            ]
-            [ Svg.text upperText ]
-        , Svg.text_
-            [ Sattr.x <| toString (centerHorizontally lowerText)
-            , Sattr.y <| toString (centerY + 10)
-            ]
-            [ Svg.text lowerText ]
+    [ Svg.text_
+        [ Sattr.x <| toString (centerHorizontally upperText)
+        , Sattr.y <| toString (centerY - 5)
         ]
+        [ Svg.text upperText ]
+    , Svg.text_
+        [ Sattr.x <| toString (centerHorizontally lowerText)
+        , Sattr.y <| toString (centerY + 10)
+        ]
+        [ Svg.text lowerText ]
+    ]
 
 
 viewHabitat : Model -> Point -> Habitat -> Html Msg
@@ -385,54 +379,53 @@ productionForm model point hab =
                             Just sub ->
                                 BuildOrder (Just (BuildSubmarine sub))
     in
-        Html.form
-            [ class "form-inline"
-            , Hattr.name "foo"
-            ]
-            [ Html.div
-                [ class "form-group" ]
-                [ Html.label
-                    [ Hattr.for "constructing" ]
-                    [ Svg.text <|
-                        "Constructing"
-                            ++ (case viewRemainingProduction model point hab of
-                                    Nothing ->
-                                        ""
+    Html.form
+        [ class "form-inline"
+        , Hattr.name "foo"
+        ]
+        [ Html.div
+            [ class "form-group" ]
+            [ Html.label
+                [ Hattr.for "constructing" ]
+                [ Svg.text <|
+                    "Constructing"
+                        ++ (case viewRemainingProduction model point hab of
+                                Nothing ->
+                                    ""
 
-                                    Just toGo ->
-                                        " (" ++ toString toGo ++ " production to go" ++ ")"
-                               )
-                            -- Non-breaking space to separate the label from the box.
-                            -- The Bootstrap examples have this separation
-                            -- automatically, not sure what I'm doing wrong.
-                            ++
-                                ": "
-                    ]
-                , Html.select
-                    [ class "form-control"
-                    , Hattr.id "constructing"
-                    , Hevent.onInput msgFromString
-                    ]
-                    [ option Nothing
-                    , case Unit.buildable hab.buildings of
-                        [] ->
-                            Html.text ""
+                                Just toGo ->
+                                    " (" ++ toString toGo ++ " production to go" ++ ")"
+                           )
+                        -- Non-breaking space to separate the label from the box.
+                        -- The Bootstrap examples have this separation
+                        -- automatically, not sure what I'm doing wrong.
+                        ++ ": "
+                ]
+            , Html.select
+                [ class "form-control"
+                , Hattr.id "constructing"
+                , Hevent.onInput msgFromString
+                ]
+                [ option Nothing
+                , case Unit.buildable hab.buildings of
+                    [] ->
+                        Html.text ""
 
-                        unitChoices ->
-                            Html.optgroup
-                                [ label_ "Units" ]
-                                (List.map (option << Just << BuildSubmarine) unitChoices)
-                    , case Building.buildable hab.buildings of
-                        [] ->
-                            Html.text ""
+                    unitChoices ->
+                        Html.optgroup
+                            [ label_ "Units" ]
+                            (List.map (option << Just << BuildSubmarine) unitChoices)
+                , case Building.buildable hab.buildings of
+                    [] ->
+                        Html.text ""
 
-                        buildingChoices ->
-                            Html.optgroup
-                                [ label_ "Buildings" ]
-                                (List.map (option << Just << BuildBuilding) buildingChoices)
-                    ]
+                    buildingChoices ->
+                        Html.optgroup
+                            [ label_ "Buildings" ]
+                            (List.map (option << Just << BuildBuilding) buildingChoices)
                 ]
             ]
+        ]
 
 
 viewHabitatNameForm : HabitatEditor -> Svg Msg
@@ -488,41 +481,42 @@ viewUnit selection unit =
         stats =
             Unit.stats unit.class
     in
-        Html.div
-            [ onClick (SelectUnit unit.id)
-            , class <|
-                "alert alert-success"
-                    ++ if Just (SelectedId unit.id) == selection then
+    Html.div
+        [ onClick (SelectUnit unit.id)
+        , class <|
+            "alert alert-success"
+                ++ (if Just (SelectedId unit.id) == selection then
                         " focused"
-                       else
+                    else
                         ""
+                   )
+        ]
+        [ Html.h4
+            []
+            [ Html.b
+                []
+                [ Html.text stats.name ]
             ]
-            [ Html.h4
-                []
-                [ Html.b
-                    []
-                    [ Html.text stats.name ]
-                ]
-            , Maybe.withDefault (Html.text "") (Unit.helpText unit.class)
-            , Html.p
-                []
-                [ Html.text "Sensors: "
-                , badge
-                    [ Html.text <| toString stats.sensors ]
-                ]
-            , Html.p
-                []
-                [ Html.text "Stealth: "
-                , badge
-                    [ Html.text <| toString stats.stealth ]
-                ]
-            , Html.p
-                []
-                [ Html.text "Firepower: "
-                , badge
-                    [ Html.text <| toString stats.firepower ]
-                ]
+        , Maybe.withDefault (Html.text "") (Unit.helpText unit.class)
+        , Html.p
+            []
+            [ Html.text "Sensors: "
+            , badge
+                [ Html.text <| toString stats.sensors ]
             ]
+        , Html.p
+            []
+            [ Html.text "Stealth: "
+            , badge
+                [ Html.text <| toString stats.stealth ]
+            ]
+        , Html.p
+            []
+            [ Html.text "Firepower: "
+            , badge
+                [ Html.text <| toString stats.firepower ]
+            ]
+        ]
 
 
 view : Model -> Svg Msg
@@ -531,75 +525,75 @@ view model =
         (HexGrid _ dict) =
             model.game.grid
     in
-        Html.div
-            []
-            [ Html.h1 [] [ Html.text "FPG: The Depths" ]
-            , Html.div
-                [ class "row" ]
-                [ Html.div
-                    [ class "col-lg-5" ]
-                    [ Html.p
-                        []
-                        [ Html.a
-                            [ Hattr.href "https://github.com/seagreen/fpg-depths#user-guide" ]
-                            -- Use label instead of button to prevent button from staying focused after
-                            -- (a) right clicking it to open the link in a new window
-                            -- or (b) clicking it and then hitting the back button.
-                            --
-                            -- Idea from: https://stackoverflow.com/a/34051869
-                            [ Html.label
-                                [ class "btn btn-default"
-                                , Hattr.type_ "button"
-                                ]
-                                [ Html.text "User Guide (on GitHub)" ]
+    Html.div
+        []
+        [ Html.h1 [] [ Html.text "FPG: The Depths" ]
+        , Html.div
+            [ class "row" ]
+            [ Html.div
+                [ class "col-lg-5" ]
+                [ Html.p
+                    []
+                    [ Html.a
+                        [ Hattr.href "https://github.com/seagreen/fpg-depths#user-guide" ]
+                        -- Use label instead of button to prevent button from staying focused after
+                        -- (a) right clicking it to open the link in a new window
+                        -- or (b) clicking it and then hitting the back button.
+                        --
+                        -- Idea from: https://stackoverflow.com/a/34051869
+                        [ Html.label
+                            [ class "btn btn-default"
+                            , Hattr.type_ "button"
                             ]
+                            [ Html.text "User Guide (on GitHub)" ]
                         ]
-                    , Html.p
-                        []
-                        [ Html.text "Turn "
-                        , badge
-                            [ Html.text (toString (Game.unTurn model.game.turn)) ]
-                        ]
-                    , displayOutcome model.game
-                    , displayBattleReports model
-                    , case Model.focus model of
-                        Nothing ->
-                            Html.text ""
-
-                        Just ( point, tile ) ->
-                            Html.div
-                                []
-                                [ case tile.fixed of
-                                    Mountain (Just hab) ->
-                                        Html.div
-                                            []
-                                            [ viewHabitat model point hab
-                                            , case hab.name of
-                                                Right _ ->
-                                                    Html.text ""
-
-                                                Left editor ->
-                                                    viewHabitatNameForm editor
-                                            ]
-
-                                    _ ->
-                                        Html.text ""
-                                , Html.div
-                                    []
-                                    (List.map (viewUnit model.selection) <| Game.friendlyUnits tile)
-                                ]
-                    , startingHelpMessage model
                     ]
-                , Html.div
-                    [ class "col-lg-7" ]
-                    [ Html.div
-                        [ class "text-center" ]
-                        [ viewBoard model
-                        , endTurnButton model
-                        ]
+                , Html.p
+                    []
+                    [ Html.text "Turn "
+                    , badge
+                        [ Html.text (toString (Game.unTurn model.game.turn)) ]
+                    ]
+                , displayOutcome model.game
+                , displayBattleReports model
+                , case Model.focus model of
+                    Nothing ->
+                        Html.text ""
+
+                    Just ( point, tile ) ->
+                        Html.div
+                            []
+                            [ case tile.fixed of
+                                Mountain (Just hab) ->
+                                    Html.div
+                                        []
+                                        [ viewHabitat model point hab
+                                        , case hab.name of
+                                            Right _ ->
+                                                Html.text ""
+
+                                            Left editor ->
+                                                viewHabitatNameForm editor
+                                        ]
+
+                                _ ->
+                                    Html.text ""
+                            , Html.div
+                                []
+                                (List.map (viewUnit model.selection) <| Game.friendlyUnits tile)
+                            ]
+                , startingHelpMessage model
+                ]
+            , Html.div
+                [ class "col-lg-7" ]
+                [ Html.div
+                    [ class "text-center" ]
+                    [ viewBoard model
+                    , endTurnButton model
                     ]
                 ]
             ]
+        ]
 
 
 displayOutcome : Game -> Html Msg
@@ -696,14 +690,14 @@ displayBattleReports model =
                     (List.reverse (List.map displayEvent report.events))
                 ]
     in
-        Html.div
-            []
-            (List.map displayReport
-                (List.filter
-                    (\entry -> Game.unTurn entry.turn == Game.unTurn model.game.turn - 1)
-                    model.gameLog
-                )
+    Html.div
+        []
+        (List.map displayReport
+            (List.filter
+                (\entry -> Game.unTurn entry.turn == Game.unTurn model.game.turn - 1)
+                model.gameLog
             )
+        )
 
 
 endTurnButton : Model -> Html Msg
@@ -726,12 +720,13 @@ startingHelpMessage model =
     if
         Game.unTurn model.game.turn
             == 1
-            && case model.selection of
-                Just (SelectedId _) ->
-                    False
+            && (case model.selection of
+                    Just (SelectedId _) ->
+                        False
 
-                _ ->
-                    True
+                    _ ->
+                        True
+               )
     then
         Html.div
             [ class "alert alert-info" ]
@@ -748,7 +743,7 @@ onRightClick msg =
         (Json.Decode.succeed msg)
 
 
-{-| https://github.com/elm-lang/html/issues/136
+{-| <https://github.com/elm-lang/html/issues/136>
 -}
 label_ : String -> Html.Attribute msg
 label_ s =

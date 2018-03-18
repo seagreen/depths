@@ -26,4 +26,4 @@ unIdSeed (IdSeed n) =
 
 next : State IdSeed Id
 next =
-    State (\(IdSeed n) -> ( (Id n), IdSeed (n + 1) ))
+    State (\(IdSeed n) -> ( Id n, IdSeed (n + 1) ))
