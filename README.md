@@ -20,8 +20,8 @@ Note that to de-select a unit you have to click outside of its move range. If yo
 
 To learn more you'll have to look at the source. I suggest:
 
-+ [src/Game/Unit.elm](./src/Game/Unit.elm)
-+ [src/Game/Building.elm](./src/Game/Building.elm)
+* [src/Game/Unit.elm](./src/Game/Unit.elm)
+* [src/Game/Building.elm](./src/Game/Building.elm)
 
 If you want to try adding your own units, install `elm-make` (`elmPackages.elm` in Nixpkgs) and run:
 
@@ -29,6 +29,17 @@ If you want to try adding your own units, install `elm-make` (`elmPackages.elm` 
 elm-make src/Main.elm --output=./site/main.js --warn --yes
 firefox site/index.html
 ```
+
+Or for live reload and debugging:
+
+* install [elm-live](https://github.com/architectcodes/elm-live)
+* run the dev script in the root directory:
+
+```sh
+./dev.sh`
+```
+
+* open `localhost:8000` in your browser
 
 # Philosophy
 
@@ -48,7 +59,7 @@ A big reason this project exists is to push the state of games in Elm forward a 
 
 # Special thanks
 
-+ To [@danneu](https://github.com/danneu/elm-hex-grid) for his [elm-hex-grid](https://github.com/danneu/elm-hex-grid) library. _The Depths_ started as a fork of that project's examples. Some of this game's hex board invoking code and CSS is still unchanged from there.
+* To [@danneu](https://github.com/danneu/elm-hex-grid) for his [elm-hex-grid](https://github.com/danneu/elm-hex-grid) library. _The Depths_ started as a fork of that project's examples. Some of this game's hex board invoking code and CSS is still unchanged from there.
 
 # Vendored
 
