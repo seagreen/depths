@@ -40,6 +40,11 @@ type alias Model =
         Dict Int (List Point)
 
     -- Keys are unit IDs.
+    --
+    -- It would be better for type safety to store build orders as a field of
+    -- habitats (that way a sea tile couldn't have a build order).
+    -- Unfortunately since habitats are defined and stored in the Game part
+    -- of the code they don't know about UI things like build orders.
     , buildOrders : Dict Point Buildable
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
@@ -58,6 +63,10 @@ init =
     }
 
 
+{-| There are two types of selections: (1) SelectionPoints, which happen
+when the user clicks a tile, and (2) SelectedIds, which happen when a user
+clicks a specific submarine description on the left side of the screen.
+-}
 type Selection
     = SelectedPoint Point
     | SelectedId Id
