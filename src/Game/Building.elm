@@ -161,6 +161,10 @@ all =
     ]
 
 
+
+-- TODO: Get rid of this
+
+
 fromString : String -> Maybe Building
 fromString s =
     case s of

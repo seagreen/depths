@@ -7,6 +7,11 @@ import Update
 import View
 
 
+enter : Int
+enter =
+    13
+
+
 main : Program Never Model.Model Model.Msg
 main =
     Html.program
@@ -18,10 +23,7 @@ main =
                 Sub.batch
                     [ Keyboard.downs
                         (\keyPress ->
-                            if
-                                -- Enter key
-                                keyPress == 13
-                            then
+                            if keyPress == enter then
                                 Model.EndTurn
                             else
                                 Model.NoOp

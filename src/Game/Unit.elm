@@ -84,6 +84,10 @@ stats sub =
             }
 
 
+
+-- TODO: Get rid of this
+
+
 fromString : String -> Maybe Submarine
 fromString s =
     case s of

@@ -331,27 +331,54 @@ viewHabitat model point hab =
         ]
 
 
+{-| Generic onchange handler for <select>
+-}
+onChange : (String -> msg) -> Html.Attribute msg
+onChange handler =
+    Hevent.on "change" <| Json.Decode.map handler <| Json.Decode.at [ "target", "value" ] Json.Decode.string
+
+
 productionForm : Model -> Point -> Habitat -> Html Msg
 productionForm model point hab =
     let
+        costFromBuildable : Buildable -> Int
+        costFromBuildable buildable =
+            case buildable of
+                BuildSubmarine sub ->
+                    Unit.stats sub |> .cost
+
+                BuildBuilding building ->
+                    Building.stats building |> .cost
+
         option : Maybe Buildable -> Html Msg
         option buildable =
+            let
+                buildableStr =
+                    Maybe.map
+                        (\buildable ->
+                            case buildable of
+                                BuildSubmarine sub ->
+                                    toString sub
+
+                                BuildBuilding building ->
+                                    toString building
+                        )
+                        buildable
+                        |> Maybe.withDefault "<None>"
+            in
             Html.option
                 (if buildable == hab.producing then
-                    [ Hattr.selected True ]
+                    [ Hattr.selected True, Hattr.value buildableStr ]
                  else
-                    []
+                    [ Hattr.value buildableStr ]
                 )
                 [ Html.text <|
                     case buildable of
                         Nothing ->
-                            "<None>"
+                            buildableStr
 
-                        Just (BuildSubmarine sub) ->
-                            toString sub
-
-                        Just (BuildBuilding building) ->
-                            toString building
+                        Just buildable ->
+                            buildableStr ++ " (" ++ toString (costFromBuildable buildable) ++ ")"
                 ]
 
         msgFromString : String -> Msg
@@ -393,10 +420,12 @@ productionForm model point hab =
                         -- automatically, not sure what I'm doing wrong.
                         ++ ": "
                 ]
+
+            -- TODO: This should be using Html.on "change" instead of using strings
             , Html.select
                 [ class "form-control"
                 , Hattr.id "constructing"
-                , Hevent.onInput msgFromString
+                , onChange msgFromString
                 ]
                 [ option Nothing
                 , case Unit.buildable hab.buildings of
@@ -454,6 +483,7 @@ viewHabitatNameForm (HabitatEditor editor) =
                 , Html.input
                     [ class "form-control"
                     , Hattr.type_ "text"
+                    , Hattr.maxlength 3
                     , Hattr.id "habitatAbbreviation"
                     , Hevent.onInput NameEditorAbbreviation
                     , Hattr.value editor.abbreviation
