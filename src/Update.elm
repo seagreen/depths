@@ -15,6 +15,7 @@ import Game.State as Game
         , Tile
         , Turn(..)
         )
+import Game.Unit exposing (Player(..))
 import HexGrid exposing (HexGrid(..), Point)
 import Model
     exposing
@@ -108,36 +109,44 @@ update msg model =
 
 endTurn : Model -> Model
 endTurn model =
-    let
-        ( immediateMoves, laterMoves ) =
-            splitPlannedMoves model.plannedMoves
+    case model.currentPlayer of
+        Player1 ->
+            { model | currentPlayer = Player2, selection = Nothing }
 
-        ( reports, newGameState ) =
-            Game.resolveTurn
-                { moves = immediateMoves
-                , buildOrders = model.buildOrders
-                }
-                model.game
-    in
-    { model
-        | game = newGameState
-        , plannedMoves = cleanPlannedMoves newGameState laterMoves
-        , buildOrders = Dict.empty
-        , selection = updateSelection newGameState model.selection
-        , gameLog = reports ++ model.gameLog
-    }
+        Player2 ->
+            let
+                ( immediateMoves, laterMoves ) =
+                    splitPlannedMoves model.plannedMoves
+
+                ( reports, newGameState ) =
+                    Game.resolveTurn
+                        { moves = immediateMoves
+                        , buildOrders = model.buildOrders
+                        }
+                        model.game
+            in
+            { model
+                | game = newGameState
+                , plannedMoves = removeOrphanMoves newGameState laterMoves
+                , buildOrders = Dict.empty
+                , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
+                , gameLog = reports ++ model.gameLog
+                , currentPlayer = Player1
+            }
 
 
 {-| Remove plans to move units that are no longer on the board.
 -}
-cleanPlannedMoves : Game -> Dict Int (List Point) -> Dict Int (List Point)
-cleanPlannedMoves game moveDict =
+removeOrphanMoves : Game -> Dict Int (List Point) -> Dict Int (List Point)
+removeOrphanMoves game moveDict =
     let
-        friendlies =
-            Game.friendlyUnitDict (Util.unHexGrid game.grid)
+        units : Dict Int Point
+        units =
+            Game.unitDict (Util.unHexGrid game.grid)
 
+        go : Int -> List Point -> Dict Int (List Point) -> Dict Int (List Point)
         go id movePoint acc =
-            if Dict.member id friendlies then
+            if Dict.member id units then
                 Dict.insert id movePoint acc
             else
                 acc
@@ -230,7 +239,7 @@ newSelection model newPoint =
                                 Just (SelectedPoint newPoint)
 
                             _ ->
-                                case List.head (Game.friendlyUnits tile) of
+                                case List.head (Game.friendlyUnits model.currentPlayer tile) of
                                     Nothing ->
                                         Just (SelectedPoint newPoint)
 

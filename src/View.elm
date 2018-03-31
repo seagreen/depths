@@ -4,7 +4,6 @@ import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game exposing (BattleEvent(..), BattleReport, Outcome(..))
 import Game.Building as Building exposing (Building(..))
-import Game.Id as Id
 import Game.State as Game
     exposing
         ( Buildable(..)
@@ -51,7 +50,13 @@ viewBoard model =
 
         friendlyPlannedMoves : Set Point
         friendlyPlannedMoves =
-            model.plannedMoves
+            let
+                friendlyUnits : Dict Int (List Point)
+                friendlyUnits =
+                    Game.friendlyUnitDict model.currentPlayer (Util.unHexGrid model.game.grid)
+                        |> Dict.map (\_ _ -> [])
+            in
+            Dict.intersect model.plannedMoves friendlyUnits
                 |> Dict.values
                 |> List.concat
                 |> Set.fromList
@@ -79,17 +84,17 @@ viewBoard model =
     in
     Svg.svg
         []
-        (List.map (renderPoint boardInfo) (Dict.toList dict))
+        (List.map (renderPoint model.currentPlayer boardInfo) (Dict.toList dict))
 
 
-getAbbreviation : Tile -> String
-getAbbreviation tile =
+getAbbreviation : Player -> Tile -> String
+getAbbreviation currentPlayer tile =
     case Game.habitatFromTile tile of
         Just hab ->
             Game.habitatAbbreviation hab
 
         Nothing ->
-            case Game.friendlyUnits tile of
+            case Game.friendlyUnits currentPlayer tile of
                 [] ->
                     ""
 
@@ -121,8 +126,8 @@ movesToPoint start end speed =
         |> List.filterMap identity
 
 
-renderPoint : BoardInfo -> ( Point, Tile ) -> Html Msg
-renderPoint bi ( point, tile ) =
+renderPoint : Player -> BoardInfo -> ( Point, Tile ) -> Html Msg
+renderPoint player bi ( point, tile ) =
     let
         ( centerX, centerY ) =
             HexGrid.hexToPixel bi.layout point
@@ -153,7 +158,7 @@ renderPoint bi ( point, tile ) =
         (viewPolygon bi.model tile bi.friendlyPlannedMoves corners point
             :: tileText centerX
                 centerY
-                (getAbbreviation tile)
+                (getAbbreviation player tile)
                 (case tile.fixed of
                     Mountain (Just hab) ->
                         case viewRemainingProduction bi.model point hab of
@@ -195,18 +200,6 @@ cornersToStr corners =
         |> String.join " "
 
 
-friendlyMoved : Model -> Tile -> Bool
-friendlyMoved model tile =
-    tile
-        |> Game.friendlyUnits
-        |> List.any
-            (\unit ->
-                Dict.member
-                    (Id.unId unit.id)
-                    model.plannedMoves
-            )
-
-
 viewPolygon :
     Model
     -> Tile
@@ -222,7 +215,7 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                 case tile.fixed of
                     Depths ->
                         if Just point == Model.focusPoint model then
-                            case Game.friendlyUnits tile of
+                            case Game.friendlyUnits model.currentPlayer tile of
                                 [] ->
                                     White
 
@@ -602,7 +595,7 @@ view model =
                                     Html.text ""
                             , Html.div
                                 []
-                                (List.map (viewUnit model.selection) <| Game.friendlyUnits tile)
+                                (List.map (viewUnit model.selection) <| Game.friendlyUnits model.currentPlayer tile)
                             ]
                 , startingHelpMessage model
                 ]
@@ -621,15 +614,15 @@ view model =
 displayOutcome : Game -> Html Msg
 displayOutcome game =
     case Game.outcome game of
-        Just Victory ->
+        Just (Victory player) ->
             Html.div
                 [ class "alert alert-success" ]
-                [ Html.text "Glorious victory!" ]
+                [ Html.text <| "Glorious victory to " ++ toString player ++ "!" ]
 
-        Just Defeat ->
+        Just Draw ->
             Html.div
                 [ class "alert alert-danger" ]
-                [ Html.text "Terrible defeat!" ]
+                [ Html.text "Draws are just losses on both sides." ]
 
         Nothing ->
             Html.text ""
@@ -685,12 +678,10 @@ displayBattleReports model =
 
                     DestructionEvent owner destroyed mDestroyer ->
                         Html.text <|
-                            (case owner of
-                                Human ->
-                                    "Our "
-
-                                Computer ->
-                                    "Enemy "
+                            (if owner == model.currentPlayer then
+                                "Our "
+                             else
+                                "Enemy "
                             )
                                 ++ Game.name destroyed
                                 ++ " was destroyed by "

@@ -45,7 +45,6 @@ resolveTurn commands game =
                 >> Tuple.mapSecond
                     (destroyHabitats
                         >> wrapResolveProduction
-                        >> wrapNewEnemies
                         >> incrementTurn
                     )
 
@@ -57,28 +56,28 @@ resolveTurn commands game =
 
 
 type Outcome
-    = Victory
-    | Defeat
+    = Victory Player
+    | Draw
 
 
 outcome : Game -> Maybe Outcome
 outcome game =
-    if Game.State.unTurn game.turn >= 200 then
-        Just Victory
+    if Game.State.unTurn game.turn < 10 then
+        --HACK:  This is bork
+        Nothing
     else
-        let
-            habitats =
-                Game.State.habitatDict game.grid
-        in
-        if Dict.size habitats >= 4 then
-            Just Victory
-        else if
-            Dict.isEmpty habitats
-                && List.isEmpty (Game.State.friendlyUnitList (Util.unHexGrid game.grid))
-        then
-            Just Defeat
-        else
-            Nothing
+        case ( Game.State.habitatsForPlayer Player1 game, Game.State.habitatsForPlayer Player2 game ) of
+            ( [], [] ) ->
+                Just Draw
+
+            ( _, [] ) ->
+                Just (Victory Player1)
+
+            ( [], _ ) ->
+                Just (Victory Player2)
+
+            _ ->
+                Nothing
 
 
 {-| The keys in `moves` are the IDs of units.
@@ -259,7 +258,7 @@ moveUnit oldPoint unit newPoint grid =
                     Mountain Nothing ->
                         case unit.class of
                             ColonySubmarine ->
-                                { tile | fixed = Mountain (Just (Game.State.newHabitat unit.id)) }
+                                { tile | fixed = Mountain (Just (Game.State.newHabitat unit.player unit.id)) }
 
                             _ ->
                                 moveTo tile
@@ -330,7 +329,7 @@ completeSubmarine sub tile hab =
 
         newUnit id =
             { id = id
-            , player = Human
+            , player = hab.player
             , class = sub
             }
 
@@ -532,17 +531,18 @@ enemiesDetected defenders enemies =
                 )
 
 
-enemiesDestroyed :
-    List Combatant
+attackersDestroyed :
+    Player
+    -> List Combatant
     -> List Combatant
     -> Tile
     -> State Random.Seed ( List BattleEvent, Tile )
-enemiesDestroyed defenders enemies tile =
+attackersDestroyed attackingPlayer defenders attackers tile =
     let
         reportEvent : Destroyed -> BattleEvent
         reportEvent destruction =
             DestructionEvent
-                Computer
+                attackingPlayer
                 (buildableFromCombatant destruction.dsTarget)
                 (Just destruction.dsBy)
     in
@@ -550,7 +550,7 @@ enemiesDestroyed defenders enemies tile =
         \oldSeed ->
             State.run oldSeed
                 (countFirepowerHits defenders
-                    |> State.andThen (destroyedByFirepower enemies)
+                    |> State.andThen (destroyedByFirepower attackers)
                     |> State.map
                         (\destroyed ->
                             ( List.map reportEvent destroyed
@@ -624,18 +624,18 @@ removeBuildings hab destroyed =
     }
 
 
-friendliesDestroyed :
+defendersDestroyed :
     Habitat
     -> List Combatant
     -> List Unit
     -> Tile
     -> State Random.Seed ( List BattleEvent, Tile )
-friendliesDestroyed hab defenders enemies tile =
+defendersDestroyed hab defenders enemies tile =
     let
         reportEvent : Destroyed -> BattleEvent
         reportEvent destruction =
             DestructionEvent
-                Human
+                hab.player
                 (buildableFromCombatant destruction.dsTarget)
                 (Just destruction.dsBy)
     in
@@ -674,7 +674,7 @@ bombard firing hab tile =
         reportEvent : Destroyed -> BattleEvent
         reportEvent destruction =
             DestructionEvent
-                Human
+                hab.player
                 (buildableFromCombatant destruction.dsTarget)
                 (Just destruction.dsBy)
 
@@ -704,13 +704,22 @@ twoSidedBattle :
     -> Tile
     -> State Random.Seed ( List BattleEvent, Tile )
 twoSidedBattle defenders enemies hab tile =
+    let
+        attackingPlayer =
+            case hab.player of
+                Player1 ->
+                    Player2
+
+                Player2 ->
+                    Player1
+    in
     enemiesDetected defenders enemies
         |> State.andThen
             (\( dtEvents, detected ) ->
-                enemiesDestroyed defenders detected tile
+                attackersDestroyed attackingPlayer defenders detected tile
                     |> State.andThen
                         (\( dsEvents, nextTile ) ->
-                            friendliesDestroyed hab defenders enemies nextTile
+                            defendersDestroyed hab defenders enemies nextTile
                                 |> State.map
                                     (Tuple.mapFirst
                                         (\friendlyDsEvents ->
@@ -725,29 +734,29 @@ twoSidedBattle defenders enemies hab tile =
 
 resolveSingleBattle : Turn -> Tile -> State ( Random.Seed, List BattleReport ) Tile
 resolveSingleBattle turn tile =
-    let
-        ( friendlyUnits, enemies ) =
-            List.partition
-                (\unit -> unit.player == Human)
-                (Dict.values tile.units)
-
-        resolve : Tile -> Habitat -> State Random.Seed ( List BattleEvent, Tile )
-        resolve tile hab =
-            let
-                defenders =
-                    List.map CMBuilding (Building.combatBuildings hab.buildings)
-                        ++ List.map CMUnit friendlyUnits
-            in
-            case defenders of
-                [] ->
-                    bombard enemies hab tile
-
-                _ ->
-                    twoSidedBattle defenders enemies hab tile
-    in
     case tile.fixed of
         Mountain (Just hab) ->
-            case enemies of
+            let
+                ( defenders, attackers ) =
+                    List.partition
+                        (\unit -> unit.player == hab.player)
+                        (Dict.values tile.units)
+
+                resolve : Tile -> Habitat -> State Random.Seed ( List BattleEvent, Tile )
+                resolve tile hab =
+                    let
+                        defendingCombatants =
+                            List.map CMBuilding (Building.combatBuildings hab.buildings)
+                                ++ List.map CMUnit defenders
+                    in
+                    case defendingCombatants of
+                        [] ->
+                            bombard attackers hab tile
+
+                        _ ->
+                            twoSidedBattle defendingCombatants attackers hab tile
+            in
+            case attackers of
                 [] ->
                     State.state tile
 
@@ -776,82 +785,3 @@ resolveSingleBattle turn tile =
 
         _ ->
             State.state tile
-
-
-wrapNewEnemies : Game -> Game
-wrapNewEnemies game =
-    let
-        (HexGrid a oldGrid) =
-            game.grid
-
-        ( newGrid, ( newRandomSeed, newIdSeed ) ) =
-            State.run ( game.randomSeed, game.idSeed ) <|
-                -- TODO: Don't pass both game and grid.
-                newEnemies game oldGrid
-    in
-    { game
-        | grid = HexGrid a newGrid
-        , randomSeed = newRandomSeed
-        , idSeed = newIdSeed
-    }
-
-
-newEnemies : Game -> Dict Point Tile -> State ( Random.Seed, IdSeed ) (Dict Point Tile)
-newEnemies game dict =
-    let
-        placeEnemies point idA idB idC =
-            let
-                enemy id =
-                    Unit id Computer AttackSubmarine
-
-                smallEnemy id =
-                    Unit id Computer RemotelyOperatedVehicle
-            in
-            Dict.update
-                point
-                (Maybe.andThen
-                    (\tile ->
-                        Just
-                            { tile
-                                | units =
-                                    Dict.insert (Id.unId idA) (enemy idA) tile.units
-                                        |> Dict.insert (Id.unId idB) (enemy idB)
-                                        |> Dict.insert (Id.unId idC) (smallEnemy idC)
-                            }
-                    )
-                )
-                dict
-    in
-    -- TODO: Place enemies at random times; make them increasingly challenging.
-    if
-        Game.State.unTurn game.turn
-            > 25
-            && Game.State.unTurn game.turn
-            % 20
-            == 0
-    then
-        let
-            pointsAndHabs =
-                Dict.toList (Game.State.habitatDict game.grid)
-        in
-        State <|
-            \( randomSeed, idSeed ) ->
-                let
-                    ( shuffledPoints, newRandomSeed ) =
-                        -- PERFORMANCE: Don't need to shuffle the whole list.
-                        -- Get a `select` function added to random-extra.
-                        Random.step (Random.List.shuffle pointsAndHabs) randomSeed
-                in
-                case shuffledPoints of
-                    ( point, _ ) :: _ ->
-                        let
-                            ( newDict, newIdSeed ) =
-                                State.run idSeed <|
-                                    State.map3 (placeEnemies point) Id.next Id.next Id.next
-                        in
-                        ( newDict, ( newRandomSeed, newIdSeed ) )
-
-                    _ ->
-                        ( dict, ( newRandomSeed, idSeed ) )
-    else
-        State.state dict

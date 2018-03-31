@@ -6,8 +6,8 @@ import Html exposing (Html)
 
 
 type Player
-    = Human
-    | Computer
+    = Player1
+    | Player2
 
 
 type alias Unit =

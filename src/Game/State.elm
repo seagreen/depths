@@ -46,7 +46,7 @@ init =
               , Tile
                     (Dict.singleton
                         (Id.unId idA)
-                        (Unit idA Human ColonySubmarine)
+                        (Unit idA Player1 ColonySubmarine)
                     )
                     Depths
               )
@@ -54,7 +54,7 @@ init =
               , Tile
                     (Dict.singleton
                         (Id.unId idB)
-                        (Unit idB Computer ColonySubmarine)
+                        (Unit idB Player2 ColonySubmarine)
                     )
                     Depths
               )
@@ -96,6 +96,7 @@ type Geology
 
 type alias Habitat =
     { name : Either HabitatEditor HabitatName
+    , player : Player
     , createdBy : Id
     , buildings : List Building
     , producing : Maybe Buildable
@@ -103,9 +104,10 @@ type alias Habitat =
     }
 
 
-newHabitat : Id -> Habitat
-newHabitat colonySubId =
+newHabitat : Player -> Id -> Habitat
+newHabitat player colonySubId =
     { name = Left emptyNameEditor
+    , player = player
     , createdBy = colonySubId
     , buildings = [ PrefabHabitat ]
     , producing = Nothing
@@ -132,6 +134,10 @@ habitatAbbreviation hab =
         Right name ->
             name.abbreviation
 
+
+habitatsForPlayer : Player -> Game -> List Habitat
+habitatsForPlayer player game =
+    habitatDict game.grid |> Dict.values |> List.filter (\hab -> hab.player == player)
 
 habitatDict : HexGrid Tile -> Dict Point Habitat
 habitatDict (HexGrid _ grid) =
@@ -244,10 +250,10 @@ findUnit id grid =
     Dict.foldr f Nothing grid
 
 
-friendlyUnits : Tile -> List Unit
-friendlyUnits tile =
+friendlyUnits : Player -> Tile -> List Unit
+friendlyUnits currentPlayer tile =
     List.filter
-        (\unit -> unit.player == Human)
+        (\unit -> unit.player == currentPlayer)
         (Dict.values tile.units)
 
 
@@ -256,9 +262,16 @@ friendlyUnits tile =
 Returned `Int` keys are unit IDs.
 
 -}
-friendlyUnitDict : Dict Point Tile -> Dict Int Point
-friendlyUnitDict grid =
-    friendlyUnitList grid
+unitDict : Dict Point Tile -> Dict Int Point
+unitDict grid =
+    unitList grid
+        |> List.map (\( point, unit ) -> ( Id.unId unit.id, point ))
+        |> Dict.fromList
+
+
+friendlyUnitDict : Player -> Dict Point Tile -> Dict Int Point
+friendlyUnitDict currentPlayer grid =
+    friendlyUnitList currentPlayer grid
         |> List.map (\( point, unit ) -> ( Id.unId unit.id, point ))
         |> Dict.fromList
 
@@ -272,15 +285,13 @@ unitList =
         []
 
 
-friendlyUnitList : Dict Point Tile -> List ( Point, Unit )
-friendlyUnitList =
+friendlyUnitList : Player -> Dict Point Tile -> List ( Point, Unit )
+friendlyUnitList currentPlayer =
     List.filterMap
         (\( point, unit ) ->
-            case unit.player of
-                Human ->
-                    Just ( point, unit )
-
-                Computer ->
-                    Nothing
+            if unit.player == currentPlayer then
+                Just ( point, unit )
+            else
+                Nothing
         )
         << unitList

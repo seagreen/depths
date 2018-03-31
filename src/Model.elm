@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Game exposing (Commands)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State exposing (Buildable(..), Game, Tile)
+import Game.Unit exposing (Player(..))
 import HexGrid exposing (Direction, HexGrid(..), Point)
 import Random
 import Util
@@ -49,6 +50,7 @@ type alias Model =
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
     , gameLog : List Game.BattleReport
+    , currentPlayer : Player
     }
 
 
@@ -60,6 +62,7 @@ init =
     , selection = Nothing
     , hoverPoint = Nothing
     , gameLog = []
+    , currentPlayer = Player1
     }
 
 
