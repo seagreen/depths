@@ -241,25 +241,31 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                         else
                             Blue
 
-                    Mountain Nothing ->
+                    Mountain mHab ->
                         if Just (SelectedPoint point) == model.selection then
-                            White
+                            case mHab of
+                                Just hab ->
+                                    if canSeeHabitat model point hab then
+                                        Red
+                                    else
+                                        White
+
+                                Nothing ->
+                                    White
                         else if Set.member point friendlyPlannedMoves then
                             DarkGray
                         else if Just point == model.hoverPoint then
                             Yellow
                         else
-                            Gray
+                            case mHab of
+                                Just hab ->
+                                    if canSeeHabitat model point hab then
+                                        Green
+                                    else
+                                        Gray
 
-                    Mountain (Just _) ->
-                        if Just (SelectedPoint point) == model.selection then
-                            Red
-                        else if Set.member point friendlyPlannedMoves then
-                            DarkGreen
-                        else if Just point == model.hoverPoint then
-                            Yellow
-                        else
-                            Green
+                                Nothing ->
+                                    Gray
         ]
         []
 
