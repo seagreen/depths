@@ -113,7 +113,7 @@ stats infra =
         Datacenter ->
             { name = "Datacenter"
             , cost = 20
-            , prerequisites = []
+            , prerequisites = [ ShippingDock ]
             , productionBonus = 1
             , populationBonus = 0
             , combatStats = Nothing
