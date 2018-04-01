@@ -3,6 +3,7 @@ module Main exposing (..)
 import Html
 import Keyboard
 import Model
+import Protocol
 import Update
 import View
 
