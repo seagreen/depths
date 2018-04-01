@@ -13,7 +13,8 @@ import Util
 type Msg
     = NoOp
     | SetRandomSeed NewSeed
-    | EndTurn
+      -- When both players commands have been queued
+    | EndRound
       -- When a point is click on the board.
       --
       -- This is more complicated than SelectUnit

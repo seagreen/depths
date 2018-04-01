@@ -286,42 +286,61 @@ tileText centerX centerY upperText lowerText =
     ]
 
 
+{-| Does the current player have a ship at the given point?
+-}
+hasShipAtPoint : Model -> Point -> Bool
+hasShipAtPoint { currentPlayer, game } point =
+    Game.friendlyUnitDict currentPlayer (Util.unHexGrid game.grid)
+        |> Dict.values
+        |> List.filter ((==) point)
+        |> not
+        << List.isEmpty
+
+
+canSeeHabitat : Model -> Point -> Habitat -> Bool
+canSeeHabitat model point hab =
+    hab.player == model.currentPlayer || hasShipAtPoint model point
+
+
 viewHabitat : Model -> Point -> Habitat -> Html Msg
 viewHabitat model point hab =
-    Html.div
-        [ onClick (SelectTile point)
-        , class "alert alert-success"
-        ]
-        [ Html.h4
-            []
-            [ Html.b
-                []
-                [ Html.text <| Game.habitatFullName hab ]
+    if not (canSeeHabitat model point hab) then
+        Html.text ""
+    else
+        Html.div
+            [ onClick (SelectTile point)
+            , class "alert alert-success"
             ]
-        , productionForm model point hab
-        , Html.p
-            []
-            [ Html.text "Production: "
-            , badge
-                [ Html.text <| toString (Building.production hab.buildings)
+            [ Html.h4
+                []
+                [ Html.b
+                    []
+                    [ Html.text <| Game.habitatFullName hab ]
+                ]
+            , productionForm model point hab
+            , Html.p
+                []
+                [ Html.text "Production: "
+                , badge
+                    [ Html.text <| toString (Building.production hab.buildings)
+                    ]
+                ]
+            , Html.p
+                []
+                [ Html.text "Population: "
+                , badge
+                    [ Html.text <| toString (Building.population hab.buildings) ]
+                ]
+            , Html.p
+                []
+                [ Html.text <|
+                    "Buildings: "
+                        ++ (String.concat <|
+                                List.intersperse ", " <|
+                                    List.map toString hab.buildings
+                           )
                 ]
             ]
-        , Html.p
-            []
-            [ Html.text "Population: "
-            , badge
-                [ Html.text <| toString (Building.population hab.buildings) ]
-            ]
-        , Html.p
-            []
-            [ Html.text <|
-                "Buildings: "
-                    ++ (String.concat <|
-                            List.intersperse ", " <|
-                                List.map toString hab.buildings
-                       )
-            ]
-        ]
 
 
 {-| Generic onchange handler for <select>
@@ -543,6 +562,16 @@ view model =
     Html.div
         []
         [ Html.h1 [] [ Html.text "FPG: The Depths" ]
+        , Html.div []
+            [ Html.text <|
+                "Player "
+                    ++ (if model.currentPlayer == Player1 then
+                            "1"
+                        else
+                            "2"
+                       )
+                    ++ "'s turn"
+            ]
         , Html.div
             [ class "row" ]
             [ Html.div
@@ -580,6 +609,7 @@ view model =
                             []
                             [ case tile.fixed of
                                 Mountain (Just hab) ->
+                                    -- can only build on mountains
                                     Html.div
                                         []
                                         [ viewHabitat model point hab
@@ -588,7 +618,10 @@ view model =
                                                 Html.text ""
 
                                             Left editor ->
-                                                viewHabitatNameForm editor
+                                                if hab.player == model.currentPlayer then
+                                                    viewHabitatNameForm editor
+                                                else
+                                                    Html.text ""
                                         ]
 
                                 _ ->
@@ -721,7 +754,7 @@ endTurnButton model =
 
         Nothing ->
             Html.button
-                [ onClick EndTurn
+                [ onClick EndRound
                 , Hattr.type_ "button"
                 , class "btn btn-primary btn-lg"
                 ]

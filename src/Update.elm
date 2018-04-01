@@ -40,8 +40,8 @@ update msg model =
             in
             { model | game = { oldGame | randomSeed = Random.initialSeed new } }
 
-        EndTurn ->
-            endTurn model
+        EndRound ->
+            endRound model
 
         HoverPoint point ->
             { model | hoverPoint = Just point }
@@ -107,8 +107,8 @@ update msg model =
                 model
 
 
-endTurn : Model -> Model
-endTurn model =
+endRound : Model -> Model
+endRound model =
     case model.currentPlayer of
         Player1 ->
             { model | currentPlayer = Player2, selection = Nothing }

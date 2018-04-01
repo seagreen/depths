@@ -24,7 +24,7 @@ main =
                     [ Keyboard.downs
                         (\keyPress ->
                             if keyPress == enter then
-                                Model.EndTurn
+                                Model.EndRound
                             else
                                 Model.NoOp
                         )
