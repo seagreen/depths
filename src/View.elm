@@ -134,6 +134,24 @@ renderPoint player bi ( point, tile ) =
 
         corners =
             HexGrid.polygonCorners bi.layout point
+
+        topText : String
+        topText =
+            getAbbreviation player tile
+
+        bottomText : String
+        bottomText =
+            case tile.fixed of
+                Mountain (Just hab) ->
+                    case viewRemainingProduction bi.model point hab of
+                        Nothing ->
+                            ""
+
+                        Just remaining ->
+                            toString remaining
+
+                _ ->
+                    ""
     in
     Svg.g
         [ onClick <| SelectPoint point
@@ -155,22 +173,17 @@ renderPoint player bi ( point, tile ) =
         , onMouseOut EndHover
         , onMouseOver (HoverPoint point)
         ]
-        (viewPolygon bi.model tile bi.friendlyPlannedMoves corners point
-            :: tileText centerX
+        (viewPolygon
+            bi.model
+            tile
+            bi.friendlyPlannedMoves
+            corners
+            point
+            :: tileText
+                centerX
                 centerY
-                (getAbbreviation player tile)
-                (case tile.fixed of
-                    Mountain (Just hab) ->
-                        case viewRemainingProduction bi.model point hab of
-                            Nothing ->
-                                ""
-
-                            Just remaining ->
-                                toString remaining
-
-                    _ ->
-                        ""
-                )
+                topText
+                bottomText
         )
 
 
