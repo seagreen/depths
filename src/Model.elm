@@ -35,9 +35,33 @@ type Msg
     | NameEditorAbbreviation String
     | NameEditorSubmit
 
+    -- Handle changes to the "server" text box before starting a game
+    | SetServer String
+
+    -- Handle changes to the "room" text box before starting a game
+    | SetRoom String
+
+    -- Handle connecting to a server
+    | Connect
+
+    -- Receive a message from the server
+    | Recv String
+
+type GameType
+  = NotPlayingYet { server : String, room : String }
+  | SharedComputer
+  | Online
+      { server : String
+      , room : String
+      , state : OnlineGameState
+      }
+
+type OnlineGameState
+  = JustConnected
 
 type alias Model =
     { game : Game
+    , gameType : GameType
     , plannedMoves :
         Dict Int (List Point)
 
@@ -58,6 +82,7 @@ type alias Model =
 init : Model
 init =
     { game = Game.State.init
+    , gameType = NotPlayingYet { server = "", room = "" }
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
     , selection = Nothing

@@ -6,6 +6,7 @@ import Model
 import Protocol
 import Update
 import View
+import WebSocket
 
 
 enter : Int
@@ -17,17 +18,33 @@ main : Program Never Model.Model Model.Msg
 main =
     Html.program
         { init = ( Model.init, Model.newRandomSeed )
-        , update = \a b -> ( Update.update a b, Cmd.none )
+        , update = Update.update
         , view = View.view
-        , subscriptions =
-            \_ ->
-                Sub.batch
-                    [ Keyboard.downs
-                        (\keyPress ->
-                            if keyPress == enter then
-                                Model.EndRound
-                            else
-                                Model.NoOp
-                        )
-                    ]
+        , subscriptions = subscriptions
         }
+
+
+subscriptions : Model.Model -> Sub Model.Msg
+subscriptions model =
+    let
+        keydown =
+            Keyboard.downs
+                (\keyPress ->
+                    if keyPress == enter then
+                        Model.EndRound
+                    else
+                        Model.NoOp
+                )
+    in
+        case model.gameType of
+            Model.NotPlayingYet _ ->
+                Sub.none
+
+            Model.SharedComputer ->
+                keydown
+
+            Model.Online { server, room } ->
+                Sub.batch
+                    [ keydown
+                    , WebSocket.listen server Model.Recv
+                    ]

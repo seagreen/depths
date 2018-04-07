@@ -19,59 +19,66 @@ import Game.Unit exposing (Player(..))
 import HexGrid exposing (HexGrid(..), Point)
 import Model
     exposing
-        ( Model
+        ( GameType(..)
+        , Model
         , Msg(..)
+        , OnlineGameState(..)
         , Selection(..)
         )
 import Random
 import Util
+import WebSocket
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
-            model
+            ( model, Cmd.none )
 
         SetRandomSeed (Model.NewSeed new) ->
             let
                 oldGame =
                     model.game
             in
-            { model | game = { oldGame | randomSeed = Random.initialSeed new } }
+                ( { model | game = { oldGame | randomSeed = Random.initialSeed new } }
+                , Cmd.none
+                )
 
         EndRound ->
-            endRound model
+            ( endRound model, Cmd.none )
 
         HoverPoint point ->
-            { model | hoverPoint = Just point }
+            ( { model | hoverPoint = Just point }
+            , Cmd.none
+            )
 
         EndHover ->
-            { model | hoverPoint = Nothing }
+            ( { model | hoverPoint = Nothing }, Cmd.none )
 
         SelectPoint point ->
-            { model | selection = newSelection model point }
+            ( { model | selection = newSelection model point }, Cmd.none )
 
         SelectUnit id ->
-            { model | selection = Just (SelectedId id) }
+            ( { model | selection = Just (SelectedId id) }, Cmd.none )
 
         SelectTile point ->
-            { model | selection = Just (SelectedPoint point) }
+            ( { model | selection = Just (SelectedPoint point) }, Cmd.none )
 
         PlanMoves id points ->
-            { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }
+            ( { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }, Cmd.none )
 
         CancelMove id ->
-            { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }
+            ( { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }, Cmd.none )
 
         StopBuilding ->
-            stopBuilding model
+            ( stopBuilding model, Cmd.none )
 
         BuildOrder buildable ->
-            buildOrder model buildable
+            ( buildOrder model buildable, Cmd.none )
 
         NameEditorFull new ->
-            setHabitatName
+            ( setHabitatName
                 (\name ->
                     case name of
                         Right _ ->
@@ -81,9 +88,11 @@ update msg model =
                             Left (HabitatEditor { editor | full = new })
                 )
                 model
+            , Cmd.none
+            )
 
         NameEditorAbbreviation new ->
-            setHabitatName
+            ( setHabitatName
                 (\name ->
                     case name of
                         Right _ ->
@@ -93,9 +102,11 @@ update msg model =
                             Left (HabitatEditor { editor | abbreviation = new })
                 )
                 model
+            , Cmd.none
+            )
 
         NameEditorSubmit ->
-            setHabitatName
+            ( setHabitatName
                 (\name ->
                     case name of
                         Right _ ->
@@ -105,6 +116,63 @@ update msg model =
                             Right editor
                 )
                 model
+            , Cmd.none
+            )
+
+        SetServer server ->
+            ( case model.gameType of
+                NotPlayingYet { room } ->
+                    { model
+                        | gameType =
+                            NotPlayingYet { server = server, room = room }
+                    }
+
+                SharedComputer ->
+                    Debug.crash ""
+
+                Online _ ->
+                    Debug.crash ""
+            , Cmd.none
+            )
+
+        SetRoom room ->
+            ( case model.gameType of
+                NotPlayingYet { server } ->
+                    { model
+                        | gameType =
+                            NotPlayingYet { server = server, room = room }
+                    }
+
+                SharedComputer ->
+                    Debug.crash ""
+
+                Online _ ->
+                    Debug.crash ""
+            , Cmd.none
+            )
+
+        Connect ->
+            case model.gameType of
+                NotPlayingYet { server, room } ->
+                    ( { model
+                        | gameType =
+                            Online
+                                { server = server
+                                , room = room
+                                , state = JustConnected
+                                }
+                      }
+                    , WebSocket.send server room
+                    )
+
+                SharedComputer ->
+                    Debug.crash "Connect / model.gameType == SharedComputer"
+
+                Online _ ->
+                    Debug.crash "Connect / model.gameType == Online"
+
+        Recv message ->
+            ( Debug.log message model, Cmd.none )
 
 
 endRound : Model -> Model
@@ -125,14 +193,14 @@ endRound model =
                         }
                         model.game
             in
-            { model
-                | game = newGameState
-                , plannedMoves = removeOrphanMoves newGameState laterMoves
-                , buildOrders = Dict.empty
-                , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
-                , gameLog = reports ++ model.gameLog
-                , currentPlayer = Player1
-            }
+                { model
+                    | game = newGameState
+                    , plannedMoves = removeOrphanMoves newGameState laterMoves
+                    , buildOrders = Dict.empty
+                    , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
+                    , gameLog = reports ++ model.gameLog
+                    , currentPlayer = Player1
+                }
 
 
 {-| Remove plans to move units that are no longer on the board.
@@ -151,7 +219,7 @@ removeOrphanMoves game moveDict =
             else
                 acc
     in
-    Dict.foldr go Dict.empty moveDict
+        Dict.foldr go Dict.empty moveDict
 
 
 {-| Split planned moves into those to be executed this turn and those for later.
@@ -179,7 +247,7 @@ splitPlannedMoves allMoves =
                             Dict.insert unitId xs futureMoves
                     )
     in
-    Dict.foldr go ( Dict.empty, Dict.empty ) allMoves
+        Dict.foldr go ( Dict.empty, Dict.empty ) allMoves
 
 
 {-| Update the selection after the end of a turn.
@@ -202,21 +270,21 @@ updateSelection game oldSelection =
                                 Nothing
                    )
     in
-    oldSelection
-        |> Maybe.andThen
-            (\selection ->
-                case selection of
-                    SelectedPoint _ ->
-                        oldSelection
+        oldSelection
+            |> Maybe.andThen
+                (\selection ->
+                    case selection of
+                        SelectedPoint _ ->
+                            oldSelection
 
-                    SelectedId id ->
-                        case stillActive id of
-                            Nothing ->
-                                maybeBecameHabitat id
+                        SelectedId id ->
+                            case stillActive id of
+                                Nothing ->
+                                    maybeBecameHabitat id
 
-                            Just _ ->
-                                oldSelection
-            )
+                                Just _ ->
+                                    oldSelection
+                )
 
 
 {-| Update the selection after a user clicks on the grid.
@@ -247,22 +315,22 @@ newSelection model newPoint =
                                         Just (SelectedId sub.id)
                     )
     in
-    case model.selection of
-        Nothing ->
-            newPointOrId
+        case model.selection of
+            Nothing ->
+                newPointOrId
 
-        Just selection ->
-            case selection of
-                SelectedId _ ->
-                    newPointOrId
-
-                SelectedPoint oldPoint ->
-                    -- If the user clicked on a tile that's currently selected,
-                    -- unselect it.
-                    if newPoint == oldPoint then
-                        Nothing
-                    else
+            Just selection ->
+                case selection of
+                    SelectedId _ ->
                         newPointOrId
+
+                    SelectedPoint oldPoint ->
+                        -- If the user clicked on a tile that's currently selected,
+                        -- unselect it.
+                        if newPoint == oldPoint then
+                            Nothing
+                        else
+                            newPointOrId
 
 
 setHabitatName :
@@ -278,7 +346,7 @@ setHabitatName updateName model =
                         newFixed =
                             Mountain (Just { hab | name = updateName hab.name })
                     in
-                    { tile | fixed = newFixed }
+                        { tile | fixed = newFixed }
 
                 _ ->
                     tile
@@ -286,15 +354,15 @@ setHabitatName updateName model =
         oldGame =
             model.game
     in
-    case Model.focusPoint model of
-        Just point ->
-            { model
-                | game =
-                    { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
-            }
+        case Model.focusPoint model of
+            Just point ->
+                { model
+                    | game =
+                        { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
+                }
 
-        _ ->
-            model
+            _ ->
+                model
 
 
 stopBuilding : Model -> Model
