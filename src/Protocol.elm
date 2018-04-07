@@ -1,4 +1,9 @@
-module Protocol exposing (Message(..), decodeMessage)
+module Protocol exposing
+    ( NetworkMessage
+    , Message(..)
+    , decodeNetworkMessage
+    , encodeNetworkMessage
+    )
 
 {-| Types and serialization functions used in the client-server protocol.
 -}
@@ -15,12 +20,11 @@ import Json.Decode as Decode exposing (Decoder)
 --------------------------------------------------------------------------------
 -- Message types
 
+type alias NetworkMessage = { topic : String, payload : Message }
+
 
 type Message
     = JoinMessage
-        { name : String
-        , room : String
-        }
     | StartGameMessage
         { seed : Int
         }
@@ -34,34 +38,38 @@ type Message
 -- Message decoders
 
 
+decodeNetworkMessage : Decoder NetworkMessage
+decodeNetworkMessage =
+    Decode.map2
+        (\topic payload ->
+            { topic = topic
+            , payload = payload
+            }
+        )
+        (Decode.field "topic" Decode.string)
+        (Decode.field "payload" decodeMessage)
+
+
 decodeMessage : Decoder Message
 decodeMessage =
     let
         decode : String -> Decoder Message
-        decode kind =
-            case kind of
+        decode type_ =
+            case type_ of
                 "join" ->
-                    Decode.field "payload" decodeJoinMessage
+                    Decode.succeed JoinMessage
 
                 "start-game" ->
-                    Decode.field "payload" decodeStartGameMessage
+                    Decode.field "value" decodeStartGameMessage
 
                 "turn" ->
-                    Decode.field "payload" decodeTurnMessage
+                    Decode.field "value" decodeTurnMessage
 
                 _ ->
-                    Decode.fail ("Unknown message type: " ++ kind)
+                    Decode.fail ("Unknown message type: " ++ type_)
     in
-    Decode.field "kind" Decode.string
+    Decode.field "type" Decode.string
         |> Decode.andThen decode
-
-
-decodeJoinMessage : Decoder Message
-decodeJoinMessage =
-    Decode.map2
-        (\name room -> JoinMessage { name = name, room = room })
-        (Decode.field "name" Decode.string)
-        (Decode.field "room" Decode.string)
 
 
 decodeStartGameMessage : Decoder Message
@@ -195,3 +203,7 @@ decodePairWith f dx dy =
 
 --------------------------------------------------------------------------------
 -- Message encoders
+
+
+encodeNetworkMessage : NetworkMessage -> String
+encodeNetworkMessage = Debug.crash "not implemented"
