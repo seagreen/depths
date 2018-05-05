@@ -109,10 +109,10 @@ decodeTurnMessage =
 
 decodeBuildable : Decoder Buildable
 decodeBuildable =
-    Decode.string
+    Decode.field "type" Decode.string
         |> Decode.andThen
-            (\kind ->
-                case kind of
+            (\type_ ->
+                case type_ of
                     "building" ->
                         Decode.field "payload" decodeBuilding
                             |> Decode.map BuildBuilding
@@ -122,7 +122,7 @@ decodeBuildable =
                             |> Decode.map BuildSubmarine
 
                     _ ->
-                        Decode.fail ("Unknown buildable: " ++ kind)
+                        Decode.fail ("Unknown buildable: " ++ type_)
             )
 
 
@@ -130,65 +130,22 @@ decodeBuilding : Decoder Building
 decodeBuilding =
     Decode.string
         |> Decode.andThen
-            (\building ->
-                case building of
-                    "PrefabHabitat" ->
-                        Decode.succeed PrefabHabitat
-
-                    "Dormitory" ->
-                        Decode.succeed Dormitory
-
-                    "ShippingDock" ->
-                        Decode.succeed ShippingDock
-
-                    "Factory" ->
-                        Decode.succeed Factory
-
-                    "Armory" ->
-                        Decode.succeed Armory
-
-                    "SubmarinePen" ->
-                        Decode.succeed SubmarinePen
-
-                    "WarningBouys" ->
-                        Decode.succeed WarningBouys
-
-                    "SonarArray" ->
-                        Decode.succeed SonarArray
-
-                    "TorpedoTube" ->
-                        Decode.succeed TorpedoTube
-
-                    "Residences" ->
-                        Decode.succeed Residences
-
-                    "Datacenter" ->
-                        Decode.succeed Datacenter
-
-                    "Supercomputer" ->
-                        Decode.succeed Supercomputer
-
-                    _ ->
-                        Decode.fail ("Unknown building: " ++ building)
+            (\buildingStr ->
+                case Game.Building.fromString buildingStr of
+                    Just building -> Decode.succeed building
+                    Nothing ->
+                        Decode.fail ("Unknown building: " ++ buildingStr)
             )
 
 decodeSubmarine : Decoder Submarine
 decodeSubmarine =
     Decode.string
         |> Decode.andThen
-            (\sub ->
-                case sub of
-                    "ColonySubmarine" ->
-                        Decode.succeed ColonySubmarine
-
-                    "RemotelyOperatedVehicle" ->
-                        Decode.succeed RemotelyOperatedVehicle
-
-                    "AttackSubmarine" ->
-                        Decode.succeed AttackSubmarine
-
-                    _ ->
-                        Decode.fail ("Unknown submarine: " ++ sub)
+            (\submarineStr ->
+                case Game.Unit.fromString submarineStr of
+                    Just sub -> Decode.succeed sub
+                    Nothing ->
+                        Decode.fail ("Unknown submarine: " ++ submarineStr)
             )
 
 --------------------------------------------------------------------------------
@@ -297,9 +254,42 @@ encodeBuildOrders =
 
 
 encodeBuildable : Buildable -> Value
-encodeBuildable = Debug.crash "bar"
+encodeBuildable buildable =
+    let encode : String -> Value -> Value
+        encode type_ payload =
+            Encode.object
+                [ ("type", Encode.string type_)
+                , ("payload", payload)
+                ]
+
+        encodeBuilding : Building -> Value
+        encodeBuilding =
+            Encode.string << toString
+
+        encodeSubmarine : Submarine -> Value
+        encodeSubmarine =
+            Encode.string << toString
+
+    in
+    case buildable of
+        BuildBuilding building ->
+            encode "building" (encodeBuilding building)
+        BuildSubmarine sub ->
+            encode "submarine" (encodeSubmarine sub)
 
 
 encodePoint : Point -> Value
 encodePoint =
     encodePair Encode.int Encode.int
+
+
+--------------------------------------------------------------------------------
+-- Sum types without arguments
+
+
+buildingToString : Building -> String
+buildingToString =
+    toString
+
+
+
