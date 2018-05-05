@@ -4,6 +4,7 @@ import Html
 import Keyboard
 import Model
 import Protocol
+import Task
 import Update
 import View
 import WebSocket
@@ -17,12 +18,19 @@ enter =
 main : Program Never Model.Model Model.Msg
 main =
     Html.program
-        { init = ( Model.init, Model.newRandomSeed )
+        { init = ( Model.init, initCommands )
         , update = Update.update
         , view = View.view
         , subscriptions = subscriptions
         }
 
+
+initCommands : Cmd Model.Msg
+initCommands =
+    Cmd.batch
+        [ Model.newRandomSeed
+        , Task.perform identity (Task.succeed Model.Connect)
+        ]
 
 subscriptions : Model.Model -> Sub Model.Msg
 subscriptions model =

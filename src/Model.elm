@@ -82,7 +82,7 @@ type alias Model =
 init : Model
 init =
     { game = Game.State.init
-    , gameType = NotPlayingYet { server = "", room = "" }
+    , gameType = NotPlayingYet { server = "127.0.0.1:8000", room = "hello" }
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
     , selection = Nothing

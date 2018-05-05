@@ -21,7 +21,9 @@ import Json.Encode as Encode
 --------------------------------------------------------------------------------
 -- Message types
 
-{- topic is an arbitrary String, eg a game room -}
+{- Non-depths specific type, just used to talk to the current server.
+
+topic is an arbitrary String, eg a game room -}
 type alias NetworkMessage = { topic : String, payload : Message }
 
 
