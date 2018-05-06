@@ -6,13 +6,11 @@ import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State exposing (Buildable(..), Game, Tile)
 import Game.Unit exposing (Player(..))
 import HexGrid exposing (Direction, HexGrid(..), Point)
-import Random
 import Util
 
 
 type Msg
     = NoOp
-    | SetRandomSeed NewSeed
       -- When both players commands have been queued
     | EndRound
       -- When a point is click on the board.
@@ -47,17 +45,26 @@ type Msg
     -- Receive a message from the server
     | Recv String
 
+
 type GameType
+  -- Haven't selected game type yet
   = NotPlayingYet { server : String, room : String }
+  -- Two players sharing a browser
   | SharedComputer
-  | Online
-      { server : String
-      , room : String
-      , state : OnlineGameState
-      }
+  | Online OnlineGame
+
+
+type alias OnlineGame =
+    { server : String
+    , room : String
+    , state : OnlineGameState
+    }
+
 
 type OnlineGameState
-  = JustConnected
+  = WaitingForStart
+  | InGame
+
 
 type alias Model =
     { game : Game
@@ -72,23 +79,27 @@ type alias Model =
     -- Unfortunately since habitats are defined and stored in the Game part
     -- of the code they don't know about UI things like build orders.
     , buildOrders : Dict Point Buildable
+    , enemyCommands : Maybe Commands
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
     , gameLog : List Game.BattleReport
     , currentPlayer : Player
+    , startSeed : Int
     }
 
 
-init : Model
-init =
+init : Int -> Model
+init startSeed =
     { game = Game.State.init
-    , gameType = NotPlayingYet { server = "127.0.0.1:8000", room = "hello" }
+    , gameType = NotPlayingYet { server = "http://127.0.0.1:8000", room = "hello" }
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
+    , enemyCommands = Nothing
     , selection = Nothing
     , hoverPoint = Nothing
     , gameLog = []
     , currentPlayer = Player1
+    , startSeed = startSeed
     }
 
 
@@ -133,16 +144,3 @@ focus model =
                     (\tile -> ( point, tile ))
                     (Dict.get point dict)
             )
-
-
-type NewSeed
-    = NewSeed Int
-
-
-newRandomSeed : Cmd Msg
-newRandomSeed =
-    Random.generate
-        (SetRandomSeed << NewSeed)
-        -- Using 999999 instead of Random.maxInt here for more human-sized values
-        -- (to make them more readable in the debugger and that kind of thing).
-        (Random.int 0 999999)

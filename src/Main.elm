@@ -3,7 +3,6 @@ module Main exposing (..)
 import Html
 import Keyboard
 import Model
-import Protocol
 import Task
 import Update
 import View
@@ -15,10 +14,10 @@ enter =
     13
 
 
-main : Program Never Model.Model Model.Msg
+main : Program { seed : Int } Model.Model Model.Msg
 main =
-    Html.program
-        { init = ( Model.init, initCommands )
+    Html.programWithFlags
+        { init = \{seed} -> ( Model.init seed, initCommands )
         , update = Update.update
         , view = View.view
         , subscriptions = subscriptions
@@ -28,8 +27,8 @@ main =
 initCommands : Cmd Model.Msg
 initCommands =
     Cmd.batch
-        [ Model.newRandomSeed
-        , Task.perform identity (Task.succeed Model.Connect)
+        -- [ Model.newRandomSeed
+        [ Task.perform identity (Task.succeed Model.Connect)
         ]
 
 subscriptions : Model.Model -> Sub Model.Msg

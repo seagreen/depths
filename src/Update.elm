@@ -17,17 +17,19 @@ import Game.State as Game
         )
 import Game.Unit exposing (Player(..))
 import HexGrid exposing (HexGrid(..), Point)
+import Json.Decode as Decode
 import Model
     exposing
         ( GameType(..)
         , Model
         , Msg(..)
+        , OnlineGame
         , OnlineGameState(..)
         , Selection(..)
         )
+import Protocol exposing (Message(..), NetworkMessage)
 import Random
 import Util
-import WebSocket
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -36,17 +38,8 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        SetRandomSeed (Model.NewSeed new) ->
-            let
-                oldGame =
-                    model.game
-            in
-                ( { model | game = { oldGame | randomSeed = Random.initialSeed new } }
-                , Cmd.none
-                )
-
         EndRound ->
-            ( endRound model, Cmd.none )
+            ( endRoundOnlineGame model, Cmd.none )
 
         HoverPoint point ->
             ( { model | hoverPoint = Just point }
@@ -154,15 +147,22 @@ update msg model =
         Connect ->
             case model.gameType of
                 NotPlayingYet { server, room } ->
-                    ( { model
-                        | gameType =
+                    let networkMsg : NetworkMessage
+                        networkMsg =
+                            { topic = room
+                            , payload = Protocol.JoinMessage
+                            }
+
+                        online : GameType
+                        online =
                             Online
                                 { server = server
                                 , room = room
-                                , state = JustConnected
+                                , state = WaitingForStart
                                 }
-                      }
-                    , WebSocket.send server room
+                    in
+                    ( { model | gameType = online }
+                    , Protocol.send server networkMsg
                     )
 
                 SharedComputer ->
@@ -171,12 +171,57 @@ update msg model =
                 Online _ ->
                     Debug.crash "Connect / model.gameType == Online"
 
-        Recv message ->
-            ( Debug.log message model, Cmd.none )
+        Recv messageStr ->
+            case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
+                Err err -> Debug.crash ("Recv decoding failed: " ++ err)
+                Ok message ->
+                    messageRecieved model message.payload
 
 
-endRound : Model -> Model
-endRound model =
+messageRecieved : Model -> Protocol.Message -> (Model, Cmd Msg)
+messageRecieved model message =
+    case model.gameType of
+        NotPlayingYet _ ->
+            Debug.crash "Recv when game state is NotPlayingYet"
+        SharedComputer ->
+            Debug.crash "Recv when game state is SharedComputer"
+        Online online ->
+            let newGameModel : Model
+                newGameModel =
+                    { model | gameType = Online { online | state = InGame } }
+            in
+            case (online.state, message) of
+                (WaitingForStart, JoinMessage) ->
+                    let startMsg : Protocol.NetworkMessage
+                        startMsg =
+                            { topic = online.room
+                            , payload = StartGameMessage { seed = model.startSeed }
+                            }
+                    in
+                        ( newGameModel
+                        , Protocol.send online.server startMsg
+                        )
+                (WaitingForStart, StartGameMessage {seed}) ->
+                    let game = newGameModel.game
+                    in
+                    ( { newGameModel | game = { game | randomSeed = Random.initialSeed seed } }
+                    , Cmd.none
+                    )
+                (InGame, TurnMessage {commands}) ->
+                    ( opponentEndsRoundOnlineGame model commands
+                    , Cmd.none
+                    )
+                (_, _) ->
+                    Debug.crash <| "Unexpected online/message combination "
+                        ++ toString online
+                        ++ " / "
+                        ++ toString message
+
+
+{-| When a user clicks the end turn button.
+-}
+endRoundSharedComputer : Model -> Model
+endRoundSharedComputer model =
     case model.currentPlayer of
         Player1 ->
             { model | currentPlayer = Player2, selection = Nothing }
@@ -201,6 +246,52 @@ endRound model =
                     , gameLog = reports ++ model.gameLog
                     , currentPlayer = Player1
                 }
+
+
+{-| When the user clicks the end turn button.
+-}
+endRoundOnlineGame : Model -> Model
+endRoundOnlineGame model =
+    case model.enemyCommands of
+        Nothing -> { model | currentPlayer = Player2 }
+        Just enemyCommands -> resolveOnlineGameTurn model enemyCommands
+
+
+opponentEndsRoundOnlineGame : Model -> Commands -> Model
+opponentEndsRoundOnlineGame model enemyCommands =
+    case model.currentPlayer of
+        Player1 -> { model | enemyCommands = Just enemyCommands }
+        Player2 -> resolveOnlineGameTurn model enemyCommands
+
+
+resolveOnlineGameTurn : Model -> Commands -> Model
+resolveOnlineGameTurn model enemyCommands =
+    let
+        mergedMoves =
+            Dict.union immediateMoves enemyCommands.moves
+
+        mergedBuildOrders =
+            Dict.union model.buildOrders enemyCommands.buildOrders
+
+        ( immediateMoves, laterMoves ) =
+            splitPlannedMoves model.plannedMoves
+
+        ( reports, newGameState ) =
+            Game.resolveTurn
+                { moves = mergedMoves
+                , buildOrders = mergedBuildOrders
+                }
+                model.game
+    in
+        { model
+            | game = newGameState
+            , plannedMoves = removeOrphanMoves newGameState laterMoves
+            , buildOrders = Dict.empty
+            , enemyCommands = Nothing
+            , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
+            , gameLog = reports ++ model.gameLog
+            , currentPlayer = Player1
+        }
 
 
 {-| Remove plans to move units that are no longer on the board.

@@ -1,6 +1,7 @@
 module Protocol exposing
     ( NetworkMessage
     , Message(..)
+    , send
     , decodeNetworkMessage
     , encodeNetworkMessage
     )
@@ -16,6 +17,7 @@ import Game.Unit exposing (Submarine(..))
 import HexGrid exposing (Point)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
+import WebSocket
 
 
 --------------------------------------------------------------------------------
@@ -36,6 +38,10 @@ type Message
         { commands : Commands
         }
 
+
+send : String -> NetworkMessage -> Cmd msg
+send server msg =
+    WebSocket.send server (encodeNetworkMessage msg)
 
 
 --------------------------------------------------------------------------------

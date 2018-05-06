@@ -594,13 +594,13 @@ view model =
               ]
 
         SharedComputer ->
-            Svg.svg [] [ viewGame model ]
+            Html.div [] [ viewGame model ]
 
         Online _ ->
-            Svg.svg [] [ viewGame model ]
+            Html.div [] [ viewGame model ]
 
 
-viewGame : Model -> Svg Msg
+viewGame : Model -> Html Msg
 viewGame model =
     let
         (HexGrid _ dict) =
@@ -683,7 +683,9 @@ viewGame model =
                     [ class "col-lg-7" ]
                     [ Html.div
                         [ class "text-center" ]
-                        [ viewBoard model
+                        [ Svg.svg
+                              []
+                              [viewBoard model]
                         , endTurnButton model
                         ]
                     ]
