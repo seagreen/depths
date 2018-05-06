@@ -147,7 +147,8 @@ update msg model =
         Connect ->
             case model.gameType of
                 NotPlayingYet { server, room } ->
-                    let networkMsg : NetworkMessage
+                    let
+                        networkMsg : NetworkMessage
                         networkMsg =
                             { topic = room
                             , payload = Protocol.JoinMessage
@@ -173,53 +174,69 @@ update msg model =
 
         Recv messageStr ->
             case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
-                Err err -> Debug.crash ("Recv decoding failed: " ++ err)
+                Err err ->
+                    Debug.crash ("Recv decoding failed: " ++ err)
+
                 Ok message ->
                     messageRecieved model message.payload
 
 
-messageRecieved : Model -> Protocol.Message -> (Model, Cmd Msg)
+messageRecieved : Model -> Protocol.Message -> ( Model, Cmd Msg )
 messageRecieved model message =
     case model.gameType of
         NotPlayingYet _ ->
             Debug.crash "Recv when game state is NotPlayingYet"
+
         SharedComputer ->
             Debug.crash "Recv when game state is SharedComputer"
+
         Online online ->
-            let newGameModel : Int -> Model
+            let
+                newGameModel : Int -> Model
                 newGameModel seed =
-                    let game = model.game
+                    let
+                        game =
+                            model.game
                     in
-                    { model | gameType = Online { online | state = InGame }
-                            , game = { game | randomSeed = Random.initialSeed seed }
+                    { model
+                        | gameType = Online { online | state = InGame }
+                        , game = { game | randomSeed = Random.initialSeed seed }
                     }
             in
-            case (online.state, message) of
-                (WaitingForStart, JoinMessage) ->
-                    let startMsg : Protocol.NetworkMessage
+            case ( online.state, message ) of
+                ( WaitingForStart, JoinMessage ) ->
+                    let
+                        startMsg : Protocol.NetworkMessage
                         startMsg =
                             { topic = online.room
                             , payload = StartGameMessage { seed = model.startSeed }
                             }
                     in
-                        ( newGameModel model.startSeed
-                        , Protocol.send online.server startMsg
-                        )
-                (WaitingForStart, StartGameMessage {seed}) ->
-                    let newModel = newGameModel seed
+                    ( newGameModel model.startSeed
+                    , Protocol.send online.server startMsg
+                    )
+
+                ( WaitingForStart, StartGameMessage { seed } ) ->
+                    let
+                        newModel =
+                            newGameModel seed
                     in
-                        ( { newModel | currentPlayer = Player2 }
-                        , Cmd.none
-                        )
-                (InGame, TurnMessage {commands}) ->
+                    ( { newModel | currentPlayer = Player2 }
+                    , Cmd.none
+                    )
+
+                ( InGame, TurnMessage { commands } ) ->
                     ( opponentEndsRoundOnlineGame model commands
                     , Cmd.none
                     )
-                (_, _) ->
-                    Debug.crash <| "Unexpected online/message combination "
-                        ++ toString online
-                        ++ " / "
-                        ++ toString message
+
+                ( _, _ ) ->
+                    Debug.crash <|
+                        "Unexpected online/message combination "
+                            ++ toString online
+                            ++ " / "
+                            ++ toString message
+
 
 
 -- {-| When a user clicks the end turn button. |-}
@@ -250,18 +267,22 @@ messageRecieved model message =
 --                    , currentPlayer = Player1
 --                }
 
+
 {-| When the user clicks the end turn button.
 -}
-endRoundOnlineGame : Model -> (Model, Cmd Msg)
+endRoundOnlineGame : Model -> ( Model, Cmd Msg )
 endRoundOnlineGame model =
     let
         ( immediateMoves, _ ) =
             splitPlannedMoves model.plannedMoves
 
-        gameType = case model.gameType of
-                       Online onlineGame -> onlineGame
-                       _ -> Debug.crash "not online"
+        gameType =
+            case model.gameType of
+                Online onlineGame ->
+                    onlineGame
 
+                _ ->
+                    Debug.crash "not online"
     in
     case model.enemyCommands of
         Nothing ->
@@ -278,6 +299,7 @@ endRoundOnlineGame model =
                         }
                 }
             )
+
         Just enemyCommands ->
             ( resolveOnlineGameTurn model enemyCommands
             , Cmd.none
@@ -311,15 +333,18 @@ resolveOnlineGameTurn model enemyCommands =
                 }
                 model.game
     in
-        { model
-            | game = newGameState
-            , plannedMoves = removeOrphanMoves newGameState laterMoves
-            , buildOrders = Dict.empty
-            , turnComplete = False
-            , enemyCommands = Nothing
-            , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
-            , gameLog = reports ++ model.gameLog
-        }
+    { model
+        | game = newGameState
+        , plannedMoves = removeOrphanMoves newGameState laterMoves
+        , buildOrders = Dict.empty
+        , turnComplete = False
+        , enemyCommands = Nothing
+        , selection =
+            Nothing
+
+        -- TODO: Need two selections in the future updateSelection newGameState model.selection
+        , gameLog = reports ++ model.gameLog
+    }
 
 
 {-| Remove plans to move units that are no longer on the board.
@@ -338,7 +363,7 @@ removeOrphanMoves game moveDict =
             else
                 acc
     in
-        Dict.foldr go Dict.empty moveDict
+    Dict.foldr go Dict.empty moveDict
 
 
 {-| Split planned moves into those to be executed this turn and those for later.
@@ -366,7 +391,7 @@ splitPlannedMoves allMoves =
                             Dict.insert unitId xs futureMoves
                     )
     in
-        Dict.foldr go ( Dict.empty, Dict.empty ) allMoves
+    Dict.foldr go ( Dict.empty, Dict.empty ) allMoves
 
 
 {-| Update the selection after the end of a turn.
@@ -389,21 +414,21 @@ updateSelection game oldSelection =
                                 Nothing
                    )
     in
-        oldSelection
-            |> Maybe.andThen
-                (\selection ->
-                    case selection of
-                        SelectedPoint _ ->
-                            oldSelection
+    oldSelection
+        |> Maybe.andThen
+            (\selection ->
+                case selection of
+                    SelectedPoint _ ->
+                        oldSelection
 
-                        SelectedId id ->
-                            case stillActive id of
-                                Nothing ->
-                                    maybeBecameHabitat id
+                    SelectedId id ->
+                        case stillActive id of
+                            Nothing ->
+                                maybeBecameHabitat id
 
-                                Just _ ->
-                                    oldSelection
-                )
+                            Just _ ->
+                                oldSelection
+            )
 
 
 {-| Update the selection after a user clicks on the grid.
@@ -434,22 +459,22 @@ newSelection model newPoint =
                                         Just (SelectedId sub.id)
                     )
     in
-        case model.selection of
-            Nothing ->
-                newPointOrId
+    case model.selection of
+        Nothing ->
+            newPointOrId
 
-            Just selection ->
-                case selection of
-                    SelectedId _ ->
+        Just selection ->
+            case selection of
+                SelectedId _ ->
+                    newPointOrId
+
+                SelectedPoint oldPoint ->
+                    -- If the user clicked on a tile that's currently selected,
+                    -- unselect it.
+                    if newPoint == oldPoint then
+                        Nothing
+                    else
                         newPointOrId
-
-                    SelectedPoint oldPoint ->
-                        -- If the user clicked on a tile that's currently selected,
-                        -- unselect it.
-                        if newPoint == oldPoint then
-                            Nothing
-                        else
-                            newPointOrId
 
 
 setHabitatName :
@@ -465,7 +490,7 @@ setHabitatName updateName model =
                         newFixed =
                             Mountain (Just { hab | name = updateName hab.name })
                     in
-                        { tile | fixed = newFixed }
+                    { tile | fixed = newFixed }
 
                 _ ->
                     tile
@@ -473,15 +498,15 @@ setHabitatName updateName model =
         oldGame =
             model.game
     in
-        case Model.focusPoint model of
-            Just point ->
-                { model
-                    | game =
-                        { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
-                }
+    case Model.focusPoint model of
+        Just point ->
+            { model
+                | game =
+                    { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
+            }
 
-            _ ->
-                model
+        _ ->
+            model
 
 
 stopBuilding : Model -> Model

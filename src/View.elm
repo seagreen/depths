@@ -56,10 +56,10 @@ viewBoard model =
                     Game.friendlyUnitDict model.currentPlayer (Util.unHexGrid model.game.grid)
                         |> Dict.map (\_ _ -> [])
             in
-                Dict.intersect model.plannedMoves friendlyUnits
-                    |> Dict.values
-                    |> List.concat
-                    |> Set.fromList
+            Dict.intersect model.plannedMoves friendlyUnits
+                |> Dict.values
+                |> List.concat
+                |> Set.fromList
 
         selectedUnit : Maybe ( Point, Unit )
         selectedUnit =
@@ -82,9 +82,9 @@ viewBoard model =
             , selectedUnit = selectedUnit
             }
     in
-        Svg.svg
-            []
-            (List.map (renderPoint model.currentPlayer boardInfo) (Dict.toList dict))
+    Svg.svg
+        []
+        (List.map (renderPoint model.currentPlayer boardInfo) (Dict.toList dict))
 
 
 getAbbreviation : Player -> Tile -> String
@@ -121,9 +121,9 @@ movesToPoint start end speed =
             else
                 Nothing
     in
-        HexGrid.line start end
-            |> List.indexedMap maybeStopHere
-            |> List.filterMap identity
+    HexGrid.line start end
+        |> List.indexedMap maybeStopHere
+        |> List.filterMap identity
 
 
 renderPoint : Player -> BoardInfo -> ( Point, Tile ) -> Html Msg
@@ -153,38 +153,38 @@ renderPoint player bi ( point, tile ) =
                 _ ->
                     ""
     in
-        Svg.g
-            [ onClick <| SelectPoint point
-            , onRightClick <|
-                case bi.selectedUnit of
-                    Nothing ->
-                        NoOp
+    Svg.g
+        [ onClick <| SelectPoint point
+        , onRightClick <|
+            case bi.selectedUnit of
+                Nothing ->
+                    NoOp
 
-                    Just ( oldPoint, unit ) ->
-                        if point == oldPoint then
-                            CancelMove unit.id
-                        else
-                            case movesToPoint oldPoint point (Unit.stats unit.class).speed of
-                                [] ->
-                                    NoOp
+                Just ( oldPoint, unit ) ->
+                    if point == oldPoint then
+                        CancelMove unit.id
+                    else
+                        case movesToPoint oldPoint point (Unit.stats unit.class).speed of
+                            [] ->
+                                NoOp
 
-                                moves ->
-                                    PlanMoves unit.id moves
-            , onMouseOut EndHover
-            , onMouseOver (HoverPoint point)
-            ]
-            (viewPolygon
-                bi.model
-                tile
-                bi.friendlyPlannedMoves
-                corners
-                point
-                :: tileText
-                    centerX
-                    centerY
-                    topText
-                    bottomText
-            )
+                            moves ->
+                                PlanMoves unit.id moves
+        , onMouseOut EndHover
+        , onMouseOver (HoverPoint point)
+        ]
+        (viewPolygon
+            bi.model
+            tile
+            bi.friendlyPlannedMoves
+            corners
+            point
+            :: tileText
+                centerX
+                centerY
+                topText
+                bottomText
+        )
 
 
 viewRemainingProduction : Model -> Point -> Habitat -> Maybe Int
@@ -292,17 +292,17 @@ tileText centerX centerY upperText lowerText =
                         15
                   )
     in
-        [ Svg.text_
-            [ Sattr.x <| toString (centerHorizontally upperText)
-            , Sattr.y <| toString (centerY - 5)
-            ]
-            [ Svg.text upperText ]
-        , Svg.text_
-            [ Sattr.x <| toString (centerHorizontally lowerText)
-            , Sattr.y <| toString (centerY + 10)
-            ]
-            [ Svg.text lowerText ]
+    [ Svg.text_
+        [ Sattr.x <| toString (centerHorizontally upperText)
+        , Sattr.y <| toString (centerY - 5)
         ]
+        [ Svg.text upperText ]
+    , Svg.text_
+        [ Sattr.x <| toString (centerHorizontally lowerText)
+        , Sattr.y <| toString (centerY + 10)
+        ]
+        [ Svg.text lowerText ]
+    ]
 
 
 {-| Does the current player have a ship at the given point?
@@ -397,20 +397,20 @@ productionForm model point hab =
                         buildable
                         |> Maybe.withDefault "<None>"
             in
-                Html.option
-                    (if buildable == hab.producing then
-                        [ Hattr.selected True, Hattr.value buildableStr ]
-                     else
-                        [ Hattr.value buildableStr ]
-                    )
-                    [ Html.text <|
-                        case buildable of
-                            Nothing ->
-                                buildableStr
+            Html.option
+                (if buildable == hab.producing then
+                    [ Hattr.selected True, Hattr.value buildableStr ]
+                 else
+                    [ Hattr.value buildableStr ]
+                )
+                [ Html.text <|
+                    case buildable of
+                        Nothing ->
+                            buildableStr
 
-                            Just buildable ->
-                                buildableStr ++ " (" ++ toString (costFromBuildable buildable) ++ ")"
-                    ]
+                        Just buildable ->
+                            buildableStr ++ " (" ++ toString (costFromBuildable buildable) ++ ")"
+                ]
 
         msgFromString : String -> Msg
         msgFromString s =
@@ -429,55 +429,55 @@ productionForm model point hab =
                             Just sub ->
                                 BuildOrder (BuildSubmarine sub)
     in
-        Html.form
-            [ class "form-inline"
-            , Hattr.name "foo"
-            ]
-            [ Html.div
-                [ class "form-group" ]
-                [ Html.label
-                    [ Hattr.for "constructing" ]
-                    [ Svg.text <|
-                        "Constructing"
-                            ++ (case viewRemainingProduction model point hab of
-                                    Nothing ->
-                                        ""
+    Html.form
+        [ class "form-inline"
+        , Hattr.name "foo"
+        ]
+        [ Html.div
+            [ class "form-group" ]
+            [ Html.label
+                [ Hattr.for "constructing" ]
+                [ Svg.text <|
+                    "Constructing"
+                        ++ (case viewRemainingProduction model point hab of
+                                Nothing ->
+                                    ""
 
-                                    Just toGo ->
-                                        " (" ++ toString toGo ++ " production to go" ++ ")"
-                               )
-                            -- Non-breaking space to separate the label from the box.
-                            -- The Bootstrap examples have this separation
-                            -- automatically, not sure what I'm doing wrong.
-                            ++ ": "
-                    ]
+                                Just toGo ->
+                                    " (" ++ toString toGo ++ " production to go" ++ ")"
+                           )
+                        -- Non-breaking space to separate the label from the box.
+                        -- The Bootstrap examples have this separation
+                        -- automatically, not sure what I'm doing wrong.
+                        ++ ": "
+                ]
 
-                -- TODO: This should be using Html.on "change" instead of using strings
-                , Html.select
-                    [ class "form-control"
-                    , Hattr.id "constructing"
-                    , onChange msgFromString
-                    ]
-                    [ option Nothing
-                    , case Unit.buildable hab.buildings of
-                        [] ->
-                            Html.text ""
+            -- TODO: This should be using Html.on "change" instead of using strings
+            , Html.select
+                [ class "form-control"
+                , Hattr.id "constructing"
+                , onChange msgFromString
+                ]
+                [ option Nothing
+                , case Unit.buildable hab.buildings of
+                    [] ->
+                        Html.text ""
 
-                        unitChoices ->
-                            Html.optgroup
-                                [ label_ "Units" ]
-                                (List.map (option << Just << BuildSubmarine) unitChoices)
-                    , case Building.buildable hab.buildings of
-                        [] ->
-                            Html.text ""
+                    unitChoices ->
+                        Html.optgroup
+                            [ label_ "Units" ]
+                            (List.map (option << Just << BuildSubmarine) unitChoices)
+                , case Building.buildable hab.buildings of
+                    [] ->
+                        Html.text ""
 
-                        buildingChoices ->
-                            Html.optgroup
-                                [ label_ "Buildings" ]
-                                (List.map (option << Just << BuildBuilding) buildingChoices)
-                    ]
+                    buildingChoices ->
+                        Html.optgroup
+                            [ label_ "Buildings" ]
+                            (List.map (option << Just << BuildBuilding) buildingChoices)
                 ]
             ]
+        ]
 
 
 viewHabitatNameForm : HabitatEditor -> Svg Msg
@@ -534,42 +534,42 @@ viewUnit selection unit =
         stats =
             Unit.stats unit.class
     in
-        Html.div
-            [ onClick (SelectUnit unit.id)
-            , class <|
-                "alert alert-success"
-                    ++ (if Just (SelectedId unit.id) == selection then
-                            " focused"
-                        else
-                            ""
-                       )
+    Html.div
+        [ onClick (SelectUnit unit.id)
+        , class <|
+            "alert alert-success"
+                ++ (if Just (SelectedId unit.id) == selection then
+                        " focused"
+                    else
+                        ""
+                   )
+        ]
+        [ Html.h4
+            []
+            [ Html.b
+                []
+                [ Html.text stats.name ]
             ]
-            [ Html.h4
-                []
-                [ Html.b
-                    []
-                    [ Html.text stats.name ]
-                ]
-            , Maybe.withDefault (Html.text "") (Unit.helpText unit.class)
-            , Html.p
-                []
-                [ Html.text "Sensors: "
-                , badge
-                    [ Html.text <| toString stats.sensors ]
-                ]
-            , Html.p
-                []
-                [ Html.text "Stealth: "
-                , badge
-                    [ Html.text <| toString stats.stealth ]
-                ]
-            , Html.p
-                []
-                [ Html.text "Firepower: "
-                , badge
-                    [ Html.text <| toString stats.firepower ]
-                ]
+        , Maybe.withDefault (Html.text "") (Unit.helpText unit.class)
+        , Html.p
+            []
+            [ Html.text "Sensors: "
+            , badge
+                [ Html.text <| toString stats.sensors ]
             ]
+        , Html.p
+            []
+            [ Html.text "Stealth: "
+            , badge
+                [ Html.text <| toString stats.stealth ]
+            ]
+        , Html.p
+            []
+            [ Html.text "Firepower: "
+            , badge
+                [ Html.text <| toString stats.firepower ]
+            ]
+        ]
 
 
 view : Model -> Html Msg
@@ -577,21 +577,21 @@ view model =
     case model.gameType of
         NotPlayingYet { server, room } ->
             Html.div
-              []
-              [ Html.input
-                  [ Hattr.placeholder "Server"
-                  , Hattr.value server
-                  , Hevent.onInput SetServer
-                  ]
-                  [ ]
-              , Html.input
-                  [ Hattr.placeholder "Room"
-                  , Hattr.value room
-                  , Hevent.onInput SetRoom
-                  ]
-                  [ ]
-              , Html.button [ Hevent.onClick Connect ] [ Html.text "CONNECT!!" ]
-              ]
+                []
+                [ Html.input
+                    [ Hattr.placeholder "Server"
+                    , Hattr.value server
+                    , Hevent.onInput SetServer
+                    ]
+                    []
+                , Html.input
+                    [ Hattr.placeholder "Room"
+                    , Hattr.value room
+                    , Hevent.onInput SetRoom
+                    ]
+                    []
+                , Html.button [ Hevent.onClick Connect ] [ Html.text "CONNECT!!" ]
+                ]
 
         SharedComputer ->
             Html.div [] [ viewGame model ]
@@ -606,91 +606,91 @@ viewGame model =
         (HexGrid _ dict) =
             model.game.grid
     in
-        Html.div
-            []
-            [ Html.h1 [] [ Html.text "FPG: The Depths" ]
-            , Html.div []
-                [ Html.text <|
-                    "Player "
-                        ++ (if model.currentPlayer == Player1 then
-                                "1"
-                            else
-                                "2"
-                           )
-                        ++ "'s turn"
+    Html.div
+        []
+        [ Html.h1 [] [ Html.text "FPG: The Depths" ]
+        , Html.div []
+            [ Html.text <|
+                "Player "
+                    ++ (if model.currentPlayer == Player1 then
+                            "1"
+                        else
+                            "2"
+                       )
+                    ++ "'s turn"
+            ]
+        , Html.div
+            [ class "row" ]
+            [ Html.div
+                [ class "col-lg-5" ]
+                [ Html.p
+                    []
+                    [ Html.a
+                        [ Hattr.href "https://github.com/seagreen/fpg-depths#user-guide" ]
+                        -- Use label instead of button to prevent button from staying focused after
+                        -- (a) right clicking it to open the link in a new window
+                        -- or (b) clicking it and then hitting the back button.
+                        --
+                        -- Idea from: https://stackoverflow.com/a/34051869
+                        [ Html.label
+                            [ class "btn btn-default"
+                            , Hattr.type_ "button"
+                            ]
+                            [ Html.text "User Guide (on GitHub)" ]
+                        ]
+                    ]
+                , Html.p
+                    []
+                    [ Html.text "Turn "
+                    , badge
+                        [ Html.text (toString (Game.unTurn model.game.turn)) ]
+                    ]
+                , displayOutcome model.game
+                , displayBattleReports model
+                , case Model.focus model of
+                    Nothing ->
+                        Html.text ""
+
+                    Just ( point, tile ) ->
+                        Html.div
+                            []
+                            [ case tile.fixed of
+                                Mountain (Just hab) ->
+                                    -- can only build on mountains
+                                    Html.div
+                                        []
+                                        [ viewHabitat model point hab
+                                        , case hab.name of
+                                            Right _ ->
+                                                Html.text ""
+
+                                            Left editor ->
+                                                if hab.player == model.currentPlayer then
+                                                    viewHabitatNameForm editor
+                                                else
+                                                    Html.text ""
+                                        ]
+
+                                _ ->
+                                    Html.text ""
+                            , Html.div
+                                []
+                                (List.map (viewUnit model.selection) <| Game.friendlyUnits model.currentPlayer tile)
+                            ]
+                , startingHelpMessage model
                 ]
             , Html.div
-                [ class "row" ]
+                [ class "col-lg-7" ]
                 [ Html.div
-                    [ class "col-lg-5" ]
-                    [ Html.p
+                    [ class "text-center" ]
+                    [ Svg.svg
                         []
-                        [ Html.a
-                            [ Hattr.href "https://github.com/seagreen/fpg-depths#user-guide" ]
-                            -- Use label instead of button to prevent button from staying focused after
-                            -- (a) right clicking it to open the link in a new window
-                            -- or (b) clicking it and then hitting the back button.
-                            --
-                            -- Idea from: https://stackoverflow.com/a/34051869
-                            [ Html.label
-                                [ class "btn btn-default"
-                                , Hattr.type_ "button"
-                                ]
-                                [ Html.text "User Guide (on GitHub)" ]
-                            ]
-                        ]
-                    , Html.p
-                        []
-                        [ Html.text "Turn "
-                        , badge
-                            [ Html.text (toString (Game.unTurn model.game.turn)) ]
-                        ]
-                    , displayOutcome model.game
-                    , displayBattleReports model
-                    , case Model.focus model of
-                        Nothing ->
-                            Html.text ""
-
-                        Just ( point, tile ) ->
-                            Html.div
-                                []
-                                [ case tile.fixed of
-                                    Mountain (Just hab) ->
-                                        -- can only build on mountains
-                                        Html.div
-                                            []
-                                            [ viewHabitat model point hab
-                                            , case hab.name of
-                                                Right _ ->
-                                                    Html.text ""
-
-                                                Left editor ->
-                                                    if hab.player == model.currentPlayer then
-                                                        viewHabitatNameForm editor
-                                                    else
-                                                        Html.text ""
-                                            ]
-
-                                    _ ->
-                                        Html.text ""
-                                , Html.div
-                                    []
-                                    (List.map (viewUnit model.selection) <| Game.friendlyUnits model.currentPlayer tile)
-                                ]
-                    , startingHelpMessage model
-                    ]
-                , Html.div
-                    [ class "col-lg-7" ]
-                    [ Html.div
-                        [ class "text-center" ]
-                        [ Svg.svg
-                              []
-                              [viewBoard model]
-                        , endTurnButton model
-                        ]
+                        [ viewBoard model ]
+                    , endTurnButton model
                     ]
                 ]
             ]
+        ]
 
 
 displayOutcome : Game -> Html Msg
@@ -785,14 +785,14 @@ displayBattleReports model =
                     (List.reverse (List.map displayEvent report.events))
                 ]
     in
-        Html.div
-            []
-            (List.map displayReport
-                (List.filter
-                    (\entry -> Game.unTurn entry.turn == Game.unTurn model.game.turn - 1)
-                    model.gameLog
-                )
+    Html.div
+        []
+        (List.map displayReport
+            (List.filter
+                (\entry -> Game.unTurn entry.turn == Game.unTurn model.game.turn - 1)
+                model.gameLog
             )
+        )
 
 
 endTurnButton : Model -> Html Msg

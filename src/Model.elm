@@ -32,26 +32,23 @@ type Msg
     | NameEditorFull String
     | NameEditorAbbreviation String
     | NameEditorSubmit
-
-    -- Handle changes to the "server" text box before starting a game
+      -- Handle changes to the "server" text box before starting a game
     | SetServer String
-
-    -- Handle changes to the "room" text box before starting a game
+      -- Handle changes to the "room" text box before starting a game
     | SetRoom String
-
-    -- Handle connecting to a server
+      -- Handle connecting to a server
     | Connect
-
-    -- Receive a message from the server
+      -- Receive a message from the server
     | Recv String
 
 
-type GameType
-  -- Haven't selected game type yet
-  = NotPlayingYet { server : String, room : String }
-  -- Two players sharing a browser
-  | SharedComputer
-  | Online OnlineGame
+type
+    GameType
+    -- Haven't selected game type yet
+    = NotPlayingYet { server : String, room : String }
+      -- Two players sharing a browser
+    | SharedComputer
+    | Online OnlineGame
 
 
 type alias OnlineGame =
@@ -62,8 +59,8 @@ type alias OnlineGame =
 
 
 type OnlineGameState
-  = WaitingForStart
-  | InGame
+    = WaitingForStart
+    | InGame
 
 
 type alias Model =
@@ -83,7 +80,9 @@ type alias Model =
     , enemyCommands : Maybe Commands
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
-    , gameLog : List Game.BattleReport
+    , gameLog :
+        List Game.BattleReport
+
     -- The player controlling the UI:
     , currentPlayer : Player
     , startSeed : Int

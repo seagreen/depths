@@ -139,6 +139,7 @@ habitatsForPlayer : Player -> Game -> List Habitat
 habitatsForPlayer player game =
     habitatDict game.grid |> Dict.values |> List.filter (\hab -> hab.player == player)
 
+
 habitatDict : HexGrid Tile -> Dict Point Habitat
 habitatDict (HexGrid _ grid) =
     Dict.foldr

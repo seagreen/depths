@@ -1,10 +1,11 @@
-module Protocol exposing
-    ( NetworkMessage
-    , Message(..)
-    , send
-    , decodeNetworkMessage
-    , encodeNetworkMessage
-    )
+module Protocol
+    exposing
+        ( Message(..)
+        , NetworkMessage
+        , decodeNetworkMessage
+        , encodeNetworkMessage
+        , send
+        )
 
 {-| Types and serialization functions used in the client-server protocol.
 -}
@@ -22,11 +23,14 @@ import WebSocket
 
 --------------------------------------------------------------------------------
 -- Message types
-
 {- Non-depths specific type, just used to talk to the current server.
 
-topic is an arbitrary String, eg a game room -}
-type alias NetworkMessage = { topic : String, payload : Message }
+   topic is an arbitrary String, eg a game room
+-}
+
+
+type alias NetworkMessage =
+    { topic : String, payload : Message }
 
 
 type Message
@@ -42,6 +46,7 @@ type Message
 send : String -> NetworkMessage -> Cmd msg
 send server msg =
     WebSocket.send server (encodeNetworkMessage msg)
+
 
 
 --------------------------------------------------------------------------------
@@ -87,7 +92,8 @@ decodeStartGameMessage =
 
 decodeTurnMessage : Decoder Message
 decodeTurnMessage =
-    let decodeCommands : Decoder Commands
+    let
+        decodeCommands : Decoder Commands
         decodeCommands =
             Decode.map2
                 Commands
@@ -140,10 +146,13 @@ decodeBuilding =
         |> Decode.andThen
             (\buildingStr ->
                 case Game.Building.fromString buildingStr of
-                    Just building -> Decode.succeed building
+                    Just building ->
+                        Decode.succeed building
+
                     Nothing ->
                         Decode.fail ("Unknown building: " ++ buildingStr)
             )
+
 
 decodeSubmarine : Decoder Submarine
 decodeSubmarine =
@@ -151,17 +160,21 @@ decodeSubmarine =
         |> Decode.andThen
             (\submarineStr ->
                 case Game.Unit.fromString submarineStr of
-                    Just sub -> Decode.succeed sub
+                    Just sub ->
+                        Decode.succeed sub
+
                     Nothing ->
                         Decode.fail ("Unknown submarine: " ++ submarineStr)
             )
+
+
 
 --------------------------------------------------------------------------------
 -- Decoding helpers
 
 
-decodeDictFromArray
-    : Decoder comparable
+decodeDictFromArray :
+    Decoder comparable
     -> Decoder v
     -> Decoder (Dict comparable v)
 decodeDictFromArray decodeA decodeB =
@@ -169,8 +182,8 @@ decodeDictFromArray decodeA decodeB =
         |> Decode.map Dict.fromList
 
 
-encodeDictAsArray
-    : (comparable -> Value)
+encodeDictAsArray :
+    (comparable -> Value)
     -> (v -> Value)
     -> Dict comparable v
     -> Value
@@ -193,9 +206,10 @@ decodePairWith f dx dy =
         (Decode.index 1 dy)
 
 
-encodePair : (a -> Value) -> (b -> Value) -> (a, b) -> Value
-encodePair f g (a, b) =
-    Encode.list [f a, g b]
+encodePair : (a -> Value) -> (b -> Value) -> ( a, b ) -> Value
+encodePair f g ( a, b ) =
+    Encode.list [ f a, g b ]
+
 
 
 --------------------------------------------------------------------------------
@@ -206,8 +220,8 @@ encodeNetworkMessage : NetworkMessage -> String
 encodeNetworkMessage nm =
     Encode.encode 2
         (Encode.object
-            [ ("topic", Encode.string nm.topic)
-            , ("payload", encodeMessage nm.payload)
+            [ ( "topic", Encode.string nm.topic )
+            , ( "payload", encodeMessage nm.payload )
             ]
         )
 
@@ -215,8 +229,8 @@ encodeNetworkMessage nm =
 encodeMessage : Message -> Value
 encodeMessage message =
     Encode.object
-        [ ("type", encodeType message)
-        , ("value", encodeValue message)
+        [ ( "type", encodeType message )
+        , ( "value", encodeValue message )
         ]
 
 
@@ -224,30 +238,40 @@ encodeType : Message -> Value
 encodeType message =
     Encode.string
         (case message of
-            JoinMessage -> "join"
-            StartGameMessage _ -> "start-game"
-            TurnMessage _ -> "turn"
+            JoinMessage ->
+                "join"
+
+            StartGameMessage _ ->
+                "start-game"
+
+            TurnMessage _ ->
+                "turn"
         )
 
 
 encodeValue : Message -> Value
 encodeValue message =
     case message of
-        JoinMessage -> Encode.object []
-        StartGameMessage { seed } -> encodeStartGameMessage seed
-        TurnMessage { commands } -> encodeTurnMessage commands
+        JoinMessage ->
+            Encode.object []
+
+        StartGameMessage { seed } ->
+            encodeStartGameMessage seed
+
+        TurnMessage { commands } ->
+            encodeTurnMessage commands
 
 
 encodeStartGameMessage : Int -> Value
 encodeStartGameMessage seed =
-    Encode.object [("seed", Encode.int seed)]
+    Encode.object [ ( "seed", Encode.int seed ) ]
 
 
 encodeTurnMessage : Commands -> Value
 encodeTurnMessage commands =
     Encode.object
-        [ ("moves", encodeMoves commands.moves)
-        , ("build_orders", encodeBuildOrders commands.buildOrders)
+        [ ( "moves", encodeMoves commands.moves )
+        , ( "build_orders", encodeBuildOrders commands.buildOrders )
         ]
 
 
@@ -263,11 +287,12 @@ encodeBuildOrders =
 
 encodeBuildable : Buildable -> Value
 encodeBuildable buildable =
-    let encode : String -> Value -> Value
+    let
+        encode : String -> Value -> Value
         encode type_ payload =
             Encode.object
-                [ ("type", Encode.string type_)
-                , ("payload", payload)
+                [ ( "type", Encode.string type_ )
+                , ( "payload", payload )
                 ]
 
         encodeBuilding : Building -> Value
@@ -277,11 +302,11 @@ encodeBuildable buildable =
         encodeSubmarine : Submarine -> Value
         encodeSubmarine =
             Encode.string << toString
-
     in
     case buildable of
         BuildBuilding building ->
             encode "building" (encodeBuilding building)
+
         BuildSubmarine sub ->
             encode "submarine" (encodeSubmarine sub)
 
@@ -291,6 +316,7 @@ encodePoint =
     encodePair Encode.int Encode.int
 
 
+
 --------------------------------------------------------------------------------
 -- Sum types without arguments
 
@@ -298,6 +324,3 @@ encodePoint =
 buildingToString : Building -> String
 buildingToString =
     toString
-
-
-

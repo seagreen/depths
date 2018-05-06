@@ -17,7 +17,7 @@ enter =
 main : Program { seed : Int } Model.Model Model.Msg
 main =
     Html.programWithFlags
-        { init = \{seed} -> ( Model.init seed, initCommands )
+        { init = \{ seed } -> ( Model.init seed, initCommands )
         , update = Update.update
         , view = View.view
         , subscriptions = subscriptions
@@ -31,6 +31,7 @@ initCommands =
         [ Task.perform identity (Task.succeed Model.Connect)
         ]
 
+
 subscriptions : Model.Model -> Sub Model.Msg
 subscriptions model =
     let
@@ -43,15 +44,15 @@ subscriptions model =
                         Model.NoOp
                 )
     in
-        case model.gameType of
-            Model.NotPlayingYet _ ->
-                Sub.none
+    case model.gameType of
+        Model.NotPlayingYet _ ->
+            Sub.none
 
-            Model.SharedComputer ->
-                keydown
+        Model.SharedComputer ->
+            keydown
 
-            Model.Online { server, room } ->
-                Sub.batch
-                    [ keydown
-                    , WebSocket.listen server Model.Recv
-                    ]
+        Model.Online { server, room } ->
+            Sub.batch
+                [ keydown
+                , WebSocket.listen server Model.Recv
+                ]
