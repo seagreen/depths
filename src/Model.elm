@@ -91,7 +91,7 @@ type alias Model =
 init : Int -> Model
 init startSeed =
     { game = Game.State.init
-    , gameType = NotPlayingYet { server = "http://127.0.0.1:8000", room = "hello" }
+    , gameType = NotPlayingYet { server = "ws://127.0.0.1:8000", room = "hello" }
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
     , enemyCommands = Nothing
