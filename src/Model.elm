@@ -79,10 +79,12 @@ type alias Model =
     -- Unfortunately since habitats are defined and stored in the Game part
     -- of the code they don't know about UI things like build orders.
     , buildOrders : Dict Point Buildable
+    , turnComplete : Bool
     , enemyCommands : Maybe Commands
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
     , gameLog : List Game.BattleReport
+    -- The player controlling the UI:
     , currentPlayer : Player
     , startSeed : Int
     }
@@ -94,6 +96,7 @@ init startSeed =
     , gameType = NotPlayingYet { server = "ws://127.0.0.1:8000", room = "hello" }
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
+    , turnComplete = False
     , enemyCommands = Nothing
     , selection = Nothing
     , hoverPoint = Nothing

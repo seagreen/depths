@@ -802,12 +802,19 @@ endTurnButton model =
             Html.text ""
 
         Nothing ->
-            Html.button
-                [ onClick EndRound
-                , Hattr.type_ "button"
-                , class "btn btn-primary btn-lg"
-                ]
-                [ Html.text "End turn" ]
+            if model.turnComplete then
+                Html.button
+                    [ Hattr.type_ "button"
+                    , class "btn btn-default btn-lg"
+                    ]
+                    [ Html.text "(Waiting)" ]
+            else
+                Html.button
+                    [ onClick EndRound
+                    , Hattr.type_ "button"
+                    , class "btn btn-primary btn-lg"
+                    ]
+                    [ Html.text "End turn" ]
 
 
 startingHelpMessage : Model -> Html Msg

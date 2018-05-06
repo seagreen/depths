@@ -39,7 +39,7 @@ update msg model =
             ( model, Cmd.none )
 
         EndRound ->
-            ( endRoundOnlineGame model, Cmd.none )
+            endRoundOnlineGame model
 
         HoverPoint point ->
             ( { model | hoverPoint = Just point }
@@ -186,9 +186,13 @@ messageRecieved model message =
         SharedComputer ->
             Debug.crash "Recv when game state is SharedComputer"
         Online online ->
-            let newGameModel : Model
-                newGameModel =
-                    { model | gameType = Online { online | state = InGame } }
+            let newGameModel : Int -> Model
+                newGameModel seed =
+                    let game = model.game
+                    in
+                    { model | gameType = Online { online | state = InGame }
+                            , game = { game | randomSeed = Random.initialSeed seed }
+                    }
             in
             case (online.state, message) of
                 (WaitingForStart, JoinMessage) ->
@@ -198,15 +202,15 @@ messageRecieved model message =
                             , payload = StartGameMessage { seed = model.startSeed }
                             }
                     in
-                        ( newGameModel
+                        ( newGameModel model.startSeed
                         , Protocol.send online.server startMsg
                         )
                 (WaitingForStart, StartGameMessage {seed}) ->
-                    let game = newGameModel.game
+                    let newModel = newGameModel seed
                     in
-                    ( { newGameModel | game = { game | randomSeed = Random.initialSeed seed } }
-                    , Cmd.none
-                    )
+                        ( { newModel | currentPlayer = Player2 }
+                        , Cmd.none
+                        )
                 (InGame, TurnMessage {commands}) ->
                     ( opponentEndsRoundOnlineGame model commands
                     , Cmd.none
@@ -218,63 +222,87 @@ messageRecieved model message =
                         ++ toString message
 
 
-{-| When a user clicks the end turn button.
--}
-endRoundSharedComputer : Model -> Model
-endRoundSharedComputer model =
-    case model.currentPlayer of
-        Player1 ->
-            { model | currentPlayer = Player2, selection = Nothing }
-
-        Player2 ->
-            let
-                ( immediateMoves, laterMoves ) =
-                    splitPlannedMoves model.plannedMoves
-
-                ( reports, newGameState ) =
-                    Game.resolveTurn
-                        { moves = immediateMoves
-                        , buildOrders = model.buildOrders
-                        }
-                        model.game
-            in
-                { model
-                    | game = newGameState
-                    , plannedMoves = removeOrphanMoves newGameState laterMoves
-                    , buildOrders = Dict.empty
-                    , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
-                    , gameLog = reports ++ model.gameLog
-                    , currentPlayer = Player1
-                }
-
+-- {-| When a user clicks the end turn button. |-}
+--endRoundSharedComputer : Model -> Model
+--endRoundSharedComputer model =
+--    case model.currentPlayer of
+--        Player1 ->
+--            { model | currentPlayer = Player2, selection = Nothing }
+--
+--        Player2 ->
+--            let
+--                ( immediateMoves, laterMoves ) =
+--                    splitPlannedMoves model.plannedMoves
+--
+--                ( reports, newGameState ) =
+--                    Game.resolveTurn
+--                        { moves = immediateMoves
+--                        , buildOrders = model.buildOrders
+--                        }
+--                        model.game
+--            in
+--                { model
+--                    | game = newGameState
+--                    , plannedMoves = removeOrphanMoves newGameState laterMoves
+--                    , buildOrders = Dict.empty
+--                    , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
+--                    , gameLog = reports ++ model.gameLog
+--                    , currentPlayer = Player1
+--                }
 
 {-| When the user clicks the end turn button.
 -}
-endRoundOnlineGame : Model -> Model
+endRoundOnlineGame : Model -> (Model, Cmd Msg)
 endRoundOnlineGame model =
+    let
+        ( immediateMoves, _ ) =
+            splitPlannedMoves model.plannedMoves
+
+        gameType = case model.gameType of
+                       Online onlineGame -> onlineGame
+                       _ -> Debug.crash "not online"
+
+    in
     case model.enemyCommands of
-        Nothing -> { model | currentPlayer = Player2 }
-        Just enemyCommands -> resolveOnlineGameTurn model enemyCommands
+        Nothing ->
+            ( { model | turnComplete = True }
+            , Protocol.send
+                gameType.server
+                { topic = gameType.room
+                , payload =
+                    TurnMessage
+                        { commands =
+                            { moves = immediateMoves
+                            , buildOrders = model.buildOrders
+                            }
+                        }
+                }
+            )
+        Just enemyCommands ->
+            ( resolveOnlineGameTurn model enemyCommands
+            , Cmd.none
+            )
 
 
 opponentEndsRoundOnlineGame : Model -> Commands -> Model
 opponentEndsRoundOnlineGame model enemyCommands =
-    case model.currentPlayer of
-        Player1 -> { model | enemyCommands = Just enemyCommands }
-        Player2 -> resolveOnlineGameTurn model enemyCommands
+    if model.turnComplete then
+        resolveOnlineGameTurn model enemyCommands
+    else
+        { model | enemyCommands = Just enemyCommands }
 
 
 resolveOnlineGameTurn : Model -> Commands -> Model
 resolveOnlineGameTurn model enemyCommands =
     let
+        ( immediateMoves, laterMoves ) =
+            splitPlannedMoves model.plannedMoves
+
         mergedMoves =
             Dict.union immediateMoves enemyCommands.moves
 
         mergedBuildOrders =
             Dict.union model.buildOrders enemyCommands.buildOrders
-
-        ( immediateMoves, laterMoves ) =
-            splitPlannedMoves model.plannedMoves
 
         ( reports, newGameState ) =
             Game.resolveTurn
@@ -287,10 +315,10 @@ resolveOnlineGameTurn model enemyCommands =
             | game = newGameState
             , plannedMoves = removeOrphanMoves newGameState laterMoves
             , buildOrders = Dict.empty
+            , turnComplete = False
             , enemyCommands = Nothing
             , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
             , gameLog = reports ++ model.gameLog
-            , currentPlayer = Player1
         }
 
 
