@@ -283,11 +283,17 @@ endRoundOnlineGame model =
 
                 _ ->
                     Debug.crash "not online"
-    in
-    case model.enemyCommands of
-        Nothing ->
-            ( { model | turnComplete = True }
-            , Protocol.send
+
+        newModel =
+            case model.enemyCommands of
+                Nothing ->
+                    { model | turnComplete = True }
+
+                Just enemyCommands ->
+                    resolveOnlineGameTurn model enemyCommands
+
+        send =
+            Protocol.send
                 gameType.server
                 { topic = gameType.room
                 , payload =
@@ -298,12 +304,8 @@ endRoundOnlineGame model =
                             }
                         }
                 }
-            )
-
-        Just enemyCommands ->
-            ( resolveOnlineGameTurn model enemyCommands
-            , Cmd.none
-            )
+    in
+    ( newModel, send )
 
 
 opponentEndsRoundOnlineGame : Model -> Commands -> Model
