@@ -575,18 +575,18 @@ viewUnit selection unit =
 view : Model -> Html Msg
 view model =
     case model.gameType of
-        NotPlayingYet { server, room } ->
+        NotPlayingYet ->
             Html.div
                 []
                 [ Html.input
                     [ Hattr.placeholder "Server"
-                    , Hattr.value server
-                    , Hevent.onInput SetServer
+                    , Hattr.value model.server.url
+                    , Hevent.onInput SetServerUrl
                     ]
                     []
                 , Html.input
                     [ Hattr.placeholder "Room"
-                    , Hattr.value room
+                    , Hattr.value model.server.room
                     , Hevent.onInput SetRoom
                     ]
                     []

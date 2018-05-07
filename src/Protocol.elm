@@ -2,6 +2,7 @@ module Protocol
     exposing
         ( Message(..)
         , NetworkMessage
+        , Server
         , decodeNetworkMessage
         , encodeNetworkMessage
         , send
@@ -33,6 +34,7 @@ type alias NetworkMessage =
     { topic : String, payload : Message }
 
 
+
 type Message
     = JoinMessage
     | StartGameMessage
@@ -43,10 +45,20 @@ type Message
         }
 
 
-send : String -> NetworkMessage -> Cmd msg
-send server msg =
-    WebSocket.send server (encodeNetworkMessage msg)
+type alias Server =
+    { url : String
+    , room : String
+    }
 
+
+send : Server -> Message -> Cmd msg
+send server msg =
+    let networkMsg =
+            { topic = server.room
+            , payload = msg
+            }
+    in
+        WebSocket.send server.url (encodeNetworkMessage networkMsg)
 
 
 --------------------------------------------------------------------------------

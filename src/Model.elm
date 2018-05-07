@@ -6,6 +6,7 @@ import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State exposing (Buildable(..), Game, Tile)
 import Game.Unit exposing (Player(..))
 import HexGrid exposing (Direction, HexGrid(..), Point)
+import Protocol
 import Util
 
 
@@ -33,7 +34,7 @@ type Msg
     | NameEditorAbbreviation String
     | NameEditorSubmit
       -- Handle changes to the "server" text box before starting a game
-    | SetServer String
+    | SetServerUrl String
       -- Handle changes to the "room" text box before starting a game
     | SetRoom String
       -- Handle connecting to a server
@@ -45,16 +46,14 @@ type Msg
 type
     GameType
     -- Haven't selected game type yet
-    = NotPlayingYet { server : String, room : String }
+    = NotPlayingYet
       -- Two players sharing a browser
     | SharedComputer
-    | Online OnlineGame
+    | Online OnlineGameState
 
 
 type alias OnlineGame =
-    { server : String
-    , room : String
-    , state : OnlineGameState
+    { state : OnlineGameState
     }
 
 
@@ -86,13 +85,13 @@ type alias Model =
     -- The player controlling the UI:
     , currentPlayer : Player
     , startSeed : Int
+    , server : Protocol.Server
     }
-
 
 init : Int -> Model
 init startSeed =
     { game = Game.State.init
-    , gameType = NotPlayingYet { server = "ws://127.0.0.1:8000", room = "hello" }
+    , gameType = NotPlayingYet
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
     , turnComplete = False
@@ -102,6 +101,10 @@ init startSeed =
     , gameLog = []
     , currentPlayer = Player1
     , startSeed = startSeed
+    , server =
+        { url = "ws://127.0.0.1:8000"
+        , room = "hello"
+        }
     }
 
 

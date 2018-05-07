@@ -45,14 +45,14 @@ subscriptions model =
                 )
     in
     case model.gameType of
-        Model.NotPlayingYet _ ->
+        Model.NotPlayingYet ->
             Sub.none
 
         Model.SharedComputer ->
             keydown
 
-        Model.Online { server, room } ->
+        Model.Online _ ->
             Sub.batch
                 [ keydown
-                , WebSocket.listen server Model.Recv
+                , WebSocket.listen model.server.url Model.Recv
                 ]

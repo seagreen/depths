@@ -112,58 +112,25 @@ update msg model =
             , Cmd.none
             )
 
-        SetServer server ->
-            ( case model.gameType of
-                NotPlayingYet { room } ->
-                    { model
-                        | gameType =
-                            NotPlayingYet { server = server, room = room }
-                    }
-
-                SharedComputer ->
-                    Debug.crash ""
-
-                Online _ ->
-                    Debug.crash ""
+        SetServerUrl url ->
+            let server = model.server
+            in
+            ( { model | server = { server | url = url } }
             , Cmd.none
             )
 
         SetRoom room ->
-            ( case model.gameType of
-                NotPlayingYet { server } ->
-                    { model
-                        | gameType =
-                            NotPlayingYet { server = server, room = room }
-                    }
-
-                SharedComputer ->
-                    Debug.crash ""
-
-                Online _ ->
-                    Debug.crash ""
+            let server = model.server
+            in
+            ( { model | server = { server | room = room } }
             , Cmd.none
             )
 
         Connect ->
             case model.gameType of
-                NotPlayingYet { server, room } ->
-                    let
-                        networkMsg : NetworkMessage
-                        networkMsg =
-                            { topic = room
-                            , payload = Protocol.JoinMessage
-                            }
-
-                        online : GameType
-                        online =
-                            Online
-                                { server = server
-                                , room = room
-                                , state = WaitingForStart
-                                }
-                    in
-                    ( { model | gameType = online }
-                    , Protocol.send server networkMsg
+                NotPlayingYet ->
+                    ( { model | gameType = Online WaitingForStart }
+                    , Protocol.send model.server Protocol.JoinMessage
                     )
 
                 SharedComputer ->
@@ -184,7 +151,7 @@ update msg model =
 messageRecieved : Model -> Protocol.Message -> ( Model, Cmd Msg )
 messageRecieved model message =
     case model.gameType of
-        NotPlayingYet _ ->
+        NotPlayingYet ->
             Debug.crash "Recv when game state is NotPlayingYet"
 
         SharedComputer ->
@@ -199,21 +166,19 @@ messageRecieved model message =
                             model.game
                     in
                     { model
-                        | gameType = Online { online | state = InGame }
+                        | gameType = Online InGame
                         , game = { game | randomSeed = Random.initialSeed seed }
                     }
             in
-            case ( online.state, message ) of
+            case ( online, message ) of
                 ( WaitingForStart, JoinMessage ) ->
                     let
-                        startMsg : Protocol.NetworkMessage
+                        startMsg : Protocol.Message
                         startMsg =
-                            { topic = online.room
-                            , payload = StartGameMessage { seed = model.startSeed }
-                            }
+                            StartGameMessage { seed = model.startSeed }
                     in
                     ( newGameModel model.startSeed
-                    , Protocol.send online.server startMsg
+                    , Protocol.send model.server startMsg
                     )
 
                 ( WaitingForStart, StartGameMessage { seed } ) ->
@@ -238,36 +203,6 @@ messageRecieved model message =
                             ++ toString message
 
 
-
--- {-| When a user clicks the end turn button. |-}
---endRoundSharedComputer : Model -> Model
---endRoundSharedComputer model =
---    case model.currentPlayer of
---        Player1 ->
---            { model | currentPlayer = Player2, selection = Nothing }
---
---        Player2 ->
---            let
---                ( immediateMoves, laterMoves ) =
---                    splitPlannedMoves model.plannedMoves
---
---                ( reports, newGameState ) =
---                    Game.resolveTurn
---                        { moves = immediateMoves
---                        , buildOrders = model.buildOrders
---                        }
---                        model.game
---            in
---                { model
---                    | game = newGameState
---                    , plannedMoves = removeOrphanMoves newGameState laterMoves
---                    , buildOrders = Dict.empty
---                    , selection = Nothing -- TODO: Need two selections in the future updateSelection newGameState model.selection
---                    , gameLog = reports ++ model.gameLog
---                    , currentPlayer = Player1
---                }
-
-
 {-| When the user clicks the end turn button.
 -}
 endRoundOnlineGame : Model -> ( Model, Cmd Msg )
@@ -275,14 +210,6 @@ endRoundOnlineGame model =
     let
         ( immediateMoves, _ ) =
             splitPlannedMoves model.plannedMoves
-
-        gameType =
-            case model.gameType of
-                Online onlineGame ->
-                    onlineGame
-
-                _ ->
-                    Debug.crash "not online"
 
         newModel =
             case model.enemyCommands of
@@ -294,16 +221,14 @@ endRoundOnlineGame model =
 
         send =
             Protocol.send
-                gameType.server
-                { topic = gameType.room
-                , payload =
-                    TurnMessage
+                model.server
+                (TurnMessage
                         { commands =
                             { moves = immediateMoves
                             , buildOrders = model.buildOrders
                             }
                         }
-                }
+                )
     in
     ( newModel, send )
 
