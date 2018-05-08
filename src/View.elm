@@ -2,8 +2,15 @@ module View exposing (..)
 
 import Dict exposing (Dict)
 import Either exposing (Either(..))
-import Game exposing (BattleEvent(..), BattleReport, Outcome(..))
+import Game exposing (Outcome(..))
 import Game.Building as Building exposing (Building(..))
+import Game.Combat
+    exposing
+        ( Combatant(..)
+        , BattleEvent(..)
+        , BattleReport
+        )
+import Game.Combat as Combat
 import Game.State as Game
     exposing
         ( Buildable(..)
@@ -697,39 +704,28 @@ viewGame model =
 displayOutcome : Game -> Html Msg
 displayOutcome game =
     case Game.outcome game of
-        Just (Victory player) ->
+        Victory player ->
             Html.div
                 [ class "alert alert-success" ]
                 [ Html.text <| "Glorious victory to " ++ toString player ++ "!" ]
 
-        Just Draw ->
+        Draw ->
             Html.div
                 [ class "alert alert-danger" ]
                 [ Html.text "Draws are just losses on both sides." ]
 
-        Nothing ->
+        Ongoing ->
             Html.text ""
 
 
 displayBattleReports : Model -> Html Msg
 displayBattleReports model =
     let
-        attackDescription : Maybe Buildable -> String
-        attackDescription mBuildable =
-            case mBuildable of
-                Nothing ->
-                    "enemy action."
-
-                Just (BuildBuilding building) ->
-                    case building of
-                        TorpedoTube ->
-                            "habitat-launched torpedoes."
-
-                        _ ->
-                            "habitat-based weapons."
-
-                Just (BuildSubmarine sub) ->
-                    case sub of
+        attackDescription : Combatant -> String
+        attackDescription combatant =
+            case combatant of
+                CMUnit sub ->
+                    case sub.class of
                         RemotelyOperatedVehicle ->
                             "a torpedo from a ROV."
 
@@ -739,36 +735,58 @@ displayBattleReports model =
                         _ ->
                             "submarine-based weapons."
 
+                CMBuilding _ building ->
+                    case building of
+                        TorpedoTube ->
+                            "habitat-launched torpedoes."
+
+                        _ ->
+                            "habitat-based weapons."
+
+
         displayEvent : BattleEvent -> Html Msg
         displayEvent event =
+
+            let
+                actor combatant =
+                    if Combat.combatantPlayer combatant == model.currentPlayer then
+                       "Our "
+                    else
+                       "Enemy "
+
+                acted combatant =
+                    if Combat.combatantPlayer combatant == model.currentPlayer then
+                       "our "
+                    else
+                       "an enemy "
+            in
             Html.li
                 []
                 [ case event of
-                    DetectionEvent enemy buildable ->
+                    DetectionEvent { detector, detected } ->
                         Html.text <|
-                            "Our "
-                                ++ Game.name buildable
-                                ++ (case enemy of
-                                        BuildSubmarine sub ->
-                                            " detected an enemy "
-                                                ++ (Unit.stats sub).name
+                            actor detector
+                                ++ Game.name (Combat.buildableFromCombatant detector)
+                                ++ (case detected of
+                                        CMUnit sub ->
+                                            " detected "
+                                                ++ acted detected
+                                                ++ (Unit.stats sub.class).name
 
-                                        BuildBuilding enemyBuilding ->
-                                            " found an enemy "
+                                        CMBuilding _ enemyBuilding ->
+                                            " found "
+                                                ++ acted detected
                                                 ++ (Building.stats enemyBuilding).name
                                    )
                                 ++ "."
 
-                    DestructionEvent owner destroyed mDestroyer ->
+                    DestructionEvent { destroyer, destroyed } ->
                         Html.text <|
-                            (if owner == model.currentPlayer then
-                                "Our "
-                             else
-                                "Enemy "
-                            )
-                                ++ Game.name destroyed
+                            actor destroyer
+                                ++ Game.name (Combat.buildableFromCombatant destroyed)
                                 ++ " was destroyed by "
-                                ++ attackDescription mDestroyer
+                                ++ acted destroyed
+                                ++ attackDescription destroyer
                 ]
 
         displayReport : BattleReport -> Html Msg
@@ -799,10 +817,13 @@ displayBattleReports model =
 endTurnButton : Model -> Html Msg
 endTurnButton model =
     case Game.outcome model.game of
-        Just _ ->
+        Victory _ ->
             Html.text ""
 
-        Nothing ->
+        Draw ->
+            Html.text ""
+
+        Ongoing ->
             if model.turnComplete then
                 Html.button
                     [ Hattr.type_ "button"

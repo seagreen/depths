@@ -11,6 +11,7 @@ Types that are part of the game's state are imported from `Game.State`.
 
 import Dict exposing (Dict)
 import Game.Building as Building exposing (Building(..))
+import Game.Combat exposing (..)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State
     exposing
@@ -26,7 +27,6 @@ import Game.State
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Random
-import Random.List
 import State exposing (State(..))
 import Util
 
@@ -34,10 +34,13 @@ import Util
 resolveTurn : Commands -> Game -> ( List BattleReport, Game )
 resolveTurn commands game =
     case outcome game of
-        Just _ ->
+        Victory _ ->
             ( [], game )
 
-        Nothing ->
+        Draw ->
+            ( [], game )
+
+        Ongoing ->
             game
                 |> resolveBuildOrders commands.buildOrders
                 >> resolveMoves commands.moves
@@ -56,105 +59,37 @@ resolveTurn commands game =
 
 
 type Outcome
-    = Victory Player
+    = Ongoing
+    | Victory Player
     | Draw
 
 
-outcome : Game -> Maybe Outcome
+outcome : Game -> Outcome
 outcome game =
-    if Game.State.unTurn game.turn < 10 then
+    if Game.State.unTurn game.turn < 20 then
         --HACK:  This is bork
-        Nothing
+        Ongoing
     else
         case ( Game.State.habitatsForPlayer Player1 game, Game.State.habitatsForPlayer Player2 game ) of
             ( [], [] ) ->
-                Just Draw
+                Draw
 
             ( _, [] ) ->
-                Just (Victory Player1)
+                Victory Player1
 
             ( [], _ ) ->
-                Just (Victory Player2)
+                Victory Player2
 
             _ ->
-                Nothing
+                Ongoing
 
 
 {-| The keys in `moves` are the IDs of units.
-
-At some point we should add the restriction that units can't
-"move" to their current tile.
-
 -}
 type alias Commands =
     { moves : Dict Int Point
     , buildOrders : Dict Point Buildable
     }
-
-
-type alias BattleReport =
-    { turn : Turn
-    , habitat : String
-    , events : List BattleEvent
-    }
-
-
-type
-    BattleEvent
-    -- When the human player detects a computer unit or building.
-    -- The first argument is the thing detected, the second is the
-    -- detector.
-    = DetectionEvent Buildable Buildable
-      -- When either the human player or the computer destorys an enemy.
-      -- The `Player` is the owner of the destroyed unit.
-      -- The first unit is the one that was destroyed, the second
-      -- (if known) is the destroyer.
-    | DestructionEvent Player Buildable (Maybe Buildable)
-
-
-type Combatant
-    = CMUnit Unit
-    | CMBuilding Building
-
-
-buildableFromCombatant : Combatant -> Buildable
-buildableFromCombatant combatant =
-    case combatant of
-        CMUnit unit ->
-            BuildSubmarine unit.class
-
-        CMBuilding building ->
-            BuildBuilding building
-
-
-combatantSensors : Combatant -> Int
-combatantSensors combatant =
-    case combatant of
-        CMUnit unit ->
-            (Unit.stats unit.class).sensors
-
-        CMBuilding building ->
-            Building.sensors building
-
-
-combatantStealth : Combatant -> Int
-combatantStealth combatant =
-    case combatant of
-        CMUnit unit ->
-            (Unit.stats unit.class).stealth
-
-        CMBuilding _ ->
-            0
-
-
-combatantFirepower : Combatant -> Int
-combatantFirepower combatant =
-    case combatant of
-        CMUnit unit ->
-            (Unit.stats unit.class).firepower
-
-        CMBuilding building ->
-            Building.firepower building
 
 
 
@@ -178,7 +113,9 @@ destroyHabitats game =
             Game.State.habitatDict game.grid
 
         remove mTile =
-            mTile |> Maybe.andThen (\tile -> Just { tile | fixed = Mountain Nothing })
+            mTile
+                |> Maybe.andThen
+                    (\tile -> Just { tile | fixed = Mountain Nothing })
     in
     { game
         | grid =
@@ -382,359 +319,15 @@ resolveBattles game =
     )
 
 
-{-| `List Buildable` is a list of the ships and buildings that scored sensor hits.
--}
-countSensorHits : List Combatant -> State Random.Seed (List Buildable)
-countSensorHits searcherList =
-    let
-        rollSensors : Combatant -> State Random.Seed (Maybe Buildable)
-        rollSensors searcher =
-            State <|
-                Random.step
-                    (Random.map
-                        (\n ->
-                            if combatantSensors searcher >= n then
-                                Just (buildableFromCombatant searcher)
-                            else
-                                Nothing
-                        )
-                        (Random.int 1 6)
-                    )
-    in
-    State.map
-        (List.filterMap identity)
-        (State.traverse rollSensors searcherList)
-
-
-type alias Detected =
-    { dtTarget : Combatant
-    , dtBy : Buildable
-    }
-
-
-type alias Destroyed =
-    { dsTarget : Combatant
-    , dsBy : Buildable
-    }
-
-
-{-| `List Buildable` are the ships and buildings that scored sensor hits.
--}
-detectedCombatants : List Combatant -> List Buildable -> State Random.Seed (List Detected)
-detectedCombatants lurkers hitList =
-    State <|
-        Random.step
-            (Random.map2
-                (List.map2
-                    (\buildable detected ->
-                        { dtTarget = detected
-                        , dtBy = buildable
-                        }
-                    )
-                )
-                (Random.List.shuffle hitList)
-                (Random.List.shuffle lurkers)
-            )
-
-
-{-| A successful stealth roll makes a unit immune to detection.
--}
-canceledByStealth : List Detected -> State Random.Seed (List Detected)
-canceledByStealth detectedList =
-    let
-        rollStealth : Detected -> State Random.Seed (Maybe Detected)
-        rollStealth detected =
-            State <|
-                Random.step
-                    (Random.map
-                        (\n ->
-                            if combatantStealth detected.dtTarget >= n then
-                                Nothing
-                            else
-                                Just detected
-                        )
-                        (Random.int 1 6)
-                    )
-    in
-    State.map
-        (List.filterMap identity)
-        (State.traverse rollStealth detectedList)
-
-
-{-| `List Buildable` are the ships and buildings that scored weapon hits.
--}
-countFirepowerHits : List Combatant -> State Random.Seed (List Buildable)
-countFirepowerHits firing =
-    let
-        rollFirepower : Combatant -> State Random.Seed (Maybe Buildable)
-        rollFirepower combatant =
-            State <|
-                Random.step
-                    (Random.map
-                        (\n ->
-                            if combatantFirepower combatant >= n then
-                                Just (buildableFromCombatant combatant)
-                            else
-                                Nothing
-                        )
-                        (Random.int 1 4)
-                    )
-    in
-    State.map
-        (List.filterMap identity)
-        (State.traverse rollFirepower firing)
-
-
-{-| `List Buildable` are the ships and buildings that scored weapon hits.
--}
-destroyedByFirepower : List Combatant -> List Buildable -> State Random.Seed (List Destroyed)
-destroyedByFirepower targets hitList =
-    State <|
-        Random.step <|
-            Random.map2
-                (List.map2
-                    (\buildable destroyed ->
-                        { dsTarget = destroyed
-                        , dsBy = buildable
-                        }
-                    )
-                )
-                (Random.List.shuffle hitList)
-                (Random.List.shuffle targets)
-
-
-enemiesDetected :
-    List Combatant
-    -> List Unit
-    -> State Random.Seed ( List BattleEvent, List Combatant )
-enemiesDetected defenders enemies =
-    let
-        reportEvent : Detected -> BattleEvent
-        reportEvent detection =
-            DetectionEvent
-                (buildableFromCombatant detection.dtTarget)
-                detection.dtBy
-
-        report : List Detected -> ( List BattleEvent, List Combatant )
-        report detectedUnits =
-            ( List.map reportEvent detectedUnits
-            , List.map .dtTarget detectedUnits
-            )
-    in
-    State <|
-        \oldSeed ->
-            State.run oldSeed
-                (countSensorHits defenders
-                    |> State.andThen (detectedCombatants (List.map CMUnit enemies))
-                    |> State.andThen canceledByStealth
-                    |> State.map report
-                )
-
-
-attackersDestroyed :
-    Player
-    -> List Combatant
-    -> List Combatant
-    -> Tile
-    -> State Random.Seed ( List BattleEvent, Tile )
-attackersDestroyed attackingPlayer defenders attackers tile =
-    let
-        reportEvent : Destroyed -> BattleEvent
-        reportEvent destruction =
-            DestructionEvent
-                attackingPlayer
-                (buildableFromCombatant destruction.dsTarget)
-                (Just destruction.dsBy)
-    in
-    State <|
-        \oldSeed ->
-            State.run oldSeed
-                (countFirepowerHits defenders
-                    |> State.andThen (destroyedByFirepower attackers)
-                    |> State.map
-                        (\destroyed ->
-                            ( List.map reportEvent destroyed
-                            , removeDestroyed destroyed Nothing tile
-                            )
-                        )
-                )
-
-
-{-| If the caller doesn't have access to the `Habitat`
--- (such as when calculating the attacker's losses),
--- it can pass in `Nothing` to skip removing buildings.
--}
-removeDestroyed : List Destroyed -> Maybe Habitat -> Tile -> Tile
-removeDestroyed destroyed mHab tile =
-    { tile
-        | units = removeUnits tile.units destroyed
-        , fixed =
-            case mHab of
-                Nothing ->
-                    tile.fixed
-
-                Just hab ->
-                    Mountain (Just (removeBuildings hab destroyed))
-    }
-
-
-removeUnits : Dict Int Unit -> List Destroyed -> Dict Int Unit
-removeUnits starting toRemove =
-    Dict.diff
-        starting
-        (Dict.fromList <|
-            List.filterMap
-                (\destruction ->
-                    case destruction.dsTarget of
-                        CMUnit unit ->
-                            Just
-                                ( Id.unId unit.id
-                                , unit
-                                )
-
-                        _ ->
-                            Nothing
-                )
-                toRemove
-        )
-
-
-removeBuildings : Habitat -> List Destroyed -> Habitat
-removeBuildings hab destroyed =
-    let
-        destroyedBuildings =
-            List.filterMap
-                (\destroyed ->
-                    case destroyed.dsTarget of
-                        CMBuilding building ->
-                            Just building
-
-                        _ ->
-                            Nothing
-                )
-                destroyed
-    in
-    { hab
-        | buildings =
-            List.filter
-                (\building ->
-                    not (List.member building destroyedBuildings)
-                )
-                hab.buildings
-    }
-
-
-defendersDestroyed :
-    Habitat
-    -> List Combatant
-    -> List Unit
-    -> Tile
-    -> State Random.Seed ( List BattleEvent, Tile )
-defendersDestroyed hab defenders enemies tile =
-    let
-        reportEvent : Destroyed -> BattleEvent
-        reportEvent destruction =
-            DestructionEvent
-                hab.player
-                (buildableFromCombatant destruction.dsTarget)
-                (Just destruction.dsBy)
-    in
-    State <|
-        \oldSeed ->
-            State.run oldSeed
-                (countSensorHits (List.map CMUnit enemies)
-                    |> State.andThen (detectedCombatants defenders)
-                    |> State.andThen canceledByStealth
-                    |> State.andThen
-                        (\defendersDetected ->
-                            countFirepowerHits (List.map CMUnit enemies)
-                                |> State.andThen
-                                    (destroyedByFirepower
-                                        (List.map .dtTarget defendersDetected)
-                                    )
-                                |> State.map
-                                    (\destroyed ->
-                                        ( List.map reportEvent destroyed
-                                        , removeDestroyed destroyed (Just hab) tile
-                                        )
-                                    )
-                        )
-                )
-
-
-{-| When there aren't any defenders at all:
-
-  - Non-combat buildings can be targeted.
-  - These buildings are automatically detected.
-
--}
-bombard : List Unit -> Habitat -> Tile -> State Random.Seed ( List BattleEvent, Tile )
-bombard firing hab tile =
-    let
-        reportEvent : Destroyed -> BattleEvent
-        reportEvent destruction =
-            DestructionEvent
-                hab.player
-                (buildableFromCombatant destruction.dsTarget)
-                (Just destruction.dsBy)
-
-        reportAndRemove : List Destroyed -> ( List BattleEvent, Tile )
-        reportAndRemove destroyed =
-            ( List.map reportEvent destroyed
-            , { tile
-                | units = removeUnits tile.units destroyed
-                , fixed = Mountain (Just (removeBuildings hab destroyed))
-              }
-            )
-    in
-    State <|
-        \oldSeed ->
-            State.run oldSeed
-                (countFirepowerHits (List.map CMUnit firing)
-                    |> State.andThen
-                        (destroyedByFirepower (List.map CMBuilding hab.buildings))
-                    |> State.map reportAndRemove
-                )
-
-
-twoSidedBattle :
-    List Combatant
-    -> List Unit
-    -> Habitat
-    -> Tile
-    -> State Random.Seed ( List BattleEvent, Tile )
-twoSidedBattle defenders enemies hab tile =
-    let
-        attackingPlayer =
-            case hab.player of
-                Player1 ->
-                    Player2
-
-                Player2 ->
-                    Player1
-    in
-    enemiesDetected defenders enemies
-        |> State.andThen
-            (\( dtEvents, detected ) ->
-                attackersDestroyed attackingPlayer defenders detected tile
-                    |> State.andThen
-                        (\( dsEvents, nextTile ) ->
-                            defendersDestroyed hab defenders enemies nextTile
-                                |> State.map
-                                    (Tuple.mapFirst
-                                        (\friendlyDsEvents ->
-                                            friendlyDsEvents
-                                                ++ dsEvents
-                                                ++ dtEvents
-                                        )
-                                    )
-                        )
-            )
-
-
 resolveSingleBattle : Turn -> Tile -> State ( Random.Seed, List BattleReport ) Tile
 resolveSingleBattle turn tile =
     case tile.fixed of
+        Depths ->
+            State.state tile
+
+        Mountain Nothing ->
+            State.state tile
+
         Mountain (Just hab) ->
             let
                 ( defenders, attackers ) =
@@ -746,7 +339,7 @@ resolveSingleBattle turn tile =
                 resolve tile hab =
                     let
                         defendingCombatants =
-                            List.map CMBuilding (Building.combatBuildings hab.buildings)
+                            List.map (CMBuilding hab.player) (Building.combatBuildings hab.buildings)
                                 ++ List.map CMUnit defenders
                     in
                     case defendingCombatants of
@@ -754,7 +347,7 @@ resolveSingleBattle turn tile =
                             bombard attackers hab tile
 
                         _ ->
-                            twoSidedBattle defendingCombatants attackers hab tile
+                            twoSidedBattle attackers defendingCombatants hab tile
             in
             case attackers of
                 [] ->
@@ -764,24 +357,126 @@ resolveSingleBattle turn tile =
                     State
                         (\( oldSeed, reports ) ->
                             let
-                                ( ( events, newTile ), newSeed ) =
+                                ( ( newEvents, newTile ), newSeed ) =
                                     State.run oldSeed (resolve tile hab)
                             in
-                            case events of
+                            case newEvents of
                                 [] ->
                                     ( tile, ( newSeed, reports ) )
 
-                                nonEmpty ->
+                                _ ->
                                     ( newTile
                                     , ( newSeed
                                       , { turn = turn
                                         , habitat = Game.State.habitatFullName hab
-                                        , events = nonEmpty
+                                        , events = newEvents
                                         }
                                             :: reports
                                       )
                                     )
                         )
 
-        _ ->
-            State.state tile
+
+twoSidedBattle :
+       List Unit
+    -> List Combatant
+    -> Habitat
+    -> Tile
+    -> State Random.Seed ( List BattleEvent, Tile )
+twoSidedBattle attackingUnits defenders hab tile =
+    let
+        attackers : List Combatant
+        attackers =
+            List.map CMUnit attackingUnits
+
+        f : List Combatant -> List Combatant -> State Random.Seed (List BattleEvent)
+        f firing targets =
+            detectedInCombat firing targets
+                |> State.andThen
+                    (\detections ->
+                        State.map
+                            (\destroyed ->
+                                List.map DetectionEvent detections
+                                    ++ List.map DestructionEvent destroyed
+                            )
+                            (destroyedInCombat
+                                firing
+                                (List.map .detected detections)
+                            )
+                    )
+
+        events : State Random.Seed (List BattleEvent)
+        events =
+            f attackers defenders
+                |> State.andThen
+                    (\eventsA ->
+                        State.map
+                            (\eventsB -> eventsA ++ eventsB)
+                            (f defenders attackers)
+                    )
+
+        destructionEvents : List BattleEvent -> List Destruction
+        destructionEvents =
+            List.filterMap
+                (\e ->
+                    case e of
+                        DestructionEvent a ->
+                            Just a
+
+                        DetectionEvent _ ->
+                            Nothing
+                )
+
+        g : List BattleEvent -> ( List BattleEvent, Tile )
+        g battleEvents =
+            ( battleEvents, removeDestroyed (destructionEvents battleEvents) tile )
+    in
+    State.map g events
+
+
+{-| When there aren't any defenders at all:
+
+  - Non-combat buildings can be targeted.
+  - These buildings are automatically detected.
+
+-}
+bombard : List Unit -> Habitat -> Tile -> State Random.Seed ( List BattleEvent, Tile )
+bombard attackingUnits hab tile =
+    let
+        attackers : List Combatant
+        attackers =
+            List.map CMUnit attackingUnits
+
+        -- HACK: Converting non-Combatant buildings to Combatants 
+        buildings : List Combatant
+        buildings =
+            List.map (CMBuilding hab.player) hab.buildings
+
+        events : State Random.Seed (List BattleEvent)
+        events =
+            State.map
+                (\destroyed ->
+                        List.map DestructionEvent destroyed
+                )
+                (destroyedInCombat
+                    attackers
+                    buildings
+                )
+
+        destructionEvents : List BattleEvent -> List Destruction
+        destructionEvents =
+            List.filterMap
+                (\e ->
+                    case e of
+                        DestructionEvent a ->
+                            Just a
+
+                        DetectionEvent _ ->
+                            Nothing
+                )
+
+        g : List BattleEvent -> ( List BattleEvent, Tile )
+        g battleEvents =
+            ( battleEvents, removeDestroyed (destructionEvents battleEvents) tile )
+    in
+    State.map g events

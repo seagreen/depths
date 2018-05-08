@@ -25,11 +25,11 @@ type alias Stats =
     , speed : Int
     , sensors : Int
     , stealth : Int
-    , firepower :
-        Int
 
     -- Named "firepower" instead of "attack" to clarify that it
     -- works the same on both offence and defense.
+    , firepower :
+        Int
     }
 
 
@@ -82,10 +82,6 @@ stats sub =
             , stealth = 3
             , firepower = 3
             }
-
-
-
--- TODO: Get rid of this
 
 
 fromString : String -> Maybe Submarine

@@ -2,6 +2,7 @@ module Model exposing (..)
 
 import Dict exposing (Dict)
 import Game exposing (Commands)
+import Game.Combat exposing (BattleReport)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State exposing (Buildable(..), Game, Tile)
 import Game.Unit exposing (Player(..))
@@ -35,8 +36,7 @@ type alias Model =
     , enemyCommands : Maybe Commands
     , selection : Maybe Selection
     , hoverPoint : Maybe Point
-    , gameLog :
-        List Game.BattleReport
+    , gameLog : List BattleReport
 
     -- The player controlling the UI:
     , currentPlayer : Player

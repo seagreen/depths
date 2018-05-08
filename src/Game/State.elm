@@ -20,7 +20,11 @@ so much that things got confusing.
 type alias Game =
     { grid : HexGrid Tile
     , turn : Turn
+
+    -- Used for giving new units Ids. Incrmental.
     , idSeed : IdSeed
+
+    -- Used for determining battle events.
     , randomSeed : Random.Seed
     }
 
@@ -62,7 +66,7 @@ init =
     , turn = Turn 1
     , idSeed = idSeed
     , randomSeed =
-        -- The Main module randomizes this at startup.
+        -- This gets overwritten at startup.
         Random.initialSeed 0
     }
 
@@ -137,20 +141,24 @@ habitatAbbreviation hab =
 
 habitatsForPlayer : Player -> Game -> List Habitat
 habitatsForPlayer player game =
-    habitatDict game.grid |> Dict.values |> List.filter (\hab -> hab.player == player)
+    habitatDict game.grid
+        |> Dict.values
+        |> List.filter (\hab -> hab.player == player)
 
 
 habitatDict : HexGrid Tile -> Dict Point Habitat
 habitatDict (HexGrid _ grid) =
-    Dict.foldr
-        (\point tile acc ->
+    let
+        f : Point -> Tile -> Dict Point Habitat -> Dict Point Habitat
+        f point tile acc =
             case tile.fixed of
                 Mountain (Just hab) ->
                     Dict.insert point hab acc
 
                 _ ->
                     acc
-        )
+    in
+    Dict.foldr f
         Dict.empty
         grid
 
@@ -161,32 +169,35 @@ habitatFromTile tile =
         Mountain (Just hab) ->
             Just hab
 
-        _ ->
+        Mountain Nothing ->
+            Nothing
+
+        Depths ->
             Nothing
 
 
 habitatFromPoint : Point -> Dict Point Tile -> Maybe Habitat
 habitatFromPoint point grid =
-    Dict.get point grid |> Maybe.andThen habitatFromTile
+    Dict.get point grid
+        |> Maybe.andThen habitatFromTile
 
 
 updateHabitat : Point -> (Habitat -> Habitat) -> Dict Point Tile -> Dict Point Tile
 updateHabitat point update grid =
     let
-        updateHab mTile =
-            mTile
-                |> Maybe.andThen
-                    (\tile ->
-                        Just <|
-                            case tile.fixed of
-                                Mountain (Just hab) ->
-                                    { tile | fixed = Mountain (Just (update hab)) }
+        updateHab : Tile -> Tile
+        updateHab tile =
+            case tile.fixed of
+                Mountain (Just hab) ->
+                    { tile | fixed = Mountain (Just (update hab)) }
 
-                                _ ->
-                                    tile
-                    )
+                Mountain Nothing ->
+                    tile
+
+                Depths ->
+                    tile
     in
-    Dict.update point updateHab grid
+    Dict.update point (Maybe.map updateHab) grid
 
 
 type alias HabitatName =
@@ -240,6 +251,7 @@ cost buildable =
 findUnit : Id -> Dict Point Tile -> Maybe ( Point, Unit )
 findUnit id grid =
     let
+        f : Point -> Tile -> Maybe ( Point, Unit ) -> Maybe ( Point, Unit )
         f point tile acc =
             case Dict.get (Id.unId id) tile.units of
                 Nothing ->
