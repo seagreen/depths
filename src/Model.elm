@@ -12,12 +12,12 @@ import Util
 
 type Msg
     = NoOp
-      -- When both players commands have been queued
+      -- When both players commands have been queued.
     | EndRound
-      -- When a point is click on the board.
+      -- When a point is clicked on the board.
       --
       -- This is more complicated than SelectUnit
-      -- or SelectPoint (which are for clicking the help
+      -- or SelectTile (which are for clicking the help
       -- boxes for subs or cities respectively) since it
       -- can also do things like unselect the point
       -- if it's already selected.
@@ -45,26 +45,15 @@ type Msg
 
 type
     GameType
-    -- Haven't selected game type yet
+    -- Haven't selected a server yet
     = NotPlayingYet
-      -- Two players sharing a browser
-    | SharedComputer
-    | Online OnlineGameState
-
-
-type alias OnlineGame =
-    { state : OnlineGameState
-    }
-
-
-type OnlineGameState
-    = WaitingForStart
+    | WaitingForStart
     | InGame
 
 
 type alias Model =
     { game : Game
-    , gameType : GameType
+    , gameStatus : GameType
     , plannedMoves :
         Dict Int (List Point)
 
@@ -91,7 +80,7 @@ type alias Model =
 init : Int -> Model
 init startSeed =
     { game = Game.State.init
-    , gameType = NotPlayingYet
+    , gameStatus = NotPlayingYet
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
     , turnComplete = False

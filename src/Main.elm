@@ -35,6 +35,7 @@ initCommands =
 subscriptions : Model.Model -> Sub Model.Msg
 subscriptions model =
     let
+        keydown : Sub Model.Msg
         keydown =
             Keyboard.downs
                 (\keyPress ->
@@ -43,16 +44,22 @@ subscriptions model =
                     else
                         Model.NoOp
                 )
+
+        listen : Sub Model.Msg
+        listen =
+            WebSocket.listen model.server.url Model.Recv
     in
-    case model.gameType of
+    case model.gameStatus of
         Model.NotPlayingYet ->
             Sub.none
 
-        Model.SharedComputer ->
-            keydown
+        Model.WaitingForStart ->
+            Sub.batch
+                [ listen
+                ]
 
-        Model.Online _ ->
+        Model.InGame ->
             Sub.batch
                 [ keydown
-                , WebSocket.listen model.server.url Model.Recv
+                , listen
                 ]

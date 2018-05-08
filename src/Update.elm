@@ -23,8 +23,6 @@ import Model
         ( GameType(..)
         , Model
         , Msg(..)
-        , OnlineGame
-        , OnlineGameState(..)
         , Selection(..)
         )
 import Protocol exposing (Message(..), NetworkMessage)
@@ -127,17 +125,18 @@ update msg model =
             )
 
         Connect ->
-            case model.gameType of
+            case model.gameStatus of
                 NotPlayingYet ->
-                    ( { model | gameType = Online WaitingForStart }
+                    ( { model | gameStatus = WaitingForStart }
                     , Protocol.send model.server Protocol.JoinMessage
                     )
 
-                SharedComputer ->
-                    Debug.crash "Connect / model.gameType == SharedComputer"
+                WaitingForStart ->
+                    Debug.crash "Connect Msg when model.GameType = WaitingForStart"
 
-                Online _ ->
-                    Debug.crash "Connect / model.gameType == Online"
+                InGame ->
+                    Debug.crash "Connect Msg when model.GameType = InGame"
+
 
         Recv messageStr ->
             case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
@@ -150,57 +149,52 @@ update msg model =
 
 messageRecieved : Model -> Protocol.Message -> ( Model, Cmd Msg )
 messageRecieved model message =
-    case model.gameType of
-        NotPlayingYet ->
+    let
+        newGameModel : Int -> Model
+        newGameModel seed =
+            let
+                game =
+                    model.game
+            in
+            { model
+                | gameStatus = InGame
+                , game = { game | randomSeed = Random.initialSeed seed }
+            }
+    in
+    case ( model.gameStatus, message ) of
+        (NotPlayingYet, _) ->
             Debug.crash "Recv when game state is NotPlayingYet"
 
-        SharedComputer ->
-            Debug.crash "Recv when game state is SharedComputer"
-
-        Online online ->
+        ( WaitingForStart, JoinMessage ) ->
             let
-                newGameModel : Int -> Model
-                newGameModel seed =
-                    let
-                        game =
-                            model.game
-                    in
-                    { model
-                        | gameType = Online InGame
-                        , game = { game | randomSeed = Random.initialSeed seed }
-                    }
+                startMsg : Protocol.Message
+                startMsg =
+                    StartGameMessage { seed = model.startSeed }
             in
-            case ( online, message ) of
-                ( WaitingForStart, JoinMessage ) ->
-                    let
-                        startMsg : Protocol.Message
-                        startMsg =
-                            StartGameMessage { seed = model.startSeed }
-                    in
-                    ( newGameModel model.startSeed
-                    , Protocol.send model.server startMsg
-                    )
+            ( newGameModel model.startSeed
+            , Protocol.send model.server startMsg
+            )
 
-                ( WaitingForStart, StartGameMessage { seed } ) ->
-                    let
-                        newModel =
-                            newGameModel seed
-                    in
-                    ( { newModel | currentPlayer = Player2 }
-                    , Cmd.none
-                    )
+        ( WaitingForStart, StartGameMessage { seed } ) ->
+            let
+                newModel =
+                    newGameModel seed
+            in
+            ( { newModel | currentPlayer = Player2 }
+            , Cmd.none
+            )
 
-                ( InGame, TurnMessage { commands } ) ->
-                    ( opponentEndsRoundOnlineGame model commands
-                    , Cmd.none
-                    )
+        ( InGame, TurnMessage { commands } ) ->
+            ( opponentEndsRoundOnlineGame model commands
+            , Cmd.none
+            )
 
-                ( _, _ ) ->
-                    Debug.crash <|
-                        "Unexpected online/message combination "
-                            ++ toString online
-                            ++ " / "
-                            ++ toString message
+        ( _, _ ) ->
+            Debug.crash <|
+                "Unexpected gameStatus/Msg combination "
+                    ++ toString model.gameStatus
+                    ++ " / "
+                    ++ toString message
 
 
 {-| When the user clicks the end turn button.

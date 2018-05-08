@@ -574,7 +574,7 @@ viewUnit selection unit =
 
 view : Model -> Html Msg
 view model =
-    case model.gameType of
+    case model.gameStatus of
         NotPlayingYet ->
             Html.div
                 []
@@ -593,10 +593,10 @@ view model =
                 , Html.button [ Hevent.onClick Connect ] [ Html.text "CONNECT!!" ]
                 ]
 
-        SharedComputer ->
-            Html.div [] [ viewGame model ]
+        WaitingForStart ->
+            Html.div [] [ Html.text "Waiting for other player." ]
 
-        Online _ ->
+        InGame ->
             Html.div [] [ viewGame model ]
 
 
