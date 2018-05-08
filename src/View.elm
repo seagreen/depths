@@ -21,12 +21,13 @@ import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
 import Json.Decode
 import Json.Encode
-import Model exposing (GameType(..), Model, Msg(..), Selection(..))
+import Model exposing (GameType(..), Model, Selection(..))
 import Set exposing (Set)
 import String
 import Svg exposing (Svg)
 import Svg.Attributes as Sattr
 import Svg.Events as Sevent exposing (onClick, onMouseOut, onMouseOver)
+import Update exposing (Msg(..))
 import Util
 
 

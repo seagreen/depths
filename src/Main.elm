@@ -14,7 +14,7 @@ enter =
     13
 
 
-main : Program { seed : Int } Model.Model Model.Msg
+main : Program { seed : Int } Model.Model Update.Msg
 main =
     Html.programWithFlags
         { init = \{ seed } -> ( Model.init seed, initCommands )
@@ -24,30 +24,30 @@ main =
         }
 
 
-initCommands : Cmd Model.Msg
+initCommands : Cmd Update.Msg
 initCommands =
     Cmd.batch
         -- [ Model.newRandomSeed
-        [ Task.perform identity (Task.succeed Model.Connect)
+        [ Task.perform identity (Task.succeed Update.Connect)
         ]
 
 
-subscriptions : Model.Model -> Sub Model.Msg
+subscriptions : Model.Model -> Sub Update.Msg
 subscriptions model =
     let
-        keydown : Sub Model.Msg
+        keydown : Sub Update.Msg
         keydown =
             Keyboard.downs
                 (\keyPress ->
                     if keyPress == enter then
-                        Model.EndRound
+                        Update.EndRound
                     else
-                        Model.NoOp
+                        Update.NoOp
                 )
 
-        listen : Sub Model.Msg
+        listen : Sub Update.Msg
         listen =
-            WebSocket.listen model.server.url Model.Recv
+            WebSocket.listen model.server.url Update.Recv
     in
     case model.gameStatus of
         Model.NotPlayingYet ->

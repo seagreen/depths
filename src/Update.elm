@@ -22,12 +22,44 @@ import Model
     exposing
         ( GameType(..)
         , Model
-        , Msg(..)
         , Selection(..)
         )
 import Protocol exposing (Message(..), NetworkMessage)
 import Random
 import Util
+
+
+type Msg
+    = NoOp
+      -- When both players commands have been queued.
+    | EndRound
+      -- When a point is clicked on the board.
+      --
+      -- This is more complicated than SelectUnit
+      -- or SelectTile (which are for clicking the help
+      -- boxes for subs or cities respectively) since it
+      -- can also do things like unselect the point
+      -- if it's already selected.
+    | SelectPoint Point
+    | SelectUnit Id
+    | SelectTile Point
+    | HoverPoint Point
+    | EndHover
+    | PlanMoves Id (List Point)
+    | CancelMove Id
+    | BuildOrder Buildable
+    | StopBuilding
+    | NameEditorFull String
+    | NameEditorAbbreviation String
+    | NameEditorSubmit
+      -- Handle changes to the "server" text box before starting a game
+    | SetServerUrl String
+      -- Handle changes to the "room" text box before starting a game
+    | SetRoom String
+      -- Handle connecting to a server
+    | Connect
+      -- Receive a message from the server
+    | Recv String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
