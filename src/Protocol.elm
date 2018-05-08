@@ -34,7 +34,6 @@ type alias NetworkMessage =
     { topic : String, payload : Message }
 
 
-
 type Message
     = JoinMessage
     | StartGameMessage
@@ -53,12 +52,14 @@ type alias Server =
 
 send : Server -> Message -> Cmd msg
 send server msg =
-    let networkMsg =
+    let
+        networkMsg =
             { topic = server.room
             , payload = msg
             }
     in
-        WebSocket.send server.url (encodeNetworkMessage networkMsg)
+    WebSocket.send server.url (encodeNetworkMessage networkMsg)
+
 
 
 --------------------------------------------------------------------------------

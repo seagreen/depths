@@ -111,14 +111,18 @@ update msg model =
             )
 
         SetServerUrl url ->
-            let server = model.server
+            let
+                server =
+                    model.server
             in
             ( { model | server = { server | url = url } }
             , Cmd.none
             )
 
         SetRoom room ->
-            let server = model.server
+            let
+                server =
+                    model.server
             in
             ( { model | server = { server | room = room } }
             , Cmd.none
@@ -136,7 +140,6 @@ update msg model =
 
                 InGame ->
                     Debug.crash "Connect Msg when model.GameType = InGame"
-
 
         Recv messageStr ->
             case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
@@ -162,7 +165,7 @@ messageRecieved model message =
             }
     in
     case ( model.gameStatus, message ) of
-        (NotPlayingYet, _) ->
+        ( NotPlayingYet, _ ) ->
             Debug.crash "Recv when game state is NotPlayingYet"
 
         ( WaitingForStart, JoinMessage ) ->
@@ -217,11 +220,11 @@ endRoundOnlineGame model =
             Protocol.send
                 model.server
                 (TurnMessage
-                        { commands =
-                            { moves = immediateMoves
-                            , buildOrders = model.buildOrders
-                            }
+                    { commands =
+                        { moves = immediateMoves
+                        , buildOrders = model.buildOrders
                         }
+                    }
                 )
     in
     ( newModel, send )

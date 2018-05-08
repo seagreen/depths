@@ -77,6 +77,7 @@ type alias Model =
     , server : Protocol.Server
     }
 
+
 init : Int -> Model
 init startSeed =
     { game = Game.State.init
