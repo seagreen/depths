@@ -21,7 +21,7 @@ import Set exposing (Set)
 import String
 import Svg exposing (Svg)
 import Svg.Attributes as Sattr
-import Svg.Events as Sevent exposing (onClick, onMouseOut, onMouseOver)
+import Svg.Events as Sevent
 import Update exposing (Msg(..))
 import Util
 
@@ -159,7 +159,7 @@ renderPoint model bi ( point, tile ) =
                         ""
     in
     Svg.g
-        [ onClick <| SelectPoint point
+        [ Sevent.onClick <| SelectPoint point
         , onRightClick <|
             case bi.selectedUnit of
                 Nothing ->
@@ -175,8 +175,8 @@ renderPoint model bi ( point, tile ) =
 
                             moves ->
                                 PlanMoves unit.id moves
-        , onMouseOut EndHover
-        , onMouseOver (HoverPoint point)
+        , Sevent.onMouseOut EndHover
+        , Sevent.onMouseOver (HoverPoint point)
         ]
         (viewPolygon
             bi.model
