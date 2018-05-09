@@ -28,10 +28,10 @@ import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
-import Lib exposing (badge, label_, onChange)
 import Model exposing (GameType(..), Model, Selection(..))
 import String
 import Update exposing (Msg(..))
+import Util exposing (badge, label_, onChange)
 import View.Board as Board
 
 
