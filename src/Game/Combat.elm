@@ -107,8 +107,8 @@ countSensorHits searcherList =
         rollSensors : Combatant -> State Random.Seed (Maybe Combatant)
         rollSensors searcher =
             State <|
-                Random.step
-                    (Random.map
+                Random.step <|
+                    Random.map
                         (\n ->
                             if n <= combatantSensors searcher then
                                 Just searcher
@@ -116,7 +116,6 @@ countSensorHits searcherList =
                                 Nothing
                         )
                         (Random.int 1 6)
-                    )
     in
     State.map
         (List.filterMap identity)
@@ -128,8 +127,8 @@ countSensorHits searcherList =
 detectedCombatants : List Combatant -> List Combatant -> State Random.Seed (List Detection)
 detectedCombatants finderList lurkerList =
     State <|
-        Random.step
-            (Random.map2
+        Random.step <|
+            Random.map2
                 (List.map2
                     (\finder lurker ->
                         { detector = finder
@@ -139,7 +138,6 @@ detectedCombatants finderList lurkerList =
                 )
                 (Random.List.shuffle finderList)
                 (Random.List.shuffle lurkerList)
-            )
 
 
 {-| A successful stealth roll makes a unit immune to detection.
@@ -150,8 +148,8 @@ canceledByStealth detectionList =
         rollStealth : Detection -> State Random.Seed (Maybe Detection)
         rollStealth detection =
             State <|
-                Random.step
-                    (Random.map
+                Random.step <|
+                    Random.map
                         (\n ->
                             if n <= combatantStealth detection.detected then
                                 Nothing
@@ -159,7 +157,6 @@ canceledByStealth detectionList =
                                 Just detection
                         )
                         (Random.int 1 6)
-                    )
     in
     State.map
         (List.filterMap identity)
@@ -174,8 +171,8 @@ countFirepowerHits combatantList =
         rollFirepower : Combatant -> State Random.Seed (Maybe Combatant)
         rollFirepower combatant =
             State <|
-                Random.step
-                    (Random.map
+                Random.step <|
+                    Random.map
                         (\n ->
                             if n <= combatantFirepower combatant then
                                 Just combatant
@@ -183,7 +180,6 @@ countFirepowerHits combatantList =
                                 Nothing
                         )
                         (Random.int 1 6)
-                    )
     in
     State.map
         (List.filterMap identity)

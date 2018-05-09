@@ -98,40 +98,6 @@ type alias Commands =
 --------------------------------------------------
 
 
-incrementTurn : Game -> Game
-incrementTurn game =
-    { game | turn = Turn (Game.State.unTurn game.turn + 1) }
-
-
-destroyHabitats : Game -> Game
-destroyHabitats game =
-    let
-        (HexGrid a grid) =
-            game.grid
-
-        habitats =
-            Game.State.habitatDict game.grid
-
-        remove mTile =
-            mTile
-                |> Maybe.andThen
-                    (\tile -> Just { tile | fixed = Mountain Nothing })
-    in
-    { game
-        | grid =
-            HexGrid a <|
-                Dict.foldr
-                    (\point hab acc ->
-                        if Building.population hab.buildings > 0 then
-                            acc
-                        else
-                            Dict.update point remove acc
-                    )
-                    grid
-                    habitats
-    }
-
-
 resolveBuildOrders : Dict Point Buildable -> Game -> Game
 resolveBuildOrders orders game =
     Dict.foldr singleBuildOrder game orders
@@ -183,29 +149,255 @@ resolveSingleMove id newPoint grid =
 moveUnit : Point -> Unit -> Point -> Dict Point Tile -> Dict Point Tile
 moveUnit oldPoint unit newPoint grid =
     let
+        removeFromLocation : Id -> Tile -> Tile
+        removeFromLocation id tile =
+            { tile | units = Dict.remove (Id.unId id) tile.units }
+
+        moveTo : Tile -> Tile
         moveTo tile =
             { tile
                 | units =
                     Dict.insert (Id.unId unit.id) unit tile.units
             }
 
+        establishHabitat : Tile -> Tile
+        establishHabitat tile =
+            { tile | fixed = Mountain (Just (Game.State.newHabitat unit.player unit.id)) }
+
+        newTile : Tile -> Tile
         newTile tile =
-            Just <|
-                case tile.fixed of
-                    Mountain Nothing ->
-                        case unit.class of
-                            ColonySubmarine ->
-                                { tile | fixed = Mountain (Just (Game.State.newHabitat unit.player unit.id)) }
+            case unit.class of
+                ColonySubmarine ->
+                    case tile.fixed of
+                        Depths ->
+                            moveTo tile
 
-                            _ ->
-                                moveTo tile
+                        Mountain (Just _) ->
+                            moveTo tile
 
-                    _ ->
-                        moveTo tile
+                        Mountain Nothing ->
+                            establishHabitat tile
+
+                _ ->
+                    moveTo tile
     in
     grid
-        |> Dict.update oldPoint (Maybe.map (removeUnit unit.id))
-        |> Dict.update newPoint (Maybe.andThen newTile)
+        |> Dict.update oldPoint (Maybe.map (removeFromLocation unit.id))
+        |> Dict.update newPoint (Maybe.map newTile)
+
+
+resolveBattles : Game -> ( List BattleReport, Game )
+resolveBattles game =
+    let
+        (HexGrid a oldGrid) =
+            game.grid
+
+        ( newGrid, ( newRandomSeed, battleReports ) ) =
+            State.run ( game.randomSeed, [] ) <|
+                Util.traverseStateDict (resolveSingleBattle game.turn) oldGrid
+    in
+    ( battleReports
+    , { game
+        | grid = HexGrid a newGrid
+        , randomSeed = newRandomSeed
+      }
+    )
+
+
+resolveSingleBattle : Turn -> Tile -> State ( Random.Seed, List BattleReport ) Tile
+resolveSingleBattle turn tile =
+    case tile.fixed of
+        Depths ->
+            State.state tile
+
+        Mountain Nothing ->
+            State.state tile
+
+        Mountain (Just hab) ->
+            let
+                ( defenders, attackers ) =
+                    List.partition
+                        (\unit -> unit.player == hab.player)
+                        (Dict.values tile.units)
+
+                resolve : Tile -> Habitat -> State Random.Seed ( List BattleEvent, Tile )
+                resolve tile hab =
+                    let
+                        defendingCombatants =
+                            List.map (CMBuilding hab.player) (Building.combatBuildings hab.buildings)
+                                ++ List.map CMUnit defenders
+                    in
+                    case defendingCombatants of
+                        [] ->
+                            bombard attackers hab tile
+
+                        _ ->
+                            twoSidedBattle attackers defendingCombatants hab tile
+            in
+            case attackers of
+                [] ->
+                    State.state tile
+
+                _ ->
+                    State <|
+                        \( oldSeed, oldReports ) ->
+                            let
+                                ( ( newEvents, newTile ), newSeed ) =
+                                    State.run oldSeed (resolve tile hab)
+
+                                newReports : List BattleReport
+                                newReports =
+                                    case newEvents of
+                                        [] ->
+                                            oldReports
+
+                                        _ ->
+                                            { turn = turn
+                                            , habitat = Game.State.habitatFullName hab
+                                            , events = newEvents
+                                            }
+                                                :: oldReports
+                            in
+                            ( newTile
+                            , ( newSeed
+                              , newReports
+                              )
+                            )
+
+
+twoSidedBattle :
+    List Unit
+    -> List Combatant
+    -> Habitat
+    -> Tile
+    -> State Random.Seed ( List BattleEvent, Tile )
+twoSidedBattle attackingUnits defenders hab tile =
+    let
+        attackers : List Combatant
+        attackers =
+            List.map CMUnit attackingUnits
+
+        f : List Combatant -> List Combatant -> State Random.Seed (List BattleEvent)
+        f firing targets =
+            detectedInCombat firing targets
+                |> State.andThen
+                    (\detections ->
+                        State.map
+                            (\destroyed ->
+                                List.map DestructionEvent destroyed
+                                    ++ List.map DetectionEvent detections
+                            )
+                            (destroyedInCombat
+                                firing
+                                (List.map .detected detections)
+                            )
+                    )
+
+        events : State Random.Seed (List BattleEvent)
+        events =
+            f attackers defenders
+                |> State.andThen
+                    (\eventsA ->
+                        State.map
+                            (\eventsB -> eventsA ++ eventsB)
+                            (f defenders attackers)
+                    )
+
+        destructionEvents : List BattleEvent -> List Destruction
+        destructionEvents =
+            List.filterMap
+                (\e ->
+                    case e of
+                        DestructionEvent a ->
+                            Just a
+
+                        DetectionEvent _ ->
+                            Nothing
+                )
+
+        g : List BattleEvent -> ( List BattleEvent, Tile )
+        g battleEvents =
+            ( battleEvents, removeDestroyed (destructionEvents battleEvents) tile )
+    in
+    State.map g events
+
+
+{-| When there aren't any defenders at all:
+
+  - Non-combat buildings can be targeted.
+  - These buildings are automatically detected.
+
+-}
+bombard : List Unit -> Habitat -> Tile -> State Random.Seed ( List BattleEvent, Tile )
+bombard attackingUnits hab tile =
+    let
+        attackers : List Combatant
+        attackers =
+            List.map CMUnit attackingUnits
+
+        -- HACK: Converting non-Combatant buildings to Combatants
+        buildings : List Combatant
+        buildings =
+            List.map (CMBuilding hab.player) hab.buildings
+
+        events : State Random.Seed (List BattleEvent)
+        events =
+            State.map
+                (\destroyed ->
+                    List.map DestructionEvent destroyed
+                )
+                (destroyedInCombat
+                    attackers
+                    buildings
+                )
+
+        destructionEvents : List BattleEvent -> List Destruction
+        destructionEvents =
+            List.filterMap
+                (\e ->
+                    case e of
+                        DestructionEvent a ->
+                            Just a
+
+                        DetectionEvent _ ->
+                            Nothing
+                )
+
+        g : List BattleEvent -> ( List BattleEvent, Tile )
+        g battleEvents =
+            ( battleEvents, removeDestroyed (destructionEvents battleEvents) tile )
+    in
+    State.map g events
+
+
+destroyHabitats : Game -> Game
+destroyHabitats game =
+    let
+        (HexGrid a grid) =
+            game.grid
+
+        habitats : Dict Point Habitat
+        habitats =
+            Game.State.habitatDict game.grid
+
+        remove : Maybe Tile -> Maybe Tile
+        remove =
+            Maybe.map
+                (\tile -> { tile | fixed = Mountain Nothing })
+    in
+    { game
+        | grid =
+            HexGrid a <|
+                Dict.foldr
+                    (\point hab acc ->
+                        if Building.population hab.buildings > 0 then
+                            acc
+                        else
+                            Dict.update point remove acc
+                    )
+                    grid
+                    habitats
+    }
 
 
 wrapResolveProduction : Game -> Game
@@ -296,187 +488,6 @@ completeBuilding building tile hab =
     { tile | fixed = Mountain (Just newHabitat) }
 
 
-removeUnit : Id -> Tile -> Tile
-removeUnit id tile =
-    { tile | units = Dict.remove (Id.unId id) tile.units }
-
-
-resolveBattles : Game -> ( List BattleReport, Game )
-resolveBattles game =
-    let
-        (HexGrid a oldGrid) =
-            game.grid
-
-        ( newGrid, ( newRandomSeed, battleReports ) ) =
-            State.run ( game.randomSeed, [] ) <|
-                Util.traverseStateDict (resolveSingleBattle game.turn) oldGrid
-    in
-    ( battleReports
-    , { game
-        | grid = HexGrid a newGrid
-        , randomSeed = newRandomSeed
-      }
-    )
-
-
-resolveSingleBattle : Turn -> Tile -> State ( Random.Seed, List BattleReport ) Tile
-resolveSingleBattle turn tile =
-    case tile.fixed of
-        Depths ->
-            State.state tile
-
-        Mountain Nothing ->
-            State.state tile
-
-        Mountain (Just hab) ->
-            let
-                ( defenders, attackers ) =
-                    List.partition
-                        (\unit -> unit.player == hab.player)
-                        (Dict.values tile.units)
-
-                resolve : Tile -> Habitat -> State Random.Seed ( List BattleEvent, Tile )
-                resolve tile hab =
-                    let
-                        defendingCombatants =
-                            List.map (CMBuilding hab.player) (Building.combatBuildings hab.buildings)
-                                ++ List.map CMUnit defenders
-                    in
-                    case defendingCombatants of
-                        [] ->
-                            bombard attackers hab tile
-
-                        _ ->
-                            twoSidedBattle attackers defendingCombatants hab tile
-            in
-            case attackers of
-                [] ->
-                    State.state tile
-
-                _ ->
-                    State
-                        (\( oldSeed, reports ) ->
-                            let
-                                ( ( newEvents, newTile ), newSeed ) =
-                                    State.run oldSeed (resolve tile hab)
-                            in
-                            case newEvents of
-                                [] ->
-                                    ( tile, ( newSeed, reports ) )
-
-                                _ ->
-                                    ( newTile
-                                    , ( newSeed
-                                      , { turn = turn
-                                        , habitat = Game.State.habitatFullName hab
-                                        , events = newEvents
-                                        }
-                                            :: reports
-                                      )
-                                    )
-                        )
-
-
-twoSidedBattle :
-    List Unit
-    -> List Combatant
-    -> Habitat
-    -> Tile
-    -> State Random.Seed ( List BattleEvent, Tile )
-twoSidedBattle attackingUnits defenders hab tile =
-    let
-        attackers : List Combatant
-        attackers =
-            List.map CMUnit attackingUnits
-
-        f : List Combatant -> List Combatant -> State Random.Seed (List BattleEvent)
-        f firing targets =
-            detectedInCombat firing targets
-                |> State.andThen
-                    (\detections ->
-                        State.map
-                            (\destroyed ->
-                                List.map DetectionEvent detections
-                                    ++ List.map DestructionEvent destroyed
-                            )
-                            (destroyedInCombat
-                                firing
-                                (List.map .detected detections)
-                            )
-                    )
-
-        events : State Random.Seed (List BattleEvent)
-        events =
-            f attackers defenders
-                |> State.andThen
-                    (\eventsA ->
-                        State.map
-                            (\eventsB -> eventsA ++ eventsB)
-                            (f defenders attackers)
-                    )
-
-        destructionEvents : List BattleEvent -> List Destruction
-        destructionEvents =
-            List.filterMap
-                (\e ->
-                    case e of
-                        DestructionEvent a ->
-                            Just a
-
-                        DetectionEvent _ ->
-                            Nothing
-                )
-
-        g : List BattleEvent -> ( List BattleEvent, Tile )
-        g battleEvents =
-            ( battleEvents, removeDestroyed (destructionEvents battleEvents) tile )
-    in
-    State.map g events
-
-
-{-| When there aren't any defenders at all:
-
-  - Non-combat buildings can be targeted.
-  - These buildings are automatically detected.
-
--}
-bombard : List Unit -> Habitat -> Tile -> State Random.Seed ( List BattleEvent, Tile )
-bombard attackingUnits hab tile =
-    let
-        attackers : List Combatant
-        attackers =
-            List.map CMUnit attackingUnits
-
-        -- HACK: Converting non-Combatant buildings to Combatants
-        buildings : List Combatant
-        buildings =
-            List.map (CMBuilding hab.player) hab.buildings
-
-        events : State Random.Seed (List BattleEvent)
-        events =
-            State.map
-                (\destroyed ->
-                    List.map DestructionEvent destroyed
-                )
-                (destroyedInCombat
-                    attackers
-                    buildings
-                )
-
-        destructionEvents : List BattleEvent -> List Destruction
-        destructionEvents =
-            List.filterMap
-                (\e ->
-                    case e of
-                        DestructionEvent a ->
-                            Just a
-
-                        DetectionEvent _ ->
-                            Nothing
-                )
-
-        g : List BattleEvent -> ( List BattleEvent, Tile )
-        g battleEvents =
-            ( battleEvents, removeDestroyed (destructionEvents battleEvents) tile )
-    in
-    State.map g events
+incrementTurn : Game -> Game
+incrementTurn game =
+    { game | turn = Turn (Game.State.unTurn game.turn + 1) }

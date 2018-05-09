@@ -1,7 +1,9 @@
 module View.Sidebar exposing (..)
 
-{-| These are the notifications, help messages, and unit descriptions
-that appear in boxes on the side of the screen.
+{-| The boxes that appear on the side of the screen.
+
+Notifications, help messages, unit descriptions, etc.
+
 -}
 
 import Either exposing (Either(..))
@@ -138,34 +140,47 @@ displayBattleReports model =
                     else
                         "an enemy "
             in
-            Html.li
-                []
-                [ case event of
-                    DetectionEvent { detector, detected } ->
-                        Html.text <|
-                            actor detector
-                                ++ Game.name (Combat.buildableFromCombatant detector)
-                                ++ (case detected of
-                                        CMUnit sub ->
-                                            " detected "
-                                                ++ acted detected
-                                                ++ (Unit.stats sub.class).name
+            case event of
+                DetectionEvent { detector, detected } ->
+                    if Combat.combatantPlayer detector == model.currentPlayer then
+                        Html.li
+                            []
+                            [ Html.text <|
+                                "Our "
+                                    ++ Game.name (Combat.buildableFromCombatant detector)
+                                    ++ (case detected of
+                                            CMUnit sub ->
+                                                " detected an enemy "
+                                                    ++ (Unit.stats sub.class).name
 
-                                        CMBuilding _ enemyBuilding ->
-                                            " found "
-                                                ++ acted detected
-                                                ++ (Building.stats enemyBuilding).name
-                                   )
-                                ++ "."
+                                            CMBuilding _ enemyBuilding ->
+                                                " found an enemy "
+                                                    ++ (Building.stats enemyBuilding).name
+                                       )
+                                    ++ "."
+                            ]
+                    else
+                        Html.text ""
 
-                    DestructionEvent { destroyer, destroyed } ->
-                        Html.text <|
-                            actor destroyer
-                                ++ Game.name (Combat.buildableFromCombatant destroyed)
-                                ++ " was destroyed by "
-                                ++ acted destroyed
-                                ++ attackDescription destroyer
-                ]
+                DestructionEvent { destroyer, destroyed } ->
+                    if Combat.combatantPlayer destroyer == model.currentPlayer then
+                        Html.li
+                            []
+                            [ Html.text <|
+                                "Our "
+                                    ++ Game.name (Combat.buildableFromCombatant destroyer)
+                                    ++ " destroyed an enemy unit or structure."
+                            ]
+                    else if Combat.combatantPlayer destroyed == model.currentPlayer then
+                        Html.li
+                            []
+                            [ Html.text <|
+                                "Our "
+                                    ++ Game.name (Combat.buildableFromCombatant destroyed)
+                                    ++ " was destroyed by enemy action."
+                            ]
+                    else
+                        Debug.crash "DestructionEvent where we weren't involved at all."
 
         displayReport : BattleReport -> Html Msg
         displayReport report =
@@ -181,14 +196,15 @@ displayBattleReports model =
                     []
                     (List.reverse (List.map displayEvent report.events))
                 ]
+
+        occuredLastTurn : BattleReport -> Bool
+        occuredLastTurn entry =
+            Game.unTurn entry.turn == Game.unTurn model.game.turn - 1
     in
     Html.div
         []
         (List.map displayReport
-            (List.filter
-                (\entry -> Game.unTurn entry.turn == Game.unTurn model.game.turn - 1)
-                model.gameLog
-            )
+            (List.filter occuredLastTurn model.gameLog)
         )
 
 

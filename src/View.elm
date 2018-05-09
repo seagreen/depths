@@ -62,9 +62,11 @@ viewGame model =
         (HexGrid _ dict) =
             model.game.grid
 
+        viewTitle : Html msg
         viewTitle =
             Html.h1 [] [ Html.text "FPG: The Depths" ]
 
+        viewPlayer : Html msg
         viewPlayer =
             Html.div []
                 [ Html.text <|
@@ -78,6 +80,7 @@ viewGame model =
                            )
                 ]
 
+        viewUserGuideLink : Html msg
         viewUserGuideLink =
             Html.p
                 []
@@ -96,6 +99,7 @@ viewGame model =
                     ]
                 ]
 
+        viewTurnNumber : Html msg
         viewTurnNumber =
             Html.p
                 []
