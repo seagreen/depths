@@ -129,6 +129,12 @@ viewGame model =
                         Html.div
                             []
                             [ case tile.fixed of
+                                Depths ->
+                                    Html.text ""
+
+                                Mountain Nothing ->
+                                    Html.text ""
+
                                 Mountain (Just hab) ->
                                     -- can only build on mountains
                                     Html.div
@@ -145,8 +151,6 @@ viewGame model =
                                                     Html.text ""
                                         ]
 
-                                _ ->
-                                    Html.text ""
                             , Html.div
                                 []
                                 (List.map (viewUnit model.selection) <| Game.friendlyUnits model.currentPlayer tile)
@@ -282,43 +286,65 @@ displayBattleReports model =
 
 viewHabitat : Model -> Point -> Habitat -> Html Msg
 viewHabitat model point hab =
-    if not (canSeeHabitat model point hab) then
-        Html.text ""
-    else
-        Html.div
-            [ onClick (SelectTile point)
-            , class "alert alert-success"
-            ]
-            [ Html.h4
-                []
-                [ Html.b
-                    []
-                    [ Html.text <| Game.habitatFullName hab ]
+    let
+        friendlyHabitat : Html Msg
+        friendlyHabitat =
+            Html.div
+                [ onClick (SelectTile point)
+                , class "alert alert-success"
                 ]
-            , productionForm model point hab
-            , Html.p
-                []
-                [ Html.text "Production: "
-                , badge
-                    [ Html.text <| toString (Building.production hab.buildings)
+                [ Html.h4
+                    []
+                    [ Html.b
+                        []
+                        [ Html.text <| Game.habitatFullName hab ]
+                    ]
+                , productionForm model point hab
+                , Html.p
+                    []
+                    [ Html.text "Production: "
+                    , badge
+                        [ Html.text <| toString (Building.production hab.buildings)
+                        ]
+                    ]
+                , Html.p
+                    []
+                    [ Html.text "Population: "
+                    , badge
+                        [ Html.text <| toString (Building.population hab.buildings) ]
+                    ]
+                , Html.p
+                    []
+                    [ Html.text <|
+                        "Buildings: "
+                            ++ (String.concat <|
+                                    List.intersperse ", " <|
+                                        List.map toString hab.buildings
+                               )
                     ]
                 ]
-            , Html.p
-                []
-                [ Html.text "Population: "
-                , badge
-                    [ Html.text <| toString (Building.population hab.buildings) ]
+
+        enemyHabitat : Html Msg
+        enemyHabitat =
+            Html.div
+                [ onClick (SelectTile point)
+                , class "alert alert-danger"
                 ]
-            , Html.p
-                []
-                [ Html.text <|
-                    "Buildings: "
-                        ++ (String.concat <|
-                                List.intersperse ", " <|
-                                    List.map toString hab.buildings
-                           )
+                [ Html.h4
+                    []
+                    [ Html.b
+                        []
+                        [ Html.text <| Game.habitatFullName hab ]
+                    ]
                 ]
-            ]
+    in
+    if hab.player == model.currentPlayer then
+        friendlyHabitat
+    else
+        if hasShipAtPoint model point then
+            enemyHabitat
+        else
+            Html.text ""
 
 
 productionForm : Model -> Point -> Habitat -> Html Msg
@@ -391,7 +417,7 @@ productionForm model point hab =
                 [ Hattr.for "constructing" ]
                 [ Svg.text <|
                     "Constructing"
-                        ++ (case viewRemainingProduction model point hab of
+                        ++ (case getRemainingProduction model point hab of
                                 Nothing ->
                                     ""
 
@@ -615,17 +641,20 @@ viewBoard model =
     in
     Svg.svg
         []
-        (List.map (renderPoint model.currentPlayer boardInfo) (Dict.toList dict))
+        (List.map (renderPoint model boardInfo) (Dict.toList dict))
 
 
-getAbbreviation : Player -> Tile -> String
-getAbbreviation currentPlayer tile =
+getAbbreviation : Model -> Point -> Tile -> String
+getAbbreviation model point tile =
     case Game.habitatFromTile tile of
         Just hab ->
-            Game.habitatAbbreviation hab
+            if canSeeHabitat model point hab then
+                Game.habitatAbbreviation hab
+            else
+                ""
 
         Nothing ->
-            case Game.friendlyUnits currentPlayer tile of
+            case Game.friendlyUnits model.currentPlayer tile of
                 [] ->
                     ""
 
@@ -657,8 +686,8 @@ movesToPoint start end speed =
         |> List.filterMap identity
 
 
-renderPoint : Player -> BoardInfo -> ( Point, Tile ) -> Html Msg
-renderPoint player bi ( point, tile ) =
+renderPoint : Model -> BoardInfo -> ( Point, Tile ) -> Html Msg
+renderPoint model bi ( point, tile ) =
     let
         ( centerX, centerY ) =
             HexGrid.hexToPixel bi.layout point
@@ -668,21 +697,27 @@ renderPoint player bi ( point, tile ) =
 
         topText : String
         topText =
-            getAbbreviation player tile
+            getAbbreviation model point tile
 
         bottomText : String
         bottomText =
             case tile.fixed of
-                Mountain (Just hab) ->
-                    case viewRemainingProduction bi.model point hab of
-                        Nothing ->
-                            ""
-
-                        Just remaining ->
-                            toString remaining
-
-                _ ->
+                Depths ->
                     ""
+
+                Mountain Nothing ->
+                    ""
+
+                Mountain (Just hab) ->
+                    if hab.player == model.currentPlayer then
+                        case getRemainingProduction bi.model point hab of
+                            Just remaining ->
+                                toString remaining
+
+                            Nothing ->
+                                ""
+                    else
+                        ""
     in
     Svg.g
         [ onClick <| SelectPoint point
@@ -718,8 +753,8 @@ renderPoint player bi ( point, tile ) =
         )
 
 
-viewRemainingProduction : Model -> Point -> Habitat -> Maybe Int
-viewRemainingProduction model point hab =
+getRemainingProduction : Model -> Point -> Habitat -> Maybe Int
+getRemainingProduction model point hab =
     case ( hab.producing, Dict.get point model.buildOrders ) of
         ( Just producing, Just buildOrder ) ->
             if buildOrder == producing then
