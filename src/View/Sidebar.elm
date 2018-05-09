@@ -103,6 +103,49 @@ displayOutcome game =
 displayBattleReports : Model -> Html Msg
 displayBattleReports model =
     let
+        occuredLastTurn : BattleReport -> Bool
+        occuredLastTurn entry =
+            Game.unTurn entry.turn == Game.unTurn model.game.turn - 1
+    in
+    Html.div
+        []
+        (List.map (displayReport model)
+            (List.filter occuredLastTurn model.gameLog)
+        )
+
+displayReport : Model -> BattleReport -> Html Msg
+displayReport model report =
+    let
+
+        visibleEvents : List (Html Msg)
+        visibleEvents =
+            List.filterMap (displayEventIfVisible model) report.events
+                -- Show events from oldest to newest.
+                |> List.reverse
+
+    in
+    case visibleEvents of
+        [] ->
+            Html.text ""
+
+        _ ->
+            Html.div
+                [ class "alert alert-danger" ]
+                [ Html.h4
+                    []
+                    [ Html.b
+                        []
+                        [ Html.text <| "Combat log: " ++ report.habitat ]
+                    ]
+                , Html.ol
+                    []
+                    visibleEvents
+                ]
+
+
+displayEventIfVisible : Model -> BattleEvent -> Maybe (Html Msg)
+displayEventIfVisible model event =
+    let
         attackDescription : Combatant -> String
         attackDescription combatant =
             case combatant of
@@ -125,87 +168,62 @@ displayBattleReports model =
                         _ ->
                             "habitat-based weapons."
 
-        displayEvent : BattleEvent -> Html Msg
-        displayEvent event =
-            let
-                actor combatant =
-                    if Combat.combatantPlayer combatant == model.currentPlayer then
-                        "Our "
-                    else
-                        "Enemy "
+        actor combatant =
+            if Combat.combatantPlayer combatant == model.currentPlayer then
+                "Our "
+            else
+                "Enemy "
 
-                acted combatant =
-                    if Combat.combatantPlayer combatant == model.currentPlayer then
-                        "our "
-                    else
-                        "an enemy "
-            in
-            case event of
-                DetectionEvent { detector, detected } ->
-                    if Combat.combatantPlayer detector == model.currentPlayer then
-                        Html.li
-                            []
-                            [ Html.text <|
-                                "Our "
-                                    ++ Game.name (Combat.buildableFromCombatant detector)
-                                    ++ (case detected of
-                                            CMUnit sub ->
-                                                " detected an enemy "
-                                                    ++ (Unit.stats sub.class).name
-
-                                            CMBuilding _ enemyBuilding ->
-                                                " found an enemy "
-                                                    ++ (Building.stats enemyBuilding).name
-                                       )
-                                    ++ "."
-                            ]
-                    else
-                        Html.text ""
-
-                DestructionEvent { destroyer, destroyed } ->
-                    if Combat.combatantPlayer destroyer == model.currentPlayer then
-                        Html.li
-                            []
-                            [ Html.text <|
-                                "Our "
-                                    ++ Game.name (Combat.buildableFromCombatant destroyer)
-                                    ++ " destroyed an enemy unit or structure."
-                            ]
-                    else if Combat.combatantPlayer destroyed == model.currentPlayer then
-                        Html.li
-                            []
-                            [ Html.text <|
-                                "Our "
-                                    ++ Game.name (Combat.buildableFromCombatant destroyed)
-                                    ++ " was destroyed by enemy action."
-                            ]
-                    else
-                        Debug.crash "DestructionEvent where we weren't involved at all."
-
-        displayReport : BattleReport -> Html Msg
-        displayReport report =
-            Html.div
-                [ class "alert alert-danger" ]
-                [ Html.h4
-                    []
-                    [ Html.b
-                        []
-                        [ Html.text <| "Combat log: " ++ report.habitat ]
-                    ]
-                , Html.ol
-                    []
-                    (List.reverse (List.map displayEvent report.events))
-                ]
-
-        occuredLastTurn : BattleReport -> Bool
-        occuredLastTurn entry =
-            Game.unTurn entry.turn == Game.unTurn model.game.turn - 1
+        acted combatant =
+            if Combat.combatantPlayer combatant == model.currentPlayer then
+                "our "
+            else
+                "an enemy "
     in
-    Html.div
-        []
-        (List.map displayReport
-            (List.filter occuredLastTurn model.gameLog)
-        )
+    case event of
+        DetectionEvent { detector, detected } ->
+            if Combat.combatantPlayer detector == model.currentPlayer then
+                Just <|
+                    Html.li
+                        []
+                        [ Html.text <|
+                            "Our "
+                                ++ Game.name (Combat.buildableFromCombatant detector)
+                                ++ (case detected of
+                                        CMUnit sub ->
+                                            " detected an enemy "
+                                                ++ (Unit.stats sub.class).name
+
+                                        CMBuilding _ enemyBuilding ->
+                                            " found an enemy "
+                                                ++ (Building.stats enemyBuilding).name
+                                   )
+                                ++ "."
+                        ]
+            else
+                Nothing
+
+        DestructionEvent { destroyer, destroyed } ->
+            if Combat.combatantPlayer destroyer == model.currentPlayer then
+                Just <|
+                    Html.li
+                        []
+                        [ Html.text <|
+                            "Our "
+                                ++ Game.name (Combat.buildableFromCombatant destroyer)
+                                ++ " destroyed an enemy unit or structure."
+                        ]
+            else if Combat.combatantPlayer destroyed == model.currentPlayer then
+                Just <|
+                    Html.li
+                        []
+                        [ Html.text <|
+                            "Our "
+                                ++ Game.name (Combat.buildableFromCombatant destroyed)
+                                ++ " was destroyed by enemy action."
+                        ]
+            else
+                Debug.crash "DestructionEvent where we weren't involved at all."
 
 
 viewHabitat : Model -> Point -> Habitat -> Html Msg
