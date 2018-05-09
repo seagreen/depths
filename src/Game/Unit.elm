@@ -10,6 +10,16 @@ type Player
     | Player2
 
 
+playerToString : Player -> String
+playerToString player =
+    case player of
+        Player1 ->
+            "Player 1"
+
+        Player2 ->
+            "Player 2"
+
+
 type alias Unit =
     { id : Id
     , player : Player

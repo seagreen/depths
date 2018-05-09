@@ -89,7 +89,7 @@ displayOutcome game =
         Victory player ->
             Html.div
                 [ class "alert alert-success" ]
-                [ Html.text <| "Glorious victory to " ++ toString player ++ "!" ]
+                [ Html.text <| "Glorious victory to " ++ Unit.playerToString player ++ "!" ]
 
         Draw ->
             Html.div
@@ -258,7 +258,7 @@ viewHabitat model point hab =
                     []
                     [ Html.b
                         []
-                        [ Html.text <| Game.habitatFullName hab ]
+                        [ Html.text <| "Enemy habitat: " ++ Game.habitatFullName hab ]
                     ]
                 ]
     in

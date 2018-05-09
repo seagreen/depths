@@ -68,16 +68,9 @@ viewGame model =
 
         viewPlayer : Html msg
         viewPlayer =
-            Html.div []
-                [ Html.text <|
-                    "Player "
-                        ++ (case model.currentPlayer of
-                                Player1 ->
-                                    "1"
-
-                                Player2 ->
-                                    "2"
-                           )
+            Html.div
+                []
+                [ Html.text <| Unit.playerToString model.currentPlayer
                 ]
 
         viewUserGuideLink : Html msg
