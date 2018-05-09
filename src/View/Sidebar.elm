@@ -113,16 +113,15 @@ displayBattleReports model =
             (List.filter occuredLastTurn model.gameLog)
         )
 
+
 displayReport : Model -> BattleReport -> Html Msg
 displayReport model report =
     let
-
         visibleEvents : List (Html Msg)
         visibleEvents =
             List.filterMap (displayEventIfVisible model) report.events
                 -- Show events from oldest to newest.
                 |> List.reverse
-
     in
     case visibleEvents of
         [] ->
