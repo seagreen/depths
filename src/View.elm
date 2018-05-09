@@ -4,13 +4,12 @@ import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game exposing (Outcome(..))
 import Game.Building as Building exposing (Building(..))
-import Game.Combat
-    exposing
-        ( Combatant(..)
-        , BattleEvent(..)
-        , BattleReport
-        )
 import Game.Combat as Combat
+    exposing
+        ( BattleEvent(..)
+        , BattleReport
+        , Combatant(..)
+        )
 import Game.State as Game
     exposing
         ( Buildable(..)
@@ -86,12 +85,14 @@ viewGame model =
         , Html.div []
             [ Html.text <|
                 "Player "
-                    ++ case model.currentPlayer of
-                           Player1 ->
-                               "1"
-                           Player2 ->
-                               "2"
-                    ++ "'s turn"
+                    ++ (case model.currentPlayer of
+                            Player1 ->
+                                "1"
+
+                            Player2 ->
+                                "2"
+                                    ++ "'s turn"
+                       )
             ]
         , Html.div
             [ class "row" ]
@@ -150,7 +151,6 @@ viewGame model =
                                                 else
                                                     Html.text ""
                                         ]
-
                             , Html.div
                                 []
                                 (List.map (viewUnit model.selection) <| Game.friendlyUnits model.currentPlayer tile)
@@ -213,22 +213,20 @@ displayBattleReports model =
                         _ ->
                             "habitat-based weapons."
 
-
         displayEvent : BattleEvent -> Html Msg
         displayEvent event =
-
             let
                 actor combatant =
                     if Combat.combatantPlayer combatant == model.currentPlayer then
-                       "Our "
+                        "Our "
                     else
-                       "Enemy "
+                        "Enemy "
 
                 acted combatant =
                     if Combat.combatantPlayer combatant == model.currentPlayer then
-                       "our "
+                        "our "
                     else
-                       "an enemy "
+                        "an enemy "
             in
             Html.li
                 []
@@ -340,11 +338,10 @@ viewHabitat model point hab =
     in
     if hab.player == model.currentPlayer then
         friendlyHabitat
+    else if hasShipAtPoint model point then
+        enemyHabitat
     else
-        if hasShipAtPoint model point then
-            enemyHabitat
-        else
-            Html.text ""
+        Html.text ""
 
 
 productionForm : Model -> Point -> Habitat -> Html Msg

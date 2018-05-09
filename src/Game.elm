@@ -378,7 +378,7 @@ resolveSingleBattle turn tile =
 
 
 twoSidedBattle :
-       List Unit
+    List Unit
     -> List Combatant
     -> Habitat
     -> Tile
@@ -447,7 +447,7 @@ bombard attackingUnits hab tile =
         attackers =
             List.map CMUnit attackingUnits
 
-        -- HACK: Converting non-Combatant buildings to Combatants 
+        -- HACK: Converting non-Combatant buildings to Combatants
         buildings : List Combatant
         buildings =
             List.map (CMBuilding hab.player) hab.buildings
@@ -456,7 +456,7 @@ bombard attackingUnits hab tile =
         events =
             State.map
                 (\destroyed ->
-                        List.map DestructionEvent destroyed
+                    List.map DestructionEvent destroyed
                 )
                 (destroyedInCombat
                     attackers
