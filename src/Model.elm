@@ -59,7 +59,7 @@ init startSeed =
     , currentPlayer = Player1
     , startSeed = startSeed
     , server =
-        { url = "ws://127.0.0.1:8000"
+        { url = "ws://45.33.68.74:16000"
         , room = "hello"
         }
     }
