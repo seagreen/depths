@@ -26,7 +26,7 @@ import Game.State
         )
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
-import Random
+import Random.Pcg as Random
 import State exposing (State(..))
 import Util
 

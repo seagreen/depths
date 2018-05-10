@@ -25,7 +25,7 @@ import Model
         , Selection(..)
         )
 import Protocol exposing (Message(..), NetworkMessage)
-import Random
+import Random.Pcg as Random
 import Util
 
 
@@ -185,7 +185,7 @@ update msg model =
 messageRecieved : Model -> Protocol.Message -> ( Model, Cmd Msg )
 messageRecieved model message =
     let
-        newGameModel : Int -> Model
+        newGameModel : Random.Seed -> Model
         newGameModel seed =
             let
                 game =
@@ -193,7 +193,7 @@ messageRecieved model message =
             in
             { model
                 | gameStatus = InGame
-                , game = { game | randomSeed = Random.initialSeed seed }
+                , game = { game | randomSeed = seed }
             }
     in
     case ( model.gameStatus, message ) of
@@ -202,11 +202,15 @@ messageRecieved model message =
 
         ( WaitingForStart, JoinMessage ) ->
             let
+                ourSeed : Random.Seed
+                ourSeed =
+                    model.game.randomSeed
+
                 startMsg : Protocol.Message
                 startMsg =
-                    StartGameMessage { seed = model.startSeed }
+                    StartGameMessage { seed = ourSeed }
             in
-            ( newGameModel model.startSeed
+            ( newGameModel ourSeed
             , Protocol.send model.server startMsg
             )
 

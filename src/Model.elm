@@ -40,13 +40,12 @@ type alias Model =
 
     -- The player controlling the UI:
     , currentPlayer : Player
-    , startSeed : Int
     , server : Protocol.Server
     }
 
 
-init : Int -> Model
-init startSeed =
+init : Model
+init =
     { game = Game.State.init
     , gameStatus = NotPlayingYet
     , plannedMoves = Dict.empty
@@ -57,7 +56,6 @@ init startSeed =
     , hoverPoint = Nothing
     , gameLog = []
     , currentPlayer = Player1
-    , startSeed = startSeed
     , server =
         { url = "ws://45.33.68.74:16000"
         , room = "hello"

@@ -19,6 +19,7 @@ import Game.Unit exposing (Submarine(..))
 import HexGrid exposing (Point)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
+import Random.Pcg as Random
 import WebSocket
 
 
@@ -37,7 +38,7 @@ type alias NetworkMessage =
 type Message
     = JoinMessage
     | StartGameMessage
-        { seed : Int
+        { seed : Random.Seed
         }
     | TurnMessage
         { commands : Commands
@@ -100,7 +101,7 @@ decodeStartGameMessage : Decoder Message
 decodeStartGameMessage =
     Decode.map
         (\seed -> StartGameMessage { seed = seed })
-        (Decode.field "seed" Decode.int)
+        (Decode.field "seed" Random.fromJson)
 
 
 decodeTurnMessage : Decoder Message
@@ -275,9 +276,9 @@ encodeValue message =
             encodeTurnMessage commands
 
 
-encodeStartGameMessage : Int -> Value
+encodeStartGameMessage : Random.Seed -> Value
 encodeStartGameMessage seed =
-    Encode.object [ ( "seed", Encode.int seed ) ]
+    Encode.object [ ( "seed", Random.toJson seed ) ]
 
 
 encodeTurnMessage : Commands -> Value

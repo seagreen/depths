@@ -15,8 +15,8 @@ import Game.State
         , Turn(..)
         )
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
-import Random
-import Random.List
+import Random.Pcg as Random
+import Random.Pcg.List as RandomList
 import State exposing (State(..))
 
 
@@ -136,8 +136,8 @@ detectedCombatants finderList lurkerList =
                         }
                     )
                 )
-                (Random.List.shuffle finderList)
-                (Random.List.shuffle lurkerList)
+                (RandomList.shuffle finderList)
+                (RandomList.shuffle lurkerList)
 
 
 {-| A successful stealth roll makes a unit immune to detection.
@@ -198,8 +198,8 @@ destroyedByFirepower shooterHits targetList =
                         }
                     )
                 )
-                (Random.List.shuffle shooterHits)
-                (Random.List.shuffle targetList)
+                (RandomList.shuffle shooterHits)
+                (RandomList.shuffle targetList)
 
 
 {-| Takes the searches and the units being searched for.

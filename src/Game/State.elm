@@ -6,7 +6,7 @@ import Game.Building as Building exposing (Building(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (Direction, HexGrid(..), Point)
-import Random
+import Random.Pcg as Random
 import State
 
 
@@ -65,9 +65,7 @@ init =
             ]
     , turn = Turn 1
     , idSeed = idSeed
-    , randomSeed =
-        -- This gets overwritten at startup.
-        Random.initialSeed 0
+    , randomSeed = Random.initialSeed 0
     }
 
 

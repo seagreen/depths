@@ -13,21 +13,14 @@ enter =
     13
 
 
-main : Program { seed : Int } Model.Model Update.Msg
+main : Program Never Model.Model Update.Msg
 main =
-    Html.programWithFlags
-        { init = \{ seed } -> ( Model.init seed, initCommands )
+    Html.program
+        { init = ( Model.init, Cmd.none )
         , update = Update.update
         , view = View.view
         , subscriptions = subscriptions
         }
-
-
-initCommands : Cmd Update.Msg
-initCommands =
-    Cmd.batch
-        -- [ Model.newRandomSeed TODO
-        []
 
 
 subscriptions : Model.Model -> Sub Update.Msg

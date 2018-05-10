@@ -269,13 +269,13 @@ viewHabitat model point hab =
         enemyHabitat =
             Html.div
                 [ Hevent.onClick (SelectTile point)
-                , class "alert alert-danger"
+                , class "alert alert-warning"
                 ]
                 [ Html.h4
                     []
                     [ Html.b
                         []
-                        [ Html.text <| "Enemy habitat: " ++ Game.habitatFullName hab ]
+                        [ Html.text <| "Location: " ++ Game.habitatFullName hab ]
                     ]
                 ]
     in
