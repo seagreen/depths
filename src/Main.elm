@@ -3,7 +3,6 @@ module Main exposing (..)
 import Html
 import Keyboard
 import Model
-import Task
 import Update
 import View
 import WebSocket
@@ -27,9 +26,8 @@ main =
 initCommands : Cmd Update.Msg
 initCommands =
     Cmd.batch
-        -- [ Model.newRandomSeed
-        [ Task.perform identity (Task.succeed Update.Connect)
-        ]
+        -- [ Model.newRandomSeed TODO
+        []
 
 
 subscriptions : Model.Model -> Sub Update.Msg
