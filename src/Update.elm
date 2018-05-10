@@ -15,7 +15,7 @@ import Game.State as Game
         , Tile
         , Turn(..)
         )
-import Game.Unit exposing (Player(..))
+import Game.Unit exposing (Player(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Json.Decode as Decode
 import Model
@@ -295,10 +295,7 @@ resolveOnlineGameTurn model enemyCommands =
         , buildOrders = Dict.empty
         , turnComplete = False
         , enemyCommands = Nothing
-        , selection =
-            Nothing
-
-        -- TODO: Need two selections in the future updateSelection newGameState model.selection
+        , selection = updateSelection newGameState model.selection
         , gameLog = reports ++ model.gameLog
     }
 
@@ -355,9 +352,11 @@ splitPlannedMoves allMoves =
 updateSelection : Game -> Maybe Selection -> Maybe Selection
 updateSelection game oldSelection =
     let
+        stillActive : Id -> Maybe ( Point, Unit )
         stillActive id =
             Game.findUnit id (Util.unHexGrid game.grid)
 
+        maybeBecameHabitat : Id -> Maybe Selection
         maybeBecameHabitat id =
             Game.habitatDict game.grid
                 |> Dict.toList
