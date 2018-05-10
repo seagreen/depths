@@ -79,7 +79,7 @@ stats sub =
             , speed = 2
             , sensors = 2
             , stealth = 0
-            , firepower = 2
+            , firepower = 3
             }
 
         AttackSubmarine ->
@@ -90,7 +90,7 @@ stats sub =
             , speed = 4
             , sensors = 4
             , stealth = 3
-            , firepower = 3
+            , firepower = 5
             }
 
 
