@@ -40,3 +40,7 @@ polygon {
 g {
   cursor: pointer;
 }
+
+.hex:hover {
+  opacity: 0.7;
+}

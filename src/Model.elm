@@ -35,7 +35,6 @@ type alias Model =
     , turnComplete : Bool
     , enemyCommands : Maybe Commands
     , selection : Maybe Selection
-    , hoverPoint : Maybe Point
     , gameLog : List BattleReport
 
     -- The player controlling the UI:
@@ -53,7 +52,6 @@ init =
     , turnComplete = False
     , enemyCommands = Nothing
     , selection = Nothing
-    , hoverPoint = Nothing
     , gameLog = []
     , currentPlayer = Player1
     , server =

@@ -43,8 +43,6 @@ type Msg
     | SelectPoint Point
     | SelectUnit Id
     | SelectTile Point
-    | HoverPoint Point
-    | EndHover
     | PlanMoves Id (List Point)
     | CancelMove Id
     | BuildOrder Buildable
@@ -70,14 +68,6 @@ update msg model =
 
         EndRound ->
             endRoundOnlineGame model
-
-        HoverPoint point ->
-            ( { model | hoverPoint = Just point }
-            , Cmd.none
-            )
-
-        EndHover ->
-            ( { model | hoverPoint = Nothing }, Cmd.none )
 
         SelectPoint point ->
             ( { model | selection = newSelection model point }, Cmd.none )

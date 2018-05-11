@@ -160,6 +160,7 @@ renderPoint model bi ( point, tile ) =
     in
     Svg.g
         [ Sevent.onClick <| SelectPoint point
+        , Sattr.class "hex"
         , onRightClick <|
             case bi.selectedUnit of
                 Nothing ->
@@ -175,8 +176,6 @@ renderPoint model bi ( point, tile ) =
 
                             moves ->
                                 PlanMoves unit.id moves
-        , Sevent.onMouseOut EndHover
-        , Sevent.onMouseOver (HoverPoint point)
         ]
         (viewPolygon
             bi.model
@@ -241,8 +240,6 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                                     Red
                         else if Set.member point friendlyPlannedMoves then
                             DarkBlue
-                        else if Just point == model.hoverPoint then
-                            Yellow
                         else
                             Blue
 
@@ -259,8 +256,6 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                                     White
                         else if Set.member point friendlyPlannedMoves then
                             DarkGray
-                        else if Just point == model.hoverPoint then
-                            Yellow
                         else
                             case mHab of
                                 Just hab ->
