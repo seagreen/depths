@@ -89,16 +89,24 @@ update msg model =
             ( { model | selection = Just (SelectedPoint point) }, Cmd.none )
 
         PlanMoves id points ->
-            ( { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }, Cmd.none )
+            unlessTurnOver
+                model
+                ( { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }, Cmd.none )
 
         CancelMove id ->
-            ( { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }, Cmd.none )
-
-        StopBuilding ->
-            ( stopBuilding model, Cmd.none )
+            unlessTurnOver
+                model
+                ( { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }, Cmd.none )
 
         BuildOrder buildable ->
-            ( buildOrder model buildable, Cmd.none )
+            unlessTurnOver
+                model
+                ( buildOrder model buildable, Cmd.none )
+
+        StopBuilding ->
+            unlessTurnOver
+                model
+                ( stopBuilding model, Cmd.none )
 
         NameEditorFull new ->
             ( setHabitatName
@@ -180,6 +188,14 @@ update msg model =
 
                 Ok message ->
                     messageRecieved model message.payload
+
+
+unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
+unlessTurnOver model action =
+    if model.turnComplete then
+        ( model, Cmd.none )
+    else
+        action
 
 
 messageRecieved : Model -> Protocol.Message -> ( Model, Cmd Msg )
