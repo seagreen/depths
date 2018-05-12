@@ -64,7 +64,7 @@ viewGame model =
 
         viewTitle : Html msg
         viewTitle =
-            Html.h1 [] [ Html.text "FPG: The Depths" ]
+            Html.h1 [] [ Html.text "The Depths" ]
 
         viewPlayer : Html msg
         viewPlayer =

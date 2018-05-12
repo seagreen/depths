@@ -4,8 +4,6 @@ Casual, single-player strategy game written in Elm.
 
 Play at [housejeffries.com/games/depths](https://housejeffries.com/games/depths).
 
-FPG stands for Functional Propaganda Games.
-
 ![screenshot](./screenshot.png)
 
 # User Guide
