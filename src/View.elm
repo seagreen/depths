@@ -16,7 +16,7 @@ import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
-import Model exposing (GameType(..), Model, Selection(..))
+import Model exposing (GameType(..), Model, Selection(..), TurnStatus(..))
 import Update exposing (Msg(..))
 import Util exposing (badge, label_, onChange)
 import View.Board as Board
@@ -135,16 +135,18 @@ endTurnButton model =
             Html.text ""
 
         Ongoing ->
-            if model.turnComplete then
-                Html.button
-                    [ Hattr.type_ "button"
-                    , class "btn btn-default btn-lg"
-                    ]
-                    [ Html.text "(Waiting)" ]
-            else
-                Html.button
-                    [ Hevent.onClick EndRound
-                    , Hattr.type_ "button"
-                    , class "btn btn-primary btn-lg"
-                    ]
-                    [ Html.text "End turn" ]
+            case model.turnStatus of
+                TurnInProgress ->
+                    Html.button
+                        [ Hevent.onClick EndRound
+                        , Hattr.type_ "button"
+                        , class "btn btn-primary btn-lg"
+                        ]
+                        [ Html.text "End turn" ]
+
+                TurnComplete ->
+                    Html.button
+                        [ Hattr.type_ "button"
+                        , class "btn btn-default btn-lg"
+                        ]
+                        [ Html.text "(Waiting)" ]

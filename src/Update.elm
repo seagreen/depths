@@ -23,6 +23,7 @@ import Model
         ( GameType(..)
         , Model
         , Selection(..)
+        , TurnStatus(..)
         )
 import Protocol exposing (Message(..), NetworkMessage)
 import Random.Pcg as Random
@@ -182,10 +183,12 @@ update msg model =
 
 unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
 unlessTurnOver model action =
-    if model.turnComplete then
-        ( model, Cmd.none )
-    else
-        action
+    case model.turnStatus of
+        TurnInProgress ->
+            action
+
+        TurnComplete ->
+            ( model, Cmd.none )
 
 
 messageRecieved : Model -> Protocol.Message -> ( Model, Cmd Msg )
@@ -253,7 +256,7 @@ endRoundOnlineGame model =
         newModel =
             case model.enemyCommands of
                 Nothing ->
-                    { model | turnComplete = True }
+                    { model | turnStatus = TurnComplete }
 
                 Just enemyCommands ->
                     resolveOnlineGameTurn model enemyCommands
@@ -274,10 +277,12 @@ endRoundOnlineGame model =
 
 opponentEndsRoundOnlineGame : Model -> Commands -> Model
 opponentEndsRoundOnlineGame model enemyCommands =
-    if model.turnComplete then
-        resolveOnlineGameTurn model enemyCommands
-    else
-        { model | enemyCommands = Just enemyCommands }
+    case model.turnStatus of
+        TurnInProgress ->
+            { model | enemyCommands = Just enemyCommands }
+
+        TurnComplete ->
+            resolveOnlineGameTurn model enemyCommands
 
 
 resolveOnlineGameTurn : Model -> Commands -> Model
@@ -303,7 +308,7 @@ resolveOnlineGameTurn model enemyCommands =
         | game = newGameState
         , plannedMoves = removeOrphanMoves newGameState laterMoves
         , buildOrders = Dict.empty
-        , turnComplete = False
+        , turnStatus = TurnInProgress
         , enemyCommands = Nothing
         , selection = updateSelection newGameState model.selection
         , gameLog = reports ++ model.gameLog

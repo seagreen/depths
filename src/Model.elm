@@ -32,7 +32,7 @@ type alias Model =
     -- Unfortunately since habitats are defined and stored in the Game part
     -- of the code they don't know about UI things like build orders.
     , buildOrders : Dict Point Buildable
-    , turnComplete : Bool
+    , turnStatus : TurnStatus
     , enemyCommands : Maybe Commands
     , selection : Maybe Selection
     , gameLog : List BattleReport
@@ -49,7 +49,7 @@ init =
     , gameStatus = NotPlayingYet
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
-    , turnComplete = False
+    , turnStatus = TurnInProgress
     , enemyCommands = Nothing
     , selection = Nothing
     , gameLog = []
@@ -59,6 +59,11 @@ init =
         , room = "hello"
         }
     }
+
+
+type TurnStatus
+    = TurnInProgress
+    | TurnComplete
 
 
 {-| There are two types of selections: (1) SelectionPoints, which happen
