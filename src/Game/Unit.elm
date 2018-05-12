@@ -44,23 +44,25 @@ type alias Stats =
 
 
 type Submarine
-    = ColonySubmarine
+    = ColonySub
     | RemotelyOperatedVehicle
-    | AttackSubmarine
+    | AttackSub
+    | Boomer
 
 
 all : List Submarine
 all =
-    [ ColonySubmarine
+    [ ColonySub
     , RemotelyOperatedVehicle
-    , AttackSubmarine
+    , AttackSub
+    , Boomer
     ]
 
 
 stats : Submarine -> Stats
 stats sub =
     case sub of
-        ColonySubmarine ->
+        ColonySub ->
             { name = "Colony Submarine"
             , abbreviation = "CS"
             , cost = 20
@@ -82,7 +84,7 @@ stats sub =
             , firepower = 3
             }
 
-        AttackSubmarine ->
+        AttackSub ->
             { name = "Attack Submarine"
             , abbreviation = "SSN"
             , cost = 30
@@ -93,18 +95,32 @@ stats sub =
             , firepower = 5
             }
 
+        Boomer ->
+            { name = "Boomer"
+            , abbreviation = "B"
+            , cost = 30
+            , prerequisites = [ SubmarinePen, Armory, Dormitory ]
+            , speed = 2
+            , sensors = 6
+            , stealth = 1
+            , firepower = 6
+            }
+
 
 fromString : String -> Maybe Submarine
 fromString s =
     case s of
-        "ColonySubmarine" ->
-            Just ColonySubmarine
+        "ColonySub" ->
+            Just ColonySub
 
         "RemotelyOperatedVehicle" ->
             Just RemotelyOperatedVehicle
 
-        "AttackSubmarine" ->
-            Just AttackSubmarine
+        "AttackSub" ->
+            Just AttackSub
+
+        "Boomer" ->
+            Just Boomer
 
         _ ->
             Nothing
@@ -113,7 +129,7 @@ fromString s =
 helpText : Submarine -> Maybe (Html a)
 helpText sub =
     case sub of
-        ColonySubmarine ->
+        ColonySub ->
             Just <|
                 Html.div
                     []

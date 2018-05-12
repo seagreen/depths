@@ -167,7 +167,7 @@ moveUnit oldPoint unit newPoint grid =
         newTile : Tile -> Tile
         newTile tile =
             case unit.class of
-                ColonySubmarine ->
+                ColonySub ->
                     case tile.fixed of
                         Depths ->
                             moveTo tile

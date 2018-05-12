@@ -153,7 +153,7 @@ displayEventIfVisible model event =
                         RemotelyOperatedVehicle ->
                             "a torpedo from a ROV."
 
-                        AttackSubmarine ->
+                        AttackSub ->
                             "a torpedo from an attack submarine."
 
                         _ ->

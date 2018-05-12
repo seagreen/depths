@@ -50,7 +50,7 @@ init =
               , Tile
                     (Dict.singleton
                         (Id.unId idA)
-                        (Unit idA Player1 ColonySubmarine)
+                        (Unit idA Player1 ColonySub)
                     )
                     Depths
               )
@@ -58,7 +58,7 @@ init =
               , Tile
                     (Dict.singleton
                         (Id.unId idB)
-                        (Unit idB Player2 ColonySubmarine)
+                        (Unit idB Player2 ColonySub)
                     )
                     Depths
               )
