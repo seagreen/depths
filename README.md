@@ -2,8 +2,6 @@
 
 Casual, single-player strategy game written in Elm.
 
-Play at [housejeffries.com/games/depths](https://housejeffries.com/games/depths).
-
 ![screenshot](./screenshot.png)
 
 # User Guide
