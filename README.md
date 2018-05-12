@@ -6,15 +6,11 @@ Casual, single-player strategy game written in Elm.
 
 # User Guide
 
-**Goal**: establish four habitats or survive until turn 200.
-
-**Disclaimer**: the game's a work-in-progress and (probably) not yet fun. Without enemy bases to attack there isn't much strategy, but I want to get the mechanics nailed down before I do anything else.
+**Goal**: destroy all the opponent's habitats.
 
 **Gameplay**: Combat only happens at habitats. Units not in combat are invisible to the opponent.
 
-Note that to de-select a unit you have to click outside of its move range. If you click another unit within its move range you'll issue a new move command, not select the new unit. I'm considering switching to a more standard 'Left click selects' / 'Right click moves' setup to fix this.
-
-To learn more you'll have to look at the source. I suggest:
+To learn more you'll have to look at the source(!?). I suggest:
 
 * [src/Game/Unit.elm](./src/Game/Unit.elm)
 * [src/Game/Building.elm](./src/Game/Building.elm)
@@ -47,7 +43,7 @@ Sometimes you just want a lot of cool options for stuff to build. That's what we
 
 # License
 
-© Ian Jeffries 2017.
+© Ian Jeffries 2018.
 
 _**Except for**_ the name of the organization, the name of the game, and any abbreviations of either, everything original is released under the [3-Clause BSD License](https://opensource.org/licenses/BSD-3-Clause).
 
