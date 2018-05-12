@@ -85,7 +85,7 @@ stats infra =
 
         SonarArray ->
             { name = "Sonar Array"
-            , cost = 8
+            , cost = 4
             , prerequisites = [ Armory ]
             , productionBonus = 0
             , populationBonus = 0
@@ -94,11 +94,11 @@ stats infra =
 
         TorpedoTube ->
             { name = "Torpedo Tube"
-            , cost = 5
+            , cost = 6
             , prerequisites = [ Armory ]
             , productionBonus = 0
             , populationBonus = 0
-            , combatStats = Just { sensors = 0, firepower = 2 }
+            , combatStats = Just { sensors = 0, firepower = 4 }
             }
 
         Residences ->
@@ -113,7 +113,7 @@ stats infra =
         Datacenter ->
             { name = "Datacenter"
             , cost = 20
-            , prerequisites = []
+            , prerequisites = [ ShippingDock ]
             , productionBonus = 1
             , populationBonus = 0
             , combatStats = Nothing
@@ -159,10 +159,6 @@ all =
     , Datacenter
     , Supercomputer
     ]
-
-
-
--- TODO: Get rid of this
 
 
 fromString : String -> Maybe Building

@@ -15,62 +15,91 @@ import Game.State as Game
         , Tile
         , Turn(..)
         )
+import Game.Unit exposing (Player(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
+import Json.Decode as Decode
 import Model
     exposing
-        ( Model
-        , Msg(..)
+        ( GameType(..)
+        , Model
         , Selection(..)
         )
-import Random
+import Protocol exposing (Message(..), NetworkMessage)
+import Random.Pcg as Random
 import Util
 
 
-update : Msg -> Model -> Model
+type Msg
+    = NoOp
+      -- When both players commands have been queued.
+    | EndRound
+      -- When a point is clicked on the board.
+      --
+      -- This is more complicated than SelectUnit
+      -- or SelectTile (which are for clicking the help
+      -- boxes for subs or cities respectively) since it
+      -- can also do things like unselect the point
+      -- if it's already selected.
+    | SelectPoint Point
+    | SelectUnit Id
+    | SelectTile Point
+    | PlanMoves Id (List Point)
+    | CancelMove Id
+    | BuildOrder Buildable
+    | StopBuilding
+    | NameEditorFull String
+    | NameEditorAbbreviation String
+    | NameEditorSubmit
+      -- Handle changes to the "server" text box before starting a game
+    | SetServerUrl String
+      -- Handle changes to the "room" text box before starting a game
+    | SetRoom String
+      -- Handle connecting to a server
+    | Connect
+      -- Receive a message from the server
+    | Recv String
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
-            model
+            ( model, Cmd.none )
 
-        SetRandomSeed (Model.NewSeed new) ->
-            let
-                oldGame =
-                    model.game
-            in
-            { model | game = { oldGame | randomSeed = Random.initialSeed new } }
-
-        EndTurn ->
-            endTurn model
-
-        HoverPoint point ->
-            { model | hoverPoint = Just point }
-
-        EndHover ->
-            { model | hoverPoint = Nothing }
+        EndRound ->
+            endRoundOnlineGame model
 
         SelectPoint point ->
-            { model | selection = newSelection model point }
+            ( { model | selection = newSelection model point }, Cmd.none )
 
         SelectUnit id ->
-            { model | selection = Just (SelectedId id) }
+            ( { model | selection = Just (SelectedId id) }, Cmd.none )
 
         SelectTile point ->
-            { model | selection = Just (SelectedPoint point) }
+            ( { model | selection = Just (SelectedPoint point) }, Cmd.none )
 
         PlanMoves id points ->
-            { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }
+            unlessTurnOver
+                model
+                ( { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }, Cmd.none )
 
         CancelMove id ->
-            { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }
-
-        StopBuilding ->
-            stopBuilding model
+            unlessTurnOver
+                model
+                ( { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }, Cmd.none )
 
         BuildOrder buildable ->
-            buildOrder model buildable
+            unlessTurnOver
+                model
+                ( buildOrder model buildable, Cmd.none )
+
+        StopBuilding ->
+            unlessTurnOver
+                model
+                ( stopBuilding model, Cmd.none )
 
         NameEditorFull new ->
-            setHabitatName
+            ( setHabitatName
                 (\name ->
                     case name of
                         Right _ ->
@@ -80,9 +109,11 @@ update msg model =
                             Left (HabitatEditor { editor | full = new })
                 )
                 model
+            , Cmd.none
+            )
 
         NameEditorAbbreviation new ->
-            setHabitatName
+            ( setHabitatName
                 (\name ->
                     case name of
                         Right _ ->
@@ -92,9 +123,11 @@ update msg model =
                             Left (HabitatEditor { editor | abbreviation = new })
                 )
                 model
+            , Cmd.none
+            )
 
         NameEditorSubmit ->
-            setHabitatName
+            ( setHabitatName
                 (\name ->
                     case name of
                         Right _ ->
@@ -104,25 +137,174 @@ update msg model =
                             Right editor
                 )
                 model
+            , Cmd.none
+            )
+
+        SetServerUrl url ->
+            let
+                server =
+                    model.server
+            in
+            ( { model | server = { server | url = url } }
+            , Cmd.none
+            )
+
+        SetRoom room ->
+            let
+                server =
+                    model.server
+            in
+            ( { model | server = { server | room = room } }
+            , Cmd.none
+            )
+
+        Connect ->
+            case model.gameStatus of
+                NotPlayingYet ->
+                    ( { model | gameStatus = WaitingForStart }
+                    , Protocol.send model.server Protocol.JoinMessage
+                    )
+
+                WaitingForStart ->
+                    Debug.crash "Connect Msg when model.GameType = WaitingForStart"
+
+                InGame ->
+                    Debug.crash "Connect Msg when model.GameType = InGame"
+
+        Recv messageStr ->
+            case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
+                Err err ->
+                    Debug.crash ("Recv decoding failed: " ++ err)
+
+                Ok message ->
+                    messageRecieved model message.payload
 
 
-endTurn : Model -> Model
-endTurn model =
+unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
+unlessTurnOver model action =
+    if model.turnComplete then
+        ( model, Cmd.none )
+    else
+        action
+
+
+messageRecieved : Model -> Protocol.Message -> ( Model, Cmd Msg )
+messageRecieved model message =
+    let
+        newGameModel : Random.Seed -> Model
+        newGameModel seed =
+            let
+                game =
+                    model.game
+            in
+            { model
+                | gameStatus = InGame
+                , game = { game | randomSeed = seed }
+            }
+    in
+    case ( model.gameStatus, message ) of
+        ( NotPlayingYet, _ ) ->
+            Debug.crash "Recv when game state is NotPlayingYet"
+
+        ( WaitingForStart, JoinMessage ) ->
+            let
+                ourSeed : Random.Seed
+                ourSeed =
+                    model.game.randomSeed
+
+                startMsg : Protocol.Message
+                startMsg =
+                    StartGameMessage { seed = ourSeed }
+            in
+            ( newGameModel ourSeed
+            , Protocol.send model.server startMsg
+            )
+
+        ( WaitingForStart, StartGameMessage { seed } ) ->
+            let
+                newModel =
+                    newGameModel seed
+            in
+            ( { newModel | currentPlayer = Player2 }
+            , Cmd.none
+            )
+
+        ( InGame, TurnMessage { commands } ) ->
+            ( opponentEndsRoundOnlineGame model commands
+            , Cmd.none
+            )
+
+        ( _, _ ) ->
+            Debug.crash <|
+                "Unexpected gameStatus/Msg combination "
+                    ++ toString model.gameStatus
+                    ++ " / "
+                    ++ toString message
+
+
+{-| When the user clicks the end turn button.
+-}
+endRoundOnlineGame : Model -> ( Model, Cmd Msg )
+endRoundOnlineGame model =
+    let
+        ( immediateMoves, _ ) =
+            splitPlannedMoves model.plannedMoves
+
+        newModel =
+            case model.enemyCommands of
+                Nothing ->
+                    { model | turnComplete = True }
+
+                Just enemyCommands ->
+                    resolveOnlineGameTurn model enemyCommands
+
+        send =
+            Protocol.send
+                model.server
+                (TurnMessage
+                    { commands =
+                        { moves = immediateMoves
+                        , buildOrders = model.buildOrders
+                        }
+                    }
+                )
+    in
+    ( newModel, send )
+
+
+opponentEndsRoundOnlineGame : Model -> Commands -> Model
+opponentEndsRoundOnlineGame model enemyCommands =
+    if model.turnComplete then
+        resolveOnlineGameTurn model enemyCommands
+    else
+        { model | enemyCommands = Just enemyCommands }
+
+
+resolveOnlineGameTurn : Model -> Commands -> Model
+resolveOnlineGameTurn model enemyCommands =
     let
         ( immediateMoves, laterMoves ) =
             splitPlannedMoves model.plannedMoves
 
+        mergedMoves =
+            Dict.union immediateMoves enemyCommands.moves
+
+        mergedBuildOrders =
+            Dict.union model.buildOrders enemyCommands.buildOrders
+
         ( reports, newGameState ) =
             Game.resolveTurn
-                { moves = immediateMoves
-                , buildOrders = model.buildOrders
+                { moves = mergedMoves
+                , buildOrders = mergedBuildOrders
                 }
                 model.game
     in
     { model
         | game = newGameState
-        , plannedMoves = cleanPlannedMoves newGameState laterMoves
+        , plannedMoves = removeOrphanMoves newGameState laterMoves
         , buildOrders = Dict.empty
+        , turnComplete = False
+        , enemyCommands = Nothing
         , selection = updateSelection newGameState model.selection
         , gameLog = reports ++ model.gameLog
     }
@@ -130,14 +312,16 @@ endTurn model =
 
 {-| Remove plans to move units that are no longer on the board.
 -}
-cleanPlannedMoves : Game -> Dict Int (List Point) -> Dict Int (List Point)
-cleanPlannedMoves game moveDict =
+removeOrphanMoves : Game -> Dict Int (List Point) -> Dict Int (List Point)
+removeOrphanMoves game moveDict =
     let
-        friendlies =
-            Game.friendlyUnitDict (Util.unHexGrid game.grid)
+        units : Dict Int Point
+        units =
+            Game.unitDict (Util.unHexGrid game.grid)
 
+        go : Int -> List Point -> Dict Int (List Point) -> Dict Int (List Point)
         go id movePoint acc =
-            if Dict.member id friendlies then
+            if Dict.member id units then
                 Dict.insert id movePoint acc
             else
                 acc
@@ -178,9 +362,11 @@ splitPlannedMoves allMoves =
 updateSelection : Game -> Maybe Selection -> Maybe Selection
 updateSelection game oldSelection =
     let
+        stillActive : Id -> Maybe ( Point, Unit )
         stillActive id =
             Game.findUnit id (Util.unHexGrid game.grid)
 
+        maybeBecameHabitat : Id -> Maybe Selection
         maybeBecameHabitat id =
             Game.habitatDict game.grid
                 |> Dict.toList
@@ -230,7 +416,7 @@ newSelection model newPoint =
                                 Just (SelectedPoint newPoint)
 
                             _ ->
-                                case List.head (Game.friendlyUnits tile) of
+                                case List.head (Game.friendlyUnits model.currentPlayer tile) of
                                     Nothing ->
                                         Just (SelectedPoint newPoint)
 

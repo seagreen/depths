@@ -6,8 +6,18 @@ import Html exposing (Html)
 
 
 type Player
-    = Human
-    | Computer
+    = Player1
+    | Player2
+
+
+playerToString : Player -> String
+playerToString player =
+    case player of
+        Player1 ->
+            "Player 1"
+
+        Player2 ->
+            "Player 2"
 
 
 type alias Unit =
@@ -25,11 +35,11 @@ type alias Stats =
     , speed : Int
     , sensors : Int
     , stealth : Int
-    , firepower :
-        Int
 
     -- Named "firepower" instead of "attack" to clarify that it
     -- works the same on both offence and defense.
+    , firepower :
+        Int
     }
 
 
@@ -69,7 +79,7 @@ stats sub =
             , speed = 2
             , sensors = 2
             , stealth = 0
-            , firepower = 2
+            , firepower = 3
             }
 
         AttackSubmarine ->
@@ -80,12 +90,8 @@ stats sub =
             , speed = 4
             , sensors = 4
             , stealth = 3
-            , firepower = 3
+            , firepower = 5
             }
-
-
-
--- TODO: Get rid of this
 
 
 fromString : String -> Maybe Submarine

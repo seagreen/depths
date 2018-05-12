@@ -2,40 +2,26 @@ module Model exposing (..)
 
 import Dict exposing (Dict)
 import Game exposing (Commands)
+import Game.Combat exposing (BattleReport)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State exposing (Buildable(..), Game, Tile)
+import Game.Unit exposing (Player(..))
 import HexGrid exposing (Direction, HexGrid(..), Point)
-import Random
+import Protocol
 import Util
 
 
-type Msg
-    = NoOp
-    | SetRandomSeed NewSeed
-    | EndTurn
-      -- When a point is click on the board.
-      --
-      -- This is more complicated than SelectUnit
-      -- or SelectPoint (which are for clicking the help
-      -- boxes for subs or cities respectively) since it
-      -- can also do things like unselect the point
-      -- if it's already selected.
-    | SelectPoint Point
-    | SelectUnit Id
-    | SelectTile Point
-    | HoverPoint Point
-    | EndHover
-    | PlanMoves Id (List Point)
-    | CancelMove Id
-    | BuildOrder Buildable
-    | StopBuilding
-    | NameEditorFull String
-    | NameEditorAbbreviation String
-    | NameEditorSubmit
+type
+    GameType
+    -- Haven't selected a server yet
+    = NotPlayingYet
+    | WaitingForStart
+    | InGame
 
 
 type alias Model =
     { game : Game
+    , gameStatus : GameType
     , plannedMoves :
         Dict Int (List Point)
 
@@ -46,20 +32,32 @@ type alias Model =
     -- Unfortunately since habitats are defined and stored in the Game part
     -- of the code they don't know about UI things like build orders.
     , buildOrders : Dict Point Buildable
+    , turnComplete : Bool
+    , enemyCommands : Maybe Commands
     , selection : Maybe Selection
-    , hoverPoint : Maybe Point
-    , gameLog : List Game.BattleReport
+    , gameLog : List BattleReport
+
+    -- The player controlling the UI:
+    , currentPlayer : Player
+    , server : Protocol.Server
     }
 
 
 init : Model
 init =
     { game = Game.State.init
+    , gameStatus = NotPlayingYet
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
+    , turnComplete = False
+    , enemyCommands = Nothing
     , selection = Nothing
-    , hoverPoint = Nothing
     , gameLog = []
+    , currentPlayer = Player1
+    , server =
+        { url = "ws://45.33.68.74:16000"
+        , room = "hello"
+        }
     }
 
 
@@ -104,16 +102,3 @@ focus model =
                     (\tile -> ( point, tile ))
                     (Dict.get point dict)
             )
-
-
-type NewSeed
-    = NewSeed Int
-
-
-newRandomSeed : Cmd Msg
-newRandomSeed =
-    Random.generate
-        (SetRandomSeed << NewSeed)
-        -- Using 999999 instead of Random.maxInt here for more human-sized values
-        -- (to make them more readable in the debugger and that kind of thing).
-        (Random.int 0 999999)

@@ -6,7 +6,7 @@ import Game.Building as Building exposing (Building(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (Direction, HexGrid(..), Point)
-import Random
+import Random.Pcg as Random
 import State
 
 
@@ -20,7 +20,11 @@ so much that things got confusing.
 type alias Game =
     { grid : HexGrid Tile
     , turn : Turn
+
+    -- Used for giving new units Ids. Incrmental.
     , idSeed : IdSeed
+
+    -- Used for determining battle events.
     , randomSeed : Random.Seed
     }
 
@@ -46,7 +50,7 @@ init =
               , Tile
                     (Dict.singleton
                         (Id.unId idA)
-                        (Unit idA Human ColonySubmarine)
+                        (Unit idA Player1 ColonySubmarine)
                     )
                     Depths
               )
@@ -54,16 +58,14 @@ init =
               , Tile
                     (Dict.singleton
                         (Id.unId idB)
-                        (Unit idB Computer ColonySubmarine)
+                        (Unit idB Player2 ColonySubmarine)
                     )
                     Depths
               )
             ]
     , turn = Turn 1
     , idSeed = idSeed
-    , randomSeed =
-        -- The Main module randomizes this at startup.
-        Random.initialSeed 0
+    , randomSeed = Random.initialSeed 0
     }
 
 
@@ -96,6 +98,7 @@ type Geology
 
 type alias Habitat =
     { name : Either HabitatEditor HabitatName
+    , player : Player
     , createdBy : Id
     , buildings : List Building
     , producing : Maybe Buildable
@@ -103,9 +106,10 @@ type alias Habitat =
     }
 
 
-newHabitat : Id -> Habitat
-newHabitat colonySubId =
+newHabitat : Player -> Id -> Habitat
+newHabitat player colonySubId =
     { name = Left emptyNameEditor
+    , player = player
     , createdBy = colonySubId
     , buildings = [ PrefabHabitat ]
     , producing = Nothing
@@ -133,17 +137,26 @@ habitatAbbreviation hab =
             name.abbreviation
 
 
+habitatsForPlayer : Player -> Game -> List Habitat
+habitatsForPlayer player game =
+    habitatDict game.grid
+        |> Dict.values
+        |> List.filter (\hab -> hab.player == player)
+
+
 habitatDict : HexGrid Tile -> Dict Point Habitat
 habitatDict (HexGrid _ grid) =
-    Dict.foldr
-        (\point tile acc ->
+    let
+        f : Point -> Tile -> Dict Point Habitat -> Dict Point Habitat
+        f point tile acc =
             case tile.fixed of
                 Mountain (Just hab) ->
                     Dict.insert point hab acc
 
                 _ ->
                     acc
-        )
+    in
+    Dict.foldr f
         Dict.empty
         grid
 
@@ -154,32 +167,35 @@ habitatFromTile tile =
         Mountain (Just hab) ->
             Just hab
 
-        _ ->
+        Mountain Nothing ->
+            Nothing
+
+        Depths ->
             Nothing
 
 
 habitatFromPoint : Point -> Dict Point Tile -> Maybe Habitat
 habitatFromPoint point grid =
-    Dict.get point grid |> Maybe.andThen habitatFromTile
+    Dict.get point grid
+        |> Maybe.andThen habitatFromTile
 
 
 updateHabitat : Point -> (Habitat -> Habitat) -> Dict Point Tile -> Dict Point Tile
 updateHabitat point update grid =
     let
-        updateHab mTile =
-            mTile
-                |> Maybe.andThen
-                    (\tile ->
-                        Just <|
-                            case tile.fixed of
-                                Mountain (Just hab) ->
-                                    { tile | fixed = Mountain (Just (update hab)) }
+        updateHab : Tile -> Tile
+        updateHab tile =
+            case tile.fixed of
+                Mountain (Just hab) ->
+                    { tile | fixed = Mountain (Just (update hab)) }
 
-                                _ ->
-                                    tile
-                    )
+                Mountain Nothing ->
+                    tile
+
+                Depths ->
+                    tile
     in
-    Dict.update point updateHab grid
+    Dict.update point (Maybe.map updateHab) grid
 
 
 type alias HabitatName =
@@ -233,6 +249,7 @@ cost buildable =
 findUnit : Id -> Dict Point Tile -> Maybe ( Point, Unit )
 findUnit id grid =
     let
+        f : Point -> Tile -> Maybe ( Point, Unit ) -> Maybe ( Point, Unit )
         f point tile acc =
             case Dict.get (Id.unId id) tile.units of
                 Nothing ->
@@ -244,10 +261,10 @@ findUnit id grid =
     Dict.foldr f Nothing grid
 
 
-friendlyUnits : Tile -> List Unit
-friendlyUnits tile =
+friendlyUnits : Player -> Tile -> List Unit
+friendlyUnits currentPlayer tile =
     List.filter
-        (\unit -> unit.player == Human)
+        (\unit -> unit.player == currentPlayer)
         (Dict.values tile.units)
 
 
@@ -256,9 +273,16 @@ friendlyUnits tile =
 Returned `Int` keys are unit IDs.
 
 -}
-friendlyUnitDict : Dict Point Tile -> Dict Int Point
-friendlyUnitDict grid =
-    friendlyUnitList grid
+unitDict : Dict Point Tile -> Dict Int Point
+unitDict grid =
+    unitList grid
+        |> List.map (\( point, unit ) -> ( Id.unId unit.id, point ))
+        |> Dict.fromList
+
+
+friendlyUnitDict : Player -> Dict Point Tile -> Dict Int Point
+friendlyUnitDict currentPlayer grid =
+    friendlyUnitList currentPlayer grid
         |> List.map (\( point, unit ) -> ( Id.unId unit.id, point ))
         |> Dict.fromList
 
@@ -272,15 +296,13 @@ unitList =
         []
 
 
-friendlyUnitList : Dict Point Tile -> List ( Point, Unit )
-friendlyUnitList =
+friendlyUnitList : Player -> Dict Point Tile -> List ( Point, Unit )
+friendlyUnitList currentPlayer =
     List.filterMap
         (\( point, unit ) ->
-            case unit.player of
-                Human ->
-                    Just ( point, unit )
-
-                Computer ->
-                    Nothing
+            if unit.player == currentPlayer then
+                Just ( point, unit )
+            else
+                Nothing
         )
         << unitList
