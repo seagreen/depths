@@ -45,9 +45,9 @@ Sometimes you just want a lot of cool options for stuff to build. That's what we
 
 © Ian Jeffries 2018.
 
-_**Except for**_ the name of the organization, the name of the game, and any abbreviations of either, everything original is released under the [3-Clause BSD License](https://opensource.org/licenses/BSD-3-Clause).
+Everything original is released under the [3-Clause BSD License](https://opensource.org/licenses/BSD-3-Clause). It's also released under [CC0](https://creativecommons.org/share-your-work/public-domain/cc0/).
 
-A big reason this project exists is to push the state of games in Elm forward a bit. Please fork this and make your own game!
+Please fork and modify at will!
 
 # Special thanks
 
