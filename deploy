@@ -1,0 +1,13 @@
+#/usr/bin/env sh
+
+# sv restart depths
+
+rsync \
+  --delete \
+  --archive \
+  --rsh ssh \
+  --verbose \
+  --checksum \
+  --exclude='.git/' \
+  /home/traveller/laptop/depths/site/ \
+  root@45.33.68.74:/root/depths
