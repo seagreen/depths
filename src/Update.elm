@@ -74,7 +74,17 @@ update msg model =
             endRoundOnlineGame model
 
         FinishLoading ->
-            ( { model | turnStatus = TurnInProgress }, Cmd.none )
+            ( case model.turnStatus of
+                TurnLoading ->
+                    { model | turnStatus = TurnInProgress }
+
+                TurnInProgress ->
+                    model
+
+                TurnComplete ->
+                    model
+            , Cmd.none
+            )
 
         SelectPoint point ->
             ( { model | selection = newSelection model point }, Cmd.none )
@@ -326,9 +336,21 @@ resolveOnlineGameTurn model enemyCommands =
 
         ( reports, newGameState ) =
             Game.resolveTurn
-                { moves = mergedMoves
-                , buildOrders = mergedBuildOrders
-                }
+                (let
+                    cmds =
+                        { moves = mergedMoves
+                        , buildOrders = mergedBuildOrders
+                        }
+
+                    foo =
+                        Debug.log
+                            (toString (Game.unTurn model.game.turn)
+                                ++ " "
+                                ++ toString cmds
+                            )
+                 in
+                 cmds
+                )
                 model.game
     in
     ( { model
