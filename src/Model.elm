@@ -61,8 +61,19 @@ init =
     }
 
 
+{-| TurnLoading exists to prevent this confusing situation:
+
+1.  Your opponent ends their turn.
+2.  You finish your moves and click "End turn".
+3.  The button doesn't change, making it look like your click didn't take effect.
+
+Instead we go to TurnLoading status for a short time,
+during which the end turn button will change to something like "loading".
+
+-}
 type TurnStatus
-    = TurnInProgress
+    = TurnLoading
+    | TurnInProgress
     | TurnComplete
 
 

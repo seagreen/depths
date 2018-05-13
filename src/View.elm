@@ -136,6 +136,14 @@ endTurnButton model =
 
         Ongoing ->
             case model.turnStatus of
+                TurnLoading ->
+                    Html.button
+                        [ Hevent.onClick EndRound
+                        , Hattr.type_ "button"
+                        , class "btn btn-warning btn-lg"
+                        ]
+                        [ Html.text "Loading" ]
+
                 TurnInProgress ->
                     Html.button
                         [ Hevent.onClick EndRound

@@ -1,5 +1,6 @@
 module Update exposing (..)
 
+import Delay
 import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game exposing (Commands)
@@ -27,6 +28,7 @@ import Model
         )
 import Protocol exposing (Message(..), NetworkMessage)
 import Random.Pcg as Random
+import Time
 import Util
 
 
@@ -34,6 +36,7 @@ type Msg
     = NoOp
       -- When both players commands have been queued.
     | EndRound
+    | FinishLoading
       -- When a point is clicked on the board.
       --
       -- This is more complicated than SelectUnit
@@ -69,6 +72,9 @@ update msg model =
 
         EndRound ->
             endRoundOnlineGame model
+
+        FinishLoading ->
+            ( { model | turnStatus = TurnInProgress }, Cmd.none )
 
         SelectPoint point ->
             ( { model | selection = newSelection model point }, Cmd.none )
@@ -184,6 +190,9 @@ update msg model =
 unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
 unlessTurnOver model action =
     case model.turnStatus of
+        TurnLoading ->
+            action
+
         TurnInProgress ->
             action
 
@@ -233,9 +242,7 @@ messageRecieved model message =
             )
 
         ( InGame, TurnMessage { commands } ) ->
-            ( opponentEndsRoundOnlineGame model commands
-            , Cmd.none
-            )
+            opponentEndsRoundOnlineGame model commands
 
         ( _, _ ) ->
             Debug.crash <|
@@ -253,14 +260,7 @@ endRoundOnlineGame model =
         ( immediateMoves, _ ) =
             splitPlannedMoves model.plannedMoves
 
-        newModel =
-            case model.enemyCommands of
-                Nothing ->
-                    { model | turnStatus = TurnComplete }
-
-                Just enemyCommands ->
-                    resolveOnlineGameTurn model enemyCommands
-
+        send : Cmd Msg
         send =
             Protocol.send
                 model.server
@@ -272,22 +272,49 @@ endRoundOnlineGame model =
                     }
                 )
     in
-    ( newModel, send )
+    case model.enemyCommands of
+        Nothing ->
+            ( { model | turnStatus = TurnComplete }
+            , send
+            )
+
+        Just enemyCommands ->
+            let
+                ( newModel, cmd ) =
+                    resolveOnlineGameTurn model enemyCommands
+            in
+            ( newModel
+            , Cmd.batch
+                [ cmd
+                , send
+                ]
+            )
 
 
-opponentEndsRoundOnlineGame : Model -> Commands -> Model
+opponentEndsRoundOnlineGame : Model -> Commands -> ( Model, Cmd Msg )
 opponentEndsRoundOnlineGame model enemyCommands =
     case model.turnStatus of
+        TurnLoading ->
+            ( { model | enemyCommands = Just enemyCommands }
+            , Cmd.none
+            )
+
         TurnInProgress ->
-            { model | enemyCommands = Just enemyCommands }
+            ( { model | enemyCommands = Just enemyCommands }
+            , Cmd.none
+            )
 
         TurnComplete ->
             resolveOnlineGameTurn model enemyCommands
 
 
-resolveOnlineGameTurn : Model -> Commands -> Model
+resolveOnlineGameTurn : Model -> Commands -> ( Model, Cmd Msg )
 resolveOnlineGameTurn model enemyCommands =
     let
+        delayThenRemoveLoading : Cmd Msg
+        delayThenRemoveLoading =
+            Delay.after 500 Time.millisecond FinishLoading
+
         ( immediateMoves, laterMoves ) =
             splitPlannedMoves model.plannedMoves
 
@@ -304,15 +331,17 @@ resolveOnlineGameTurn model enemyCommands =
                 }
                 model.game
     in
-    { model
+    ( { model
         | game = newGameState
         , plannedMoves = removeOrphanMoves newGameState laterMoves
         , buildOrders = Dict.empty
-        , turnStatus = TurnInProgress
+        , turnStatus = TurnLoading
         , enemyCommands = Nothing
         , selection = updateSelection newGameState model.selection
         , gameLog = reports ++ model.gameLog
-    }
+      }
+    , delayThenRemoveLoading
+    )
 
 
 {-| Remove plans to move units that are no longer on the board.

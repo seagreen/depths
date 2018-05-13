@@ -1,9 +1,9 @@
 {
+    "andrewMacmurray/elm-delay": "2.0.3",
     "kress95/random-pcg-extra": "1.0.1",
     "toastal/either": "3.4.1",
     "elm-lang/virtual-dom": "2.0.4",
     "folkertdev/elm-state": "3.0.0",
-    "elm-community/random-extra": "2.0.0",
     "mgold/elm-random-pcg": "4.0.2",
     "elm-lang/dom": "1.1.1",
     "elm-lang/websocket": "1.0.2",
