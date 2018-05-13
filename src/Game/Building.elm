@@ -101,15 +101,6 @@ stats infra =
             , combatStats = Just { sensors = 0, firepower = 4 }
             }
 
-        Residences ->
-            { name = "Residences"
-            , cost = 5
-            , prerequisites = [ Dormitory ]
-            , productionBonus = 0
-            , populationBonus = 1
-            , combatStats = Nothing
-            }
-
         Datacenter ->
             { name = "Datacenter"
             , cost = 20
@@ -139,7 +130,6 @@ type Building
     | WarningBouys
     | SonarArray
     | TorpedoTube
-    | Residences
     | Datacenter
     | Supercomputer
 
@@ -155,7 +145,6 @@ all =
     , WarningBouys
     , SonarArray
     , TorpedoTube
-    , Residences
     , Datacenter
     , Supercomputer
     ]
@@ -190,9 +179,6 @@ fromString s =
 
         "TorpedoTube" ->
             Just TorpedoTube
-
-        "Residences" ->
-            Just Residences
 
         "Datacenter" ->
             Just Datacenter
