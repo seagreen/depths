@@ -130,7 +130,9 @@ resolveMoves moves game =
         (HexGrid a grid) =
             game.grid
     in
-    { game | grid = HexGrid a <| Dict.foldr (resolveSingleMove << Id) grid moves }
+    { game
+        | grid = HexGrid a <| Dict.foldr (resolveSingleMove << Id) grid moves
+    }
 
 
 resolveSingleMove : Id -> Point -> Dict Point Tile -> Dict Point Tile
@@ -407,12 +409,12 @@ wrapResolveProduction game =
             game.grid
 
         ( newGrid, newIdSeed ) =
-            State.run game.idSeed <|
+            State.run game.nextUnitId <|
                 Util.traverseStateDict resolveProduction oldGrid
     in
     { game
         | grid = HexGrid a newGrid
-        , idSeed = newIdSeed
+        , nextUnitId = newIdSeed
     }
 
 

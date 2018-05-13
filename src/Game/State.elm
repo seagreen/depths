@@ -7,7 +7,6 @@ import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (Direction, HexGrid(..), Point)
 import Random.Pcg as Random
-import State
 
 
 {-| The game's state.
@@ -22,7 +21,7 @@ type alias Game =
     , turn : Turn
 
     -- Used for giving new units Ids. Incrmental.
-    , idSeed : IdSeed
+    , nextUnitId : IdSeed
 
     -- Used for determining battle events.
     , randomSeed : Random.Seed
@@ -31,11 +30,6 @@ type alias Game =
 
 init : Game
 init =
-    let
-        ( ( idA, idB ), idSeed ) =
-            State.run (IdSeed 1) <|
-                State.map2 (,) Id.next Id.next
-    in
     { grid =
         HexGrid.fromList 6
             (Tile Dict.empty Depths)
@@ -49,22 +43,22 @@ init =
             , ( ( -4, -2 )
               , Tile
                     (Dict.singleton
-                        (Id.unId idA)
-                        (Unit idA Player1 ColonySub)
+                        1
+                        (Unit (Id 1) Player1 ColonySub)
                     )
                     Depths
               )
             , ( ( 6, 0 )
               , Tile
                     (Dict.singleton
-                        (Id.unId idB)
-                        (Unit idB Player2 ColonySub)
+                        2
+                        (Unit (Id 2) Player2 ColonySub)
                     )
                     Depths
               )
             ]
     , turn = Turn 1
-    , idSeed = idSeed
+    , nextUnitId = IdSeed 3
     , randomSeed = Random.initialSeed 0
     }
 

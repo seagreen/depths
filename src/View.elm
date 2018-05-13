@@ -63,6 +63,8 @@ viewGame model =
         (HexGrid _ dict) =
             model.game.grid
 
+        game = model.game
+
         viewTitle : Html msg
         viewTitle =
             Html.h1 [] [ Html.text "The Depths" ]
@@ -107,6 +109,8 @@ viewGame model =
         [ viewTitle
         , viewPlayer
         , TechTree.view
+        , Html.div [] [Html.text <| toString game.nextUnitId]
+        , Html.div [] [Html.text <| toString game.randomSeed]
         , Html.div
             [ class "row" ]
             [ Html.div
