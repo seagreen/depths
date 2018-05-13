@@ -9,5 +9,5 @@ rsync \
   --verbose \
   --checksum \
   --exclude='.git/' \
-  /home/traveller/laptop/depths/site/ \
+  ./site/ \
   root@45.33.68.74:/root/depths
