@@ -89,7 +89,7 @@ stats infra =
             , prerequisites = [ Armory ]
             , productionBonus = 0
             , populationBonus = 0
-            , combatStats = Just { sensors = 3, firepower = 0 }
+            , combatStats = Just { sensors = 4, firepower = 0 }
             }
 
         TorpedoTube ->
@@ -98,7 +98,7 @@ stats infra =
             , prerequisites = [ Armory ]
             , productionBonus = 0
             , populationBonus = 0
-            , combatStats = Just { sensors = 0, firepower = 3 }
+            , combatStats = Just { sensors = 0, firepower = 4 }
             }
 
         Reactor ->
