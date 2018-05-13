@@ -303,19 +303,28 @@ endRoundOnlineGame model =
 
 opponentEndsRoundOnlineGame : Model -> Commands -> ( Model, Cmd Msg )
 opponentEndsRoundOnlineGame model enemyCommands =
-    case model.turnStatus of
-        TurnLoading ->
-            ( { model | enemyCommands = Just enemyCommands }
-            , Cmd.none
-            )
+    let
+        handleMsg =
+            case model.turnStatus of
+                TurnLoading ->
+                    ( { model | enemyCommands = Just enemyCommands }
+                    , Cmd.none
+                    )
 
-        TurnInProgress ->
-            ( { model | enemyCommands = Just enemyCommands }
-            , Cmd.none
-            )
+                TurnInProgress ->
+                    ( { model | enemyCommands = Just enemyCommands }
+                    , Cmd.none
+                    )
 
-        TurnComplete ->
-            resolveOnlineGameTurn model enemyCommands
+                TurnComplete ->
+                    resolveOnlineGameTurn model enemyCommands
+    in
+    case model.enemyCommands of
+        Nothing ->
+            handleMsg
+
+        Just _ ->
+            Debug.crash "Oppenent sent two messages in the same turn."
 
 
 resolveOnlineGameTurn : Model -> Commands -> ( Model, Cmd Msg )
