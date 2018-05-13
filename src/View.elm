@@ -21,6 +21,7 @@ import Update exposing (Msg(..))
 import Util exposing (badge, label_, onChange)
 import View.Board as Board
 import View.Sidebar as Sidebar
+import View.TechTree as TechTree
 
 
 view : Model -> Html Msg
@@ -105,6 +106,7 @@ viewGame model =
         []
         [ viewTitle
         , viewPlayer
+        , TechTree.view
         , Html.div
             [ class "row" ]
             [ Html.div
