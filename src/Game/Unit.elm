@@ -76,7 +76,7 @@ stats sub =
         RemotelyOperatedVehicle ->
             { name = "Remotely Operated Vehicle"
             , abbreviation = "ROV"
-            , cost = 10
+            , cost = 12
             , prerequisites = [ SubmarinePen ]
             , speed = 2
             , sensors = 2
@@ -87,22 +87,22 @@ stats sub =
         AttackSub ->
             { name = "Attack Submarine"
             , abbreviation = "SSN"
-            , cost = 30
-            , prerequisites = [ SubmarinePen, Armory ]
+            , cost = 20
+            , prerequisites = [ SubmarinePen, Reactor ]
             , speed = 4
             , sensors = 4
             , stealth = 3
-            , firepower = 5
+            , firepower = 4
             }
 
         Boomer ->
             { name = "Boomer"
             , abbreviation = "B"
-            , cost = 30
-            , prerequisites = [ SubmarinePen, Armory ]
+            , cost = 20
+            , prerequisites = [ SubmarinePen, Reactor ]
             , speed = 2
             , sensors = 6
-            , stealth = 1
+            , stealth = 0
             , firepower = 6
             }
 

@@ -58,7 +58,7 @@ stats infra =
 
         Armory ->
             { name = "Armory"
-            , cost = 10
+            , cost = 5
             , prerequisites = []
             , productionBonus = 0
             , populationBonus = 0
@@ -74,22 +74,22 @@ stats infra =
             , combatStats = Nothing
             }
 
-        WarningBouys ->
-            { name = "Warning Bouys"
+        Minefield ->
+            { name = "Minefild"
             , cost = 4
             , prerequisites = []
             , productionBonus = 0
             , populationBonus = 0
-            , combatStats = Just { sensors = 2, firepower = 0 }
+            , combatStats = Just { sensors = 2, firepower = 2 }
             }
 
         SonarArray ->
             { name = "Sonar Array"
-            , cost = 4
+            , cost = 6
             , prerequisites = [ Armory ]
             , productionBonus = 0
             , populationBonus = 0
-            , combatStats = Just { sensors = 2, firepower = 0 }
+            , combatStats = Just { sensors = 3, firepower = 0 }
             }
 
         TorpedoTube ->
@@ -98,7 +98,16 @@ stats infra =
             , prerequisites = [ Armory ]
             , productionBonus = 0
             , populationBonus = 0
-            , combatStats = Just { sensors = 0, firepower = 4 }
+            , combatStats = Just { sensors = 0, firepower = 3 }
+            }
+
+        Reactor ->
+            { name = "Reactor"
+            , cost = 5
+            , prerequisites = [ ShippingDock ]
+            , productionBonus = 0
+            , populationBonus = 0
+            , combatStats = Nothing
             }
 
         Datacenter ->
@@ -127,9 +136,10 @@ type Building
     | Factory
     | Armory
     | SubmarinePen
-    | WarningBouys
+    | Minefield
     | SonarArray
     | TorpedoTube
+    | Reactor
     | Datacenter
     | Supercomputer
 
@@ -142,9 +152,10 @@ all =
     , Factory
     , Armory
     , SubmarinePen
-    , WarningBouys
+    , Minefield
     , SonarArray
     , TorpedoTube
+    , Reactor
     , Datacenter
     , Supercomputer
     ]
@@ -171,14 +182,17 @@ fromString s =
         "SubmarinePen" ->
             Just SubmarinePen
 
-        "WarningBouys" ->
-            Just WarningBouys
+        "Minefield" ->
+            Just Minefield
 
         "SonarArray" ->
             Just SonarArray
 
         "TorpedoTube" ->
             Just TorpedoTube
+
+        "Reactor" ->
+            Just Reactor
 
         "Datacenter" ->
             Just Datacenter
