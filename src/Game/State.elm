@@ -63,6 +63,41 @@ init =
     }
 
 
+initDebug : Game
+initDebug =
+    { grid =
+        HexGrid.fromList 6
+            (Tile Dict.empty Depths)
+            [ ( ( -4, 1 ), Tile Dict.empty (Mountain (Just <| newHabitat Player1 (Id 1))) )
+            , ( ( -1, -3 ), Tile Dict.empty (Mountain (Just <| newHabitat Player2 (Id 2))) )
+            , ( ( 2, -4 ), emptyMountain )
+            , ( ( 3, -1 ), emptyMountain )
+            , ( ( 2, 2 ), emptyMountain )
+            , ( ( -3, 3 ), emptyMountain )
+            , ( ( -2, 4 ), emptyMountain )
+            , ( ( -4, -2 )
+              , Tile
+                    (Dict.singleton
+                        1
+                        (Unit (Id 1) Player1 ColonySub)
+                    )
+                    Depths
+              )
+            , ( ( 6, 0 )
+              , Tile
+                    (Dict.singleton
+                        2
+                        (Unit (Id 2) Player2 ColonySub)
+                    )
+                    Depths
+              )
+            ]
+    , turn = Turn 1
+    , nextUnitId = IdSeed 3
+    , randomSeed = Random.initialSeed 0
+    }
+
+
 type Turn
     = Turn Int
 
