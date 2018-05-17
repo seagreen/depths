@@ -23,6 +23,7 @@ import Model
     exposing
         ( GameType(..)
         , Model
+        , Screen(..)
         , Selection(..)
         , TurnStatus(..)
         )
@@ -44,6 +45,7 @@ type Msg
       -- boxes for subs or cities respectively) since it
       -- can also do things like unselect the point
       -- if it's already selected.
+    | ChangeScreen Screen
     | SelectPoint Point
     | SelectUnit Id
     | SelectTile Point
@@ -85,6 +87,9 @@ update msg model =
                     model
             , Cmd.none
             )
+
+        ChangeScreen screen ->
+            ( { model | screen = screen }, Cmd.none )
 
         SelectPoint point ->
             ( { model | selection = newSelection model point }, Cmd.none )

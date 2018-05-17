@@ -19,9 +19,15 @@ type
     | InGame
 
 
+type Screen
+    = Board
+    | TechTable
+
+
 type alias Model =
     { game : Game
     , gameStatus : GameType
+    , screen : Screen
     , plannedMoves :
         Dict Int (List Point)
 
@@ -47,6 +53,7 @@ init : Model
 init =
     { game = Game.State.init
     , gameStatus = NotPlayingYet
+    , screen = Board
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
     , turnStatus = TurnInProgress

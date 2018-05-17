@@ -1,14 +1,14 @@
-module View.TechTree exposing (..)
+module View.TechTable exposing (..)
 
-import Html exposing (Html)
 import Game.Building as Building exposing (Building)
 import Game.Unit as Unit exposing (Submarine)
+import Html exposing (Html)
 
 
 view : Html msg
 view =
     Html.div [] <|
-      (List.map viewSubmarine Unit.all ++ List.map viewBuilding Building.all)
+        (List.map viewSubmarine Unit.all ++ List.map viewBuilding Building.all)
 
 
 viewSubmarine : Submarine -> Html msg

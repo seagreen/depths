@@ -16,12 +16,12 @@ import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
-import Model exposing (GameType(..), Model, Selection(..), TurnStatus(..))
+import Model exposing (GameType(..), Model, Screen(..), Selection(..), TurnStatus(..))
 import Update exposing (Msg(..))
 import Util exposing (badge, label_, onChange)
 import View.Board as Board
 import View.Sidebar as Sidebar
-import View.TechTree as TechTree
+import View.TechTable as TechTable
 
 
 view : Model -> Html Msg
@@ -63,7 +63,8 @@ viewGame model =
         (HexGrid _ dict) =
             model.game.grid
 
-        game = model.game
+        game =
+            model.game
 
         viewTitle : Html msg
         viewTitle =
@@ -71,7 +72,7 @@ viewGame model =
 
         viewPlayer : Html msg
         viewPlayer =
-            Html.div
+            Html.p
                 []
                 [ Html.text <| Unit.playerToString model.currentPlayer
                 ]
@@ -107,26 +108,54 @@ viewGame model =
     Html.div
         []
         [ viewTitle
-        , viewPlayer
-        , TechTree.view
-        , Html.div [] [Html.text <| toString game.nextUnitId]
-        , Html.div [] [Html.text <| toString game.randomSeed]
-        , Html.div
-            [ class "row" ]
-            [ Html.div
-                [ class "col-lg-5" ]
-                [ viewUserGuideLink
-                , viewTurnNumber
-                , Sidebar.viewSidebar model
-                ]
-            , Html.div
-                [ class "col-lg-7" ]
-                [ Html.div
-                    [ class "text-center" ]
-                    [ Board.viewBoard model
-                    , endTurnButton model
+        , viewUserGuideLink
+        , changeScreenButton model.screen
+        , case model.screen of
+            TechTable ->
+                TechTable.view
+
+            Board ->
+                Html.div
+                    []
+                    [ Html.div
+                        [ class "row" ]
+                        [ Html.div
+                            [ class "col-lg-5" ]
+                            [ viewPlayer
+                            , viewTurnNumber
+                            , Sidebar.viewSidebar model
+                            ]
+                        , Html.div
+                            [ class "col-lg-7" ]
+                            [ Html.div
+                                [ class "text-center" ]
+                                [ Board.viewBoard model
+                                , endTurnButton model
+                                ]
+                            ]
+                        ]
                     ]
-                ]
+        ]
+
+
+changeScreenButton : Screen -> Html Msg
+changeScreenButton screen =
+    let
+        ( newScreen, newScreenTitle ) =
+            case screen of
+                Board ->
+                    ( TechTable, "Tech table" )
+
+                TechTable ->
+                    ( Board, "Board" )
+    in
+    Html.p []
+        [ Html.label
+            [ class "btn btn-default"
+            , Hattr.type_ "button"
+            , Hevent.onClick (ChangeScreen newScreen)
+            ]
+            [ Html.text newScreenTitle
             ]
         ]
 
