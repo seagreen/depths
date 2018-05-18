@@ -150,11 +150,11 @@ displayEventIfVisible model event =
             case combatant of
                 CMUnit sub ->
                     case sub.class of
-                        RemotelyOperatedVehicle ->
-                            "a torpedo from a ROV."
+                        DieselSub ->
+                            "a torpedo."
 
                         AttackSub ->
-                            "a torpedo from an attack submarine."
+                            "a nuclear torpedo."
 
                         _ ->
                             "submarine-based weapons."

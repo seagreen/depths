@@ -45,7 +45,7 @@ type alias Stats =
 
 type Submarine
     = ColonySub
-    | RemotelyOperatedVehicle
+    | DieselSub
     | AttackSub
     | Boomer
 
@@ -53,7 +53,7 @@ type Submarine
 all : List Submarine
 all =
     [ ColonySub
-    , RemotelyOperatedVehicle
+    , DieselSub
     , AttackSub
     , Boomer
     ]
@@ -73,9 +73,9 @@ stats sub =
             , firepower = 0
             }
 
-        RemotelyOperatedVehicle ->
-            { name = "Remotely Operated Vehicle"
-            , abbreviation = "ROV"
+        DieselSub ->
+            { name = "Diesel Submarine"
+            , abbreviation = "DS"
             , cost = 12
             , prerequisites = [ SubmarinePen ]
             , speed = 2
@@ -113,8 +113,8 @@ fromString s =
         "ColonySub" ->
             Just ColonySub
 
-        "RemotelyOperatedVehicle" ->
-            Just RemotelyOperatedVehicle
+        "DieselSub" ->
+            Just DieselSub
 
         "AttackSub" ->
             Just AttackSub
