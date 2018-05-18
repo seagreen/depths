@@ -39,7 +39,7 @@ stats infra =
             }
 
         Minefield ->
-            { name = "Minefild"
+            { name = "Minefield"
             , cost = 4
             , prerequisites = []
             , productionBonus = 0
