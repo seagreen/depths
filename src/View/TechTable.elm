@@ -141,7 +141,7 @@ viewBuilding building =
             [ Html.text firepower ]
         , Html.td
             []
-            [ Html.text (toString stats.productionBonus) ]
+            [ Html.text (showIfNonZero stats.productionBonus) ]
         , Html.td
             []
             [ Html.text (toString stats.cost) ]
@@ -149,3 +149,13 @@ viewBuilding building =
             []
             [ Html.text (String.join ", " (List.map toString stats.prerequisites)) ]
         ]
+
+
+showIfNonZero : Int -> String
+showIfNonZero i =
+    case i of
+        0 ->
+            ""
+
+        _ ->
+            toString i
