@@ -85,7 +85,7 @@ stats infra =
 
         Reactor ->
             { name = "Reactor"
-            , cost = 5
+            , cost = 20
             , prerequisites = [ Dock ]
             , productionBonus = 0
             , populationBonus = 0
@@ -104,7 +104,7 @@ stats infra =
         Datacenter ->
             { name = "Datacenter"
             , cost = 20
-            , prerequisites = [ Dock, Factory ]
+            , prerequisites = [ Factory ]
             , productionBonus = 1
             , populationBonus = 0
             , combatStats = Nothing
