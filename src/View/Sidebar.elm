@@ -252,9 +252,11 @@ viewHabitat model point hab =
                     []
                     [ Html.text <|
                         "Buildings: "
-                            ++ (String.concat <|
-                                    List.intersperse ", " <|
-                                        List.map toString hab.buildings
+                            ++ (hab.buildings
+                                    |> List.reverse
+                                    |> List.map toString
+                                    |> List.intersperse ", "
+                                    |> String.concat
                                )
                     ]
                 ]
