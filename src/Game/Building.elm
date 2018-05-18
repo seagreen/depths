@@ -77,7 +77,7 @@ stats infra =
 
         Reactor ->
             { name = "Reactor"
-            , cost = 20
+            , cost = 15
             , prerequisites = [ Dock ]
             , productionBonus = 0
             , combatStats = Nothing
@@ -85,7 +85,7 @@ stats infra =
 
         Factory ->
             { name = "Factory"
-            , cost = 15
+            , cost = 20
             , prerequisites = [ Dock ]
             , productionBonus = 1
             , combatStats = Nothing
