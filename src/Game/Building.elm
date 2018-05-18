@@ -29,47 +29,11 @@ stats infra =
             , combatStats = Nothing
             }
 
-        Dormitory ->
-            { name = "Dormitory"
-            , cost = 5
-            , prerequisites = []
-            , productionBonus = 0
-            , populationBonus = 1
-            , combatStats = Nothing
-            }
-
-        ShippingDock ->
-            { name = "Shipping Dock"
+        Dock ->
+            { name = "Dock"
             , cost = 5
             , prerequisites = []
             , productionBonus = 1
-            , populationBonus = 0
-            , combatStats = Nothing
-            }
-
-        Factory ->
-            { name = "Factory"
-            , cost = 10
-            , prerequisites = [ ShippingDock ]
-            , productionBonus = 1
-            , populationBonus = 0
-            , combatStats = Nothing
-            }
-
-        Armory ->
-            { name = "Armory"
-            , cost = 5
-            , prerequisites = []
-            , productionBonus = 0
-            , populationBonus = 0
-            , combatStats = Nothing
-            }
-
-        SubmarinePen ->
-            { name = "Submarine Pen"
-            , cost = 10
-            , prerequisites = [ ShippingDock ]
-            , productionBonus = 0
             , populationBonus = 0
             , combatStats = Nothing
             }
@@ -81,6 +45,24 @@ stats infra =
             , productionBonus = 0
             , populationBonus = 0
             , combatStats = Just { sensors = 2, firepower = 2 }
+            }
+
+        Dormitory ->
+            { name = "Dormitory"
+            , cost = 5
+            , prerequisites = [ Dock ]
+            , productionBonus = 0
+            , populationBonus = 1
+            , combatStats = Nothing
+            }
+
+        Armory ->
+            { name = "Armory"
+            , cost = 5
+            , prerequisites = [ Dock ]
+            , productionBonus = 0
+            , populationBonus = 0
+            , combatStats = Nothing
             }
 
         SonarArray ->
@@ -104,8 +86,17 @@ stats infra =
         Reactor ->
             { name = "Reactor"
             , cost = 5
-            , prerequisites = [ ShippingDock ]
+            , prerequisites = [ Dock ]
             , productionBonus = 0
+            , populationBonus = 0
+            , combatStats = Nothing
+            }
+
+        Factory ->
+            { name = "Factory"
+            , cost = 10
+            , prerequisites = [ Dock ]
+            , productionBonus = 1
             , populationBonus = 0
             , combatStats = Nothing
             }
@@ -113,7 +104,7 @@ stats infra =
         Datacenter ->
             { name = "Datacenter"
             , cost = 20
-            , prerequisites = [ ShippingDock ]
+            , prerequisites = [ Dock, Factory ]
             , productionBonus = 1
             , populationBonus = 0
             , combatStats = Nothing
@@ -131,15 +122,14 @@ stats infra =
 
 type Building
     = PrefabHabitat
-    | Dormitory
-    | ShippingDock
-    | Factory
-    | Armory
-    | SubmarinePen
+    | Dock
     | Minefield
+    | Dormitory
+    | Armory
     | SonarArray
     | TorpedoTube
     | Reactor
+    | Factory
     | Datacenter
     | Supercomputer
 
@@ -147,15 +137,14 @@ type Building
 all : List Building
 all =
     [ PrefabHabitat
-    , Dormitory
-    , ShippingDock
-    , Factory
-    , Armory
-    , SubmarinePen
+    , Dock
     , Minefield
+    , Dormitory
+    , Armory
     , SonarArray
     , TorpedoTube
     , Reactor
+    , Factory
     , Datacenter
     , Supercomputer
     ]
@@ -167,23 +156,17 @@ fromString s =
         "PrefabHabitat" ->
             Just PrefabHabitat
 
-        "Dormitory" ->
-            Just Dormitory
-
-        "ShippingDock" ->
-            Just ShippingDock
-
-        "Factory" ->
-            Just Factory
-
-        "Armory" ->
-            Just Armory
-
-        "SubmarinePen" ->
-            Just SubmarinePen
+        "Dock" ->
+            Just Dock
 
         "Minefield" ->
             Just Minefield
+
+        "Dormitory" ->
+            Just Dormitory
+
+        "Armory" ->
+            Just Armory
 
         "SonarArray" ->
             Just SonarArray
@@ -193,6 +176,9 @@ fromString s =
 
         "Reactor" ->
             Just Reactor
+
+        "Factory" ->
+            Just Factory
 
         "Datacenter" ->
             Just Datacenter
