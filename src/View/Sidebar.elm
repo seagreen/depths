@@ -250,12 +250,6 @@ viewHabitat model point hab =
                     ]
                 , Html.p
                     []
-                    [ Html.text "Population: "
-                    , badge
-                        [ Html.text <| toString (Building.population hab.buildings) ]
-                    ]
-                , Html.p
-                    []
                     [ Html.text <|
                         "Buildings: "
                             ++ (String.concat <|

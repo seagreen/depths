@@ -392,10 +392,12 @@ destroyHabitats game =
             HexGrid a <|
                 Dict.foldr
                     (\point hab acc ->
-                        if Building.population hab.buildings > 0 then
-                            acc
-                        else
-                            Dict.update point remove acc
+                        case hab.buildings of
+                            [] ->
+                                Dict.update point remove acc
+
+                            _ ->
+                                acc
                     )
                     grid
                     habitats

@@ -6,7 +6,6 @@ type alias Stats =
     , cost : Int
     , prerequisites : List Building
     , productionBonus : Int
-    , populationBonus : Int
     , combatStats : Maybe CombatStats
     }
 
@@ -25,7 +24,6 @@ stats infra =
             , cost = 10
             , prerequisites = []
             , productionBonus = 1
-            , populationBonus = 1
             , combatStats = Nothing
             }
 
@@ -34,7 +32,6 @@ stats infra =
             , cost = 5
             , prerequisites = []
             , productionBonus = 1
-            , populationBonus = 0
             , combatStats = Nothing
             }
 
@@ -43,7 +40,6 @@ stats infra =
             , cost = 5
             , prerequisites = []
             , productionBonus = 0
-            , populationBonus = 0
             , combatStats = Just { sensors = 2, firepower = 2 }
             }
 
@@ -52,7 +48,6 @@ stats infra =
             , cost = 5
             , prerequisites = [ Dock ]
             , productionBonus = 0
-            , populationBonus = 1
             , combatStats = Nothing
             }
 
@@ -61,7 +56,6 @@ stats infra =
             , cost = 5
             , prerequisites = [ Dock ]
             , productionBonus = 0
-            , populationBonus = 0
             , combatStats = Nothing
             }
 
@@ -70,7 +64,6 @@ stats infra =
             , cost = 6
             , prerequisites = [ Armory ]
             , productionBonus = 0
-            , populationBonus = 0
             , combatStats = Just { sensors = 4, firepower = 0 }
             }
 
@@ -79,7 +72,6 @@ stats infra =
             , cost = 6
             , prerequisites = [ Armory ]
             , productionBonus = 0
-            , populationBonus = 0
             , combatStats = Just { sensors = 0, firepower = 4 }
             }
 
@@ -88,7 +80,6 @@ stats infra =
             , cost = 20
             , prerequisites = [ Dock ]
             , productionBonus = 0
-            , populationBonus = 0
             , combatStats = Nothing
             }
 
@@ -97,7 +88,6 @@ stats infra =
             , cost = 15
             , prerequisites = [ Dock ]
             , productionBonus = 1
-            , populationBonus = 0
             , combatStats = Nothing
             }
 
@@ -106,7 +96,6 @@ stats infra =
             , cost = 20
             , prerequisites = [ Factory ]
             , productionBonus = 1
-            , populationBonus = 0
             , combatStats = Nothing
             }
 
@@ -115,7 +104,6 @@ stats infra =
             , cost = 50
             , prerequisites = [ Datacenter ]
             , productionBonus = 2
-            , populationBonus = 0
             , combatStats = Nothing
             }
 
@@ -225,11 +213,6 @@ firepower building =
     (stats building).combatStats
         |> Maybe.map .firepower
         |> Maybe.withDefault 0
-
-
-population : List Building -> Int
-population =
-    List.sum << List.map (.populationBonus << stats)
 
 
 production : List Building -> Int
