@@ -40,7 +40,7 @@ stats infra =
 
         Minefield ->
             { name = "Minefield"
-            , cost = 4
+            , cost = 5
             , prerequisites = []
             , productionBonus = 0
             , populationBonus = 0
@@ -94,7 +94,7 @@ stats infra =
 
         Factory ->
             { name = "Factory"
-            , cost = 10
+            , cost = 15
             , prerequisites = [ Dock ]
             , productionBonus = 1
             , populationBonus = 0
