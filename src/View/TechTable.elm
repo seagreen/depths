@@ -33,6 +33,9 @@ view =
                         [ Html.text "Stealth" ]
                     , Html.th
                         []
+                        [ Html.text "Move" ]
+                    , Html.th
+                        []
                         [ Html.text "Cost" ]
                     , Html.th
                         []
@@ -99,6 +102,9 @@ viewSubmarine submarine =
         , Html.td
             []
             [ Html.text (toString stats.stealth) ]
+        , Html.td
+            []
+            [ Html.text (toString stats.speed) ]
         , Html.td
             []
             [ Html.text (toString stats.cost) ]
