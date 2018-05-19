@@ -8,8 +8,8 @@ import View
 import WebSocket
 
 
-enter : Int
-enter =
+enterKey : Int
+enterKey =
     13
 
 
@@ -30,8 +30,8 @@ subscriptions model =
         keydown =
             Keyboard.downs
                 (\keyPress ->
-                    if keyPress == enter then
-                        Update.EndRound
+                    if keyPress == enterKey then
+                        Update.Enter
                     else
                         Update.NoOp
                 )
@@ -39,18 +39,17 @@ subscriptions model =
         listen : Sub Update.Msg
         listen =
             WebSocket.listen model.server.url Update.Recv
+
+        listenIfConnected : List (Sub Update.Msg)
+        listenIfConnected =
+            case model.gameStatus of
+                Model.NotPlayingYet ->
+                    []
+
+                Model.WaitingForStart ->
+                    [ listen ]
+
+                Model.InGame ->
+                    [ listen ]
     in
-    case model.gameStatus of
-        Model.NotPlayingYet ->
-            Sub.none
-
-        Model.WaitingForStart ->
-            Sub.batch
-                [ listen
-                ]
-
-        Model.InGame ->
-            Sub.batch
-                [ keydown
-                , listen
-                ]
+    Sub.batch (keydown :: listenIfConnected)

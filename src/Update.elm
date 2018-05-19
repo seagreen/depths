@@ -36,7 +36,8 @@ import Util
 type Msg
     = NoOp
       -- When both players commands have been queued.
-    | EndRound
+    | Enter
+    | EndTurnButton
     | FinishLoading
       -- When a point is clicked on the board.
       --
@@ -72,7 +73,18 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        EndRound ->
+        Enter ->
+            case model.gameStatus of
+                Model.NotPlayingYet ->
+                    ( model, Cmd.none )
+
+                Model.WaitingForStart ->
+                    ( model, Cmd.none )
+
+                Model.InGame ->
+                    youEndTurn model
+
+        EndTurnButton ->
             youEndTurn model
 
         FinishLoading ->
@@ -289,23 +301,31 @@ youEndTurn model =
                     }
                 )
     in
-    case model.enemyCommands of
-        Nothing ->
-            ( { model | turnStatus = TurnComplete }
-            , send
-            )
+    case model.turnStatus of
+        TurnLoading ->
+            ( model, Cmd.none )
 
-        Just enemyCommands ->
-            let
-                ( newModel, cmd ) =
-                    runResolveTurn model enemyCommands
-            in
-            ( newModel
-            , Cmd.batch
-                [ cmd
-                , send
-                ]
-            )
+        TurnComplete ->
+            ( model, Cmd.none )
+
+        TurnInProgress ->
+            case model.enemyCommands of
+                Nothing ->
+                    ( { model | turnStatus = TurnComplete }
+                    , send
+                    )
+
+                Just enemyCommands ->
+                    let
+                        ( newModel, cmd ) =
+                            runResolveTurn model enemyCommands
+                    in
+                    ( newModel
+                    , Cmd.batch
+                        [ cmd
+                        , send
+                        ]
+                    )
 
 
 opponentEndsTurn : Model -> Commands -> ( Model, Cmd Msg )
