@@ -46,15 +46,20 @@ view model =
                 , Html.button [ Hevent.onClick Connect ] [ Html.text "CONNECT!!" ]
                 ]
     in
-    case model.gameStatus of
-        NotPlayingYet ->
-            joinGame
+    case model.crashed of
+        Just crashMessage ->
+            Html.text ("Crashed: " ++ crashMessage)
 
-        WaitingForStart ->
-            Html.div [] [ Html.text "Waiting for other player." ]
+        Nothing ->
+            case model.gameStatus of
+                NotPlayingYet ->
+                    joinGame
 
-        InGame ->
-            Html.div [] [ viewGame model ]
+                WaitingForStart ->
+                    Html.div [] [ Html.text "Waiting for other player." ]
+
+                InGame ->
+                    Html.div [] [ viewGame model ]
 
 
 viewGame : Model -> Html Msg

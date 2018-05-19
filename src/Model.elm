@@ -46,6 +46,10 @@ type alias Model =
     -- The player controlling the UI:
     , currentPlayer : Player
     , server : Protocol.Server
+
+    -- Using this instead of Debug.crash because the latter disables
+    -- the debugger (see: https://github.com/elm-lang/core/issues/953):
+    , crashed : Maybe String
     }
 
 
@@ -65,6 +69,7 @@ init =
         { url = "ws://45.33.68.74:16000"
         , room = "hello"
         }
+    , crashed = Nothing
     }
 
 
@@ -125,3 +130,18 @@ focus model =
                     (\tile -> ( point, tile ))
                     (Dict.get point dict)
             )
+
+
+{-| Use this instead of setting the `crashed` field directly
+to prevent overwriting a previous crash message.
+-}
+crash : Model -> String -> ( Model, Cmd msg )
+crash model crashMsg =
+    ( case model.crashed of
+        Just _ ->
+            model
+
+        Nothing ->
+            { model | crashed = Just crashMsg }
+    , Cmd.none
+    )

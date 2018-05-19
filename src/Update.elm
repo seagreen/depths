@@ -192,15 +192,15 @@ update msg model =
                     )
 
                 WaitingForStart ->
-                    Debug.crash "Connect Msg when model.GameType = WaitingForStart"
+                    Model.crash model "Connect Msg when model.GameType = WaitingForStart"
 
                 InGame ->
-                    Debug.crash "Connect Msg when model.GameType = InGame"
+                    Model.crash model "Connect Msg when model.GameType = InGame"
 
         Recv messageStr ->
             case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
                 Err err ->
-                    Debug.crash ("Recv decoding failed: " ++ err)
+                    Model.crash model ("Recv decoding failed: " ++ err)
 
                 Ok message ->
                     messageRecieved model message.payload
@@ -235,7 +235,7 @@ messageRecieved model message =
     in
     case ( model.gameStatus, message ) of
         ( NotPlayingYet, _ ) ->
-            Debug.crash "Recv when game state is NotPlayingYet"
+            Model.crash model "Recv when game state is NotPlayingYet"
 
         ( WaitingForStart, JoinMessage ) ->
             let
@@ -264,7 +264,7 @@ messageRecieved model message =
             opponentEndsTurn model commands
 
         ( _, _ ) ->
-            Debug.crash <|
+            Model.crash model <|
                 "Unexpected gameStatus/Msg combination "
                     ++ toString model.gameStatus
                     ++ " / "
@@ -331,7 +331,7 @@ opponentEndsTurn model enemyCommands =
             handleMsg
 
         Just _ ->
-            Debug.crash "Oppenent sent two messages in the same turn."
+            Model.crash model "Oppenent sent two messages in the same turn."
 
 
 runResolveTurn : Model -> Commands -> ( Model, Cmd Msg )
