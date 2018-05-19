@@ -17,7 +17,7 @@ import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
 import Model exposing (GameType(..), Model, Screen(..), Selection(..), TurnStatus(..))
-import Update exposing (Msg(..))
+import Update exposing (Msg(..), SplashScreenMsg(..))
 import Util exposing (badge, label_, onChange)
 import View.Board as Board
 import View.Sidebar as Sidebar
@@ -27,7 +27,7 @@ import View.TechTable as TechTable
 view : Model -> Html Msg
 view model =
     let
-        joinGame : Html Msg
+        joinGame : Html SplashScreenMsg
         joinGame =
             Html.div
                 []
@@ -53,7 +53,7 @@ view model =
         Nothing ->
             case model.gameStatus of
                 NotPlayingYet ->
-                    joinGame
+                    Html.map SplashScreen joinGame
 
                 WaitingForStart ->
                     Html.div [] [ Html.text "Waiting for other player." ]
