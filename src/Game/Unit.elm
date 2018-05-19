@@ -65,7 +65,7 @@ stats sub =
         ColonySub ->
             { name = "Colony Submarine"
             , abbreviation = "CS"
-            , cost = 20
+            , cost = 15
             , prerequisites = [ Dock, Dormitory ]
             , speed = 2
             , sensors = 2
