@@ -18,7 +18,6 @@ import Game.State as Game
         )
 import Game.Unit exposing (Player(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
-import Json.Decode as Decode
 import Model
     exposing
         ( GameType(..)
@@ -59,7 +58,7 @@ type Msg
     | NameEditorSubmit
     | SplashScreen SplashScreenMsg
       -- Receive a message from the server
-    | Recv String
+    | Protocol (Result String Protocol.Message)
 
 
 {-| Messages that are only sent when the splash screen is visible.
@@ -194,15 +193,15 @@ update msg model =
         SplashScreen msg_ ->
             updateSplashScreen msg_ model
 
-        Recv messageStr ->
-            case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
-                Err err ->
-                    Model.crash model ("Recv decoding failed: " ++ err)
+        Protocol (Err err) ->
+            Model.crash model ("Recv decoding failed: " ++ err)
 
-                Ok message ->
-                    messageRecieved model message.payload
+        Protocol (Ok msg_) ->
+            updateProtocol msg_ model
 
 
+{-| Handle 'SplashScreenMsg'
+-}
 updateSplashScreen : SplashScreenMsg -> Model -> ( Model, Cmd msg )
 updateSplashScreen msg model =
     case msg of
@@ -238,21 +237,10 @@ updateSplashScreen msg model =
                     Model.crash model "Connect Msg when model.GameType = InGame"
 
 
-unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
-unlessTurnOver model action =
-    case model.turnStatus of
-        TurnLoading ->
-            action
-
-        TurnInProgress ->
-            action
-
-        TurnComplete ->
-            ( model, Cmd.none )
-
-
-messageRecieved : Model -> Protocol.Message -> ( Model, Cmd Msg )
-messageRecieved model message =
+{-| Handle 'Protocol.Message'.
+-}
+updateProtocol : Protocol.Message -> Model -> ( Model, Cmd Msg )
+updateProtocol msg model =
     let
         newGameModel : Random.Seed -> Model
         newGameModel seed =
@@ -265,7 +253,7 @@ messageRecieved model message =
                 , game = { game | randomSeed = seed }
             }
     in
-    case ( model.gameStatus, message ) of
+    case ( model.gameStatus, msg ) of
         ( NotPlayingYet, _ ) ->
             Model.crash model "Recv when game state is NotPlayingYet"
 
@@ -300,7 +288,20 @@ messageRecieved model message =
                 "Unexpected gameStatus/Msg combination "
                     ++ toString model.gameStatus
                     ++ " / "
-                    ++ toString message
+                    ++ toString msg
+
+
+unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
+unlessTurnOver model action =
+    case model.turnStatus of
+        TurnLoading ->
+            action
+
+        TurnInProgress ->
+            action
+
+        TurnComplete ->
+            ( model, Cmd.none )
 
 
 youEndTurn : Model -> ( Model, Cmd Msg )
