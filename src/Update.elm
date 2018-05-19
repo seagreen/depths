@@ -73,7 +73,7 @@ update msg model =
             ( model, Cmd.none )
 
         EndRound ->
-            endRoundOnlineGame model
+            youEndTurn model
 
         FinishLoading ->
             ( case model.turnStatus of
@@ -103,12 +103,16 @@ update msg model =
         PlanMoves id points ->
             unlessTurnOver
                 model
-                ( { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }, Cmd.none )
+                ( { model | plannedMoves = Dict.insert (Id.unId id) points model.plannedMoves }
+                , Cmd.none
+                )
 
         CancelMove id ->
             unlessTurnOver
                 model
-                ( { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }, Cmd.none )
+                ( { model | plannedMoves = Dict.remove (Id.unId id) model.plannedMoves }
+                , Cmd.none
+                )
 
         BuildOrder buildable ->
             unlessTurnOver
@@ -257,7 +261,7 @@ messageRecieved model message =
             )
 
         ( InGame, TurnMessage { commands } ) ->
-            opponentEndsRoundOnlineGame model commands
+            opponentEndsTurn model commands
 
         ( _, _ ) ->
             Debug.crash <|
@@ -267,10 +271,8 @@ messageRecieved model message =
                     ++ toString message
 
 
-{-| When the user clicks the end turn button.
--}
-endRoundOnlineGame : Model -> ( Model, Cmd Msg )
-endRoundOnlineGame model =
+youEndTurn : Model -> ( Model, Cmd Msg )
+youEndTurn model =
     let
         ( immediateMoves, _ ) =
             splitPlannedMoves model.plannedMoves
@@ -296,7 +298,7 @@ endRoundOnlineGame model =
         Just enemyCommands ->
             let
                 ( newModel, cmd ) =
-                    resolveOnlineGameTurn model enemyCommands
+                    runResolveTurn model enemyCommands
             in
             ( newModel
             , Cmd.batch
@@ -306,8 +308,8 @@ endRoundOnlineGame model =
             )
 
 
-opponentEndsRoundOnlineGame : Model -> Commands -> ( Model, Cmd Msg )
-opponentEndsRoundOnlineGame model enemyCommands =
+opponentEndsTurn : Model -> Commands -> ( Model, Cmd Msg )
+opponentEndsTurn model enemyCommands =
     let
         handleMsg =
             case model.turnStatus of
@@ -322,7 +324,7 @@ opponentEndsRoundOnlineGame model enemyCommands =
                     )
 
                 TurnComplete ->
-                    resolveOnlineGameTurn model enemyCommands
+                    runResolveTurn model enemyCommands
     in
     case model.enemyCommands of
         Nothing ->
@@ -332,8 +334,8 @@ opponentEndsRoundOnlineGame model enemyCommands =
             Debug.crash "Oppenent sent two messages in the same turn."
 
 
-resolveOnlineGameTurn : Model -> Commands -> ( Model, Cmd Msg )
-resolveOnlineGameTurn model enemyCommands =
+runResolveTurn : Model -> Commands -> ( Model, Cmd Msg )
+runResolveTurn model enemyCommands =
     let
         delayThenRemoveLoading : Cmd Msg
         delayThenRemoveLoading =
