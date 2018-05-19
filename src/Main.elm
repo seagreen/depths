@@ -1,8 +1,10 @@
 module Main exposing (..)
 
 import Html
+import Json.Decode as Decode
 import Keyboard
 import Model
+import Protocol
 import Update
 import View
 import WebSocket
@@ -38,7 +40,11 @@ subscriptions model =
 
         listen : Sub Update.Msg
         listen =
-            WebSocket.listen model.server.url Update.Recv
+            WebSocket.listen model.server.url
+                (Decode.decodeString Protocol.decodeNetworkMessage
+                    >> Result.map .payload
+                    >> Update.Protocol
+                )
 
         listenIfConnected : List (Sub Update.Msg)
         listenIfConnected =
