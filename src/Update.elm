@@ -57,22 +57,32 @@ type Msg
     | NameEditorFull String
     | NameEditorAbbreviation String
     | NameEditorSubmit
-      -- Handle changes to the "server" text box before starting a game
-    | SetServerUrl String
+    | SplashScreen SplashScreenMsg
+      -- Receive a message from the server
+    | Recv String
+
+
+{-| Messages that are only sent when the splash screen is visible.
+-}
+type
+    SplashScreenMsg
+    -- Handle changes to the "server" text box before starting a game
+    = SetServerUrl String
       -- Handle changes to the "room" text box before starting a game
     | SetRoom String
       -- Handle connecting to a server
     | Connect
-      -- Receive a message from the server
-    | Recv String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        -- Always ignore NoOp messages.
         NoOp ->
             ( model, Cmd.none )
 
+        -- 'Enter' was pressed. If we're in a game, this ends our current turn.
+        -- Otherwise, we ignore the message.
         Enter ->
             case model.gameStatus of
                 Model.NotPlayingYet ->
@@ -84,9 +94,12 @@ update msg model =
                 Model.InGame ->
                     youEndTurn model
 
+        -- 'End Turn' was pressed; end our current turn.
         EndTurnButton ->
             youEndTurn model
 
+        -- We sent ourselves a 'FinishLoading' message intended to transition
+        -- us from 'TurnLoading' back to 'TurnInProgress'.
         FinishLoading ->
             ( case model.turnStatus of
                 TurnLoading ->
@@ -178,6 +191,21 @@ update msg model =
             , Cmd.none
             )
 
+        SplashScreen msg_ ->
+            updateSplashScreen msg_ model
+
+        Recv messageStr ->
+            case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
+                Err err ->
+                    Model.crash model ("Recv decoding failed: " ++ err)
+
+                Ok message ->
+                    messageRecieved model message.payload
+
+
+updateSplashScreen : SplashScreenMsg -> Model -> ( Model, Cmd msg )
+updateSplashScreen msg model =
+    case msg of
         SetServerUrl url ->
             let
                 server =
@@ -208,14 +236,6 @@ update msg model =
 
                 InGame ->
                     Model.crash model "Connect Msg when model.GameType = InGame"
-
-        Recv messageStr ->
-            case Decode.decodeString Protocol.decodeNetworkMessage messageStr of
-                Err err ->
-                    Model.crash model ("Recv decoding failed: " ++ err)
-
-                Ok message ->
-                    messageRecieved model message.payload
 
 
 unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
