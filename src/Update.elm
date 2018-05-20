@@ -407,10 +407,7 @@ runResolveTurn model enemyCommands =
         , turnStatus = TurnLoading
         , plannedMoves = removeOrphanMoves newGameState laterMoves
         , buildOrders = Dict.empty
-        , habitatNameEditors =
-            addEditorsForNewHabitats
-                model.game.grid
-                model.habitatNameEditors
+        , habitatNameEditors = addEditorsForNewHabitats model
         , enemyCommands = Nothing
         , gameLog = reports ++ model.gameLog
       }
@@ -596,6 +593,29 @@ setHabitatNameEditor model habId updateName =
     }
 
 
-addEditorsForNewHabitats : HexGrid Tile -> Dict Int Habitat.NameEditor -> Dict Int Habitat.NameEditor
-addEditorsForNewHabitats =
-    Debug.crash "foo"
+addEditorsForNewHabitats : Model -> Dict Int Habitat.NameEditor
+addEditorsForNewHabitats model =
+    let
+        (HexGrid _ grid) =
+            model.game.grid
+
+        addIfNew :
+            Point
+            -> Habitat
+            -> Dict Int Habitat.NameEditor
+            -> Dict Int Habitat.NameEditor
+        addIfNew point hab editorsAcc =
+            case hab.name of
+                Just _ ->
+                    editorsAcc
+
+                Nothing ->
+                    if hab.player == model.player then
+                        Dict.update
+                            (unId hab.id)
+                            (Just << Maybe.withDefault Habitat.emptyNameEditor)
+                            editorsAcc
+                    else
+                        editorsAcc
+    in
+    Dict.foldl addIfNew model.habitatNameEditors (Game.habitatDict grid)
