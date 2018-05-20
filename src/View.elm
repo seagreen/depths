@@ -19,21 +19,68 @@ view model =
     let
         joinGame : Html SplashScreenMsg
         joinGame =
-            Html.div
-                []
-                [ Html.input
-                    [ Hattr.placeholder "Server"
-                    , Hattr.value model.server.url
-                    , Hevent.onInput SetServerUrl
+            Html.main_ [ class "splash" ]
+                [ Html.div [ class "c-join" ]
+                    [ Html.header []
+                        [ Html.span [] [ Html.text "Connect to " ]
+                        , Html.span [ class "c-join__title" ]
+                            [ Html.text "The Depths" ]
+                        ]
+                    , Html.div [ class "form" ]
+                        [ Html.div [ class "form-group" ]
+                            [ Html.label
+                                [ Hattr.for "server"
+                                , class "control-label"
+                                ]
+                                [ Html.text "Server Address" ]
+                            , Html.input
+                                [ Hattr.placeholder "server"
+                                , Hattr.value model.server.url
+                                , Hevent.onInput SetServerUrl
+                                , Hattr.id "server"
+                                , class "form-control"
+                                ]
+                                []
+                            ]
+                        , Html.div [ class "form-group" ]
+                            [ Html.label
+                                [ Hattr.for "room"
+                                , class "control-label"
+                                ]
+                                [ Html.text "Room ID" ]
+                            , Html.input
+                                [ Hattr.placeholder "Room"
+                                , Hattr.value model.server.room
+                                , Hevent.onInput SetRoom
+                                , Hattr.id "room"
+                                , class "form-control"
+                                ]
+                                []
+                            ]
+                        , Html.div [ class "form-group" ]
+                            [ Html.button
+                                [ Hevent.onClick Connect
+                                , class "btn btn-primary c-join__connect"
+                                ]
+                                [ Html.text "Prepare to Dive" ]
+                            ]
+                        ]
                     ]
-                    []
-                , Html.input
-                    [ Hattr.placeholder "Room"
-                    , Hattr.value model.server.room
-                    , Hevent.onInput SetRoom
-                    ]
-                    []
-                , Html.button [ Hevent.onClick Connect ] [ Html.text "CONNECT!!" ]
+                , Html.div [ class "c-sub-splash" ]
+                    [ Html.img [ Hattr.src "./assets/sub1.svg" ] [] ]
+                ]
+
+        waiting : Html Msg
+        waiting =
+            Html.main_ [ class "c-waiting-for-player" ]
+                [ Html.div [ class "c-waiting-for-player__text" ]
+                    [ Html.text "Waiting for other player..." ]
+                , Html.div [ Hattr.id "bubbles" ] []
+                , Html.div [ class "bubble x1" ] []
+                , Html.div [ class "bubble x2" ] []
+                , Html.div [ class "bubble x3" ] []
+                , Html.div [ class "bubble x4" ] []
+                , Html.div [ class "bubble x5" ] []
                 ]
     in
     case model.crashed of
@@ -46,7 +93,7 @@ view model =
                     Html.map SplashScreen joinGame
 
                 WaitingForStart ->
-                    Html.div [] [ Html.text "Waiting for other player." ]
+                    waiting
 
                 InGame ->
                     Html.div [] [ viewGame model ]
@@ -102,7 +149,7 @@ viewGame model =
                     [ Html.text (toString (unTurn model.game.turn)) ]
                 ]
     in
-    Html.div
+    Html.main_
         []
         [ viewTitle
         , viewUserGuideLink

@@ -1,7 +1,59 @@
-body {
-  font-size: 18px;
-  padding-top: 20px;
-  padding-left: 50px;
+:root {
+  --bg: #2F4172;
+  --color: #226666;
+  --color-accent: #378B2E;
+}
+
+
+main {
+  height: 100vh;
+  width: 100vw;
+  padding: 5px;
+}
+
+.splash, .c-waiting-for-player {
+  color: white;
+  text-shadow: 1px 1px 0 black;
+  background-color: var(--bg);
+}
+
+.c-sub-splash {
+  overflow: hidden;
+  width: 100%;
+}
+.c-sub-splash img {
+  animation-duration: 10s;
+  animation-name: slideAcross;
+  position: relative;
+  animation-iteration-count: infinite;
+
+}
+
+.c-join {
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.c-join__connect {
+  margin-left: auto;
+}
+
+.c-waiting-for-player {
+  width: 100%;
+}
+
+.c-waiting-for-player__text {
+  text-align: center;
+  font-size: 50px;
+}
+.c-join > header {
+  font-size: 40px;
+  text-align: center;
+}
+
+.c-join__title {
+  color: var(--color);
 }
 
 /* Prevent a horizontal scrollbar */
@@ -43,4 +95,75 @@ g {
 
 .hex:hover {
   opacity: 0.7;
+}
+
+/** Bubbles experiment from http://jsfiddle.net/p5gpx/ **/
+#bubbles {
+  padding: 100px 0 ;
+  height: 100%;
+}
+.bubble {
+    width: 80px;
+    height: 80px;
+    background: #FFF;
+    border-radius: 200px;
+    position: absolute;
+}
+
+.x1 {
+    transform: scale(0.9);
+    opacity: 0.2;
+    animation: moveclouds 15s linear infinite, sideWays 4s ease-in-out infinite alternate;
+}
+
+.x2 {
+    left: 200px;
+    transform: scale(0.6);
+    opacity: 0.5;
+    animation: moveclouds 25s linear infinite, sideWays 5s ease-in-out infinite alternate;
+}
+.x3 {
+    left: 350px;
+    transform: scale(0.8);
+    opacity: 0.3;
+    animation: moveclouds 20s linear infinite, sideWays 4s ease-in-out infinite alternate;
+}
+.x4 {
+    left: 470px;
+    transform: scale(0.75);
+    opacity: 0.35;
+    animation: moveclouds 18s linear infinite, sideWays 2s ease-in-out infinite alternate;
+}
+.x5 {
+    left: 150px;
+    transform: scale(0.8);
+    opacity: 0.3;
+    animation: moveclouds 7s linear infinite, sideWays 1s ease-in-out infinite alternate;
+}
+@keyframes moveclouds {
+    0% {
+        left: 50%;
+        top: 800px;
+    }
+    100% {
+        top: -500px;
+    }
+}
+
+@keyframes sideWays {
+    0% {
+        margin-left:0px;
+    }
+    100% {
+        margin-left:50px;
+    }
+}
+
+@keyframes slideAcross {
+  0% {
+    left: -500px;
+  }
+  100% {
+    left: 4000px;
+  }
 }
