@@ -24,6 +24,12 @@ view =
                         [ Html.text "Name" ]
                     , Html.th
                         []
+                        [ Html.text "Cost" ]
+                    , Html.th
+                        []
+                        [ Html.text "Prerequisites" ]
+                    , Html.th
+                        []
                         [ Html.text "Sensors" ]
                     , Html.th
                         []
@@ -34,12 +40,6 @@ view =
                     , Html.th
                         []
                         [ Html.text "Move" ]
-                    , Html.th
-                        []
-                        [ Html.text "Cost" ]
-                    , Html.th
-                        []
-                        [ Html.text "Prerequisites" ]
                     ]
                 ]
             , Html.tbody
@@ -60,6 +60,12 @@ view =
                         [ Html.text "Name" ]
                     , Html.th
                         []
+                        [ Html.text "Cost" ]
+                    , Html.th
+                        []
+                        [ Html.text "Prerequisites" ]
+                    , Html.th
+                        []
                         [ Html.text "Sensors" ]
                     , Html.th
                         []
@@ -67,12 +73,6 @@ view =
                     , Html.th
                         []
                         [ Html.text "Production bonus" ]
-                    , Html.th
-                        []
-                        [ Html.text "Cost" ]
-                    , Html.th
-                        []
-                        [ Html.text "Prerequisites" ]
                     ]
                 ]
             , Html.tbody
@@ -95,6 +95,12 @@ viewSubmarine submarine =
             [ Html.text stats.name ]
         , Html.td
             []
+            [ Html.text (toString stats.cost) ]
+        , Html.td
+            []
+            [ Html.text (String.join ", " (List.map toString stats.prerequisites)) ]
+        , Html.td
+            []
             [ Html.text (toString stats.sensors) ]
         , Html.td
             []
@@ -105,12 +111,6 @@ viewSubmarine submarine =
         , Html.td
             []
             [ Html.text (toString stats.speed) ]
-        , Html.td
-            []
-            [ Html.text (toString stats.cost) ]
-        , Html.td
-            []
-            [ Html.text (String.join ", " (List.map toString stats.prerequisites)) ]
         ]
 
 
@@ -135,6 +135,12 @@ viewBuilding building =
             [ Html.text stats.name ]
         , Html.td
             []
+            [ Html.text (toString stats.cost) ]
+        , Html.td
+            []
+            [ Html.text (String.join ", " (List.map toString stats.prerequisites)) ]
+        , Html.td
+            []
             [ Html.text sensors ]
         , Html.td
             []
@@ -142,12 +148,6 @@ viewBuilding building =
         , Html.td
             []
             [ Html.text (showIfNonZero stats.productionBonus) ]
-        , Html.td
-            []
-            [ Html.text (toString stats.cost) ]
-        , Html.td
-            []
-            [ Html.text (String.join ", " (List.map toString stats.prerequisites)) ]
         ]
 
 
