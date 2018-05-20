@@ -6,7 +6,6 @@ Notifications, help messages, unit descriptions, etc.
 
 -}
 
-import Either exposing (Either(..))
 import Game exposing (Outcome(..))
 import Game.Combat as Combat
     exposing
@@ -58,15 +57,15 @@ viewSidebar model =
                             Html.div
                                 []
                                 [ viewHabitat model point hab
-                                , case hab.name of
-                                    Right _ ->
-                                        Html.text ""
 
-                                    Left editor ->
-                                        if hab.player == model.player then
-                                            viewHabitatNameForm editor
-                                        else
-                                            Html.text ""
+                                -- , case hab.name of
+                                --     Nothing ->
+                                --         Html.text ""
+                                --     Left editor ->
+                                --         if hab.player == model.player then
+                                --             viewHabitatNameForm editor
+                                --         else
+                                --             Html.text ""
                                 ]
                     , Html.div
                         []
@@ -390,52 +389,53 @@ productionForm model point hab =
         ]
 
 
-viewHabitatNameForm : Habitat.NameEditor -> Html Msg
-viewHabitatNameForm (Habitat.NameEditor editor) =
-    Html.div
-        [ class "alert alert-warning" ]
-        [ Html.form
-            [ Hevent.onSubmit NameEditorSubmit ]
-            [ Html.h4
-                []
-                [ Html.b
-                    []
-                    [ Html.text "Name Habitat" ]
-                ]
-            , Html.div
-                [ class "form-group" ]
-                [ Html.label
-                    [ Hattr.for "habitatName" ]
-                    [ Html.text "Full name:" ]
-                , Html.input
-                    [ class "form-control"
-                    , Hattr.type_ "text"
-                    , Hattr.id "habitatName"
-                    , Hevent.onInput NameEditorFull
-                    , Hattr.value editor.full
-                    ]
-                    []
-                ]
-            , Html.div
-                [ class "form-group" ]
-                [ Html.label
-                    [ Hattr.for "habitatAbbreviation" ]
-                    [ Html.text "Abbreviation (1-3 letters):" ]
-                , Html.input
-                    [ class "form-control"
-                    , Hattr.type_ "text"
-                    , Hattr.maxlength 3
-                    , Hattr.id "habitatAbbreviation"
-                    , Hevent.onInput NameEditorAbbreviation
-                    , Hattr.value editor.abbreviation
-                    ]
-                    []
-                ]
-            , Html.button
-                [ Hattr.type_ "submit" ]
-                [ Html.text "Found" ]
-            ]
-        ]
+
+-- viewHabitatNameForm : Habitat.NameEditor -> Html Msg
+-- viewHabitatNameForm (Habitat.NameEditor editor) =
+--     Html.div
+--         [ class "alert alert-warning" ]
+--         [ Html.form
+--             [ Hevent.onSubmit NameEditorSubmit ]
+--             [ Html.h4
+--                 []
+--                 [ Html.b
+--                     []
+--                     [ Html.text "Name Habitat" ]
+--                 ]
+--             , Html.div
+--                 [ class "form-group" ]
+--                 [ Html.label
+--                     [ Hattr.for "habitatName" ]
+--                     [ Html.text "Full name:" ]
+--                 , Html.input
+--                     [ class "form-control"
+--                     , Hattr.type_ "text"
+--                     , Hattr.id "habitatName"
+--                     , Hevent.onInput NameEditorFull
+--                     , Hattr.value editor.full
+--                     ]
+--                     []
+--                 ]
+--             , Html.div
+--                 [ class "form-group" ]
+--                 [ Html.label
+--                     [ Hattr.for "habitatAbbreviation" ]
+--                     [ Html.text "Abbreviation (1-3 letters):" ]
+--                 , Html.input
+--                     [ class "form-control"
+--                     , Hattr.type_ "text"
+--                     , Hattr.maxlength 3
+--                     , Hattr.id "habitatAbbreviation"
+--                     , Hevent.onInput NameEditorAbbreviation
+--                     , Hattr.value editor.abbreviation
+--                     ]
+--                     []
+--                 ]
+--             , Html.button
+--                 [ Hattr.type_ "submit" ]
+--                 [ Html.text "Found" ]
+--             ]
+--         ]
 
 
 viewUnit : Maybe Selection -> Unit -> Html Msg

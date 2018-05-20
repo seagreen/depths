@@ -5,6 +5,8 @@ import Game exposing (Commands)
 import Game.Combat exposing (BattleReport)
 import Game.State exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
+import Game.Type.Geology exposing (Geology(..))
+import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Type.Player exposing (Player(..))
 import Game.Type.Tile exposing (Tile)
@@ -45,6 +47,9 @@ type alias Model =
     -- Unfortunately since habitats are defined and stored in the Game part
     -- of the code they don't know about UI things like build orders.
     , buildOrders : Dict Point Buildable
+
+    -- Int is the habitat ID.
+    , habitatNameEditors : Dict Int Habitat.NameEditor
     , enemyCommands : Maybe Commands
     , gameLog : List BattleReport
 
@@ -68,6 +73,7 @@ init =
     , turnStatus = TurnInProgress
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
+    , habitatNameEditors = Dict.empty
     , enemyCommands = Nothing
     , gameLog = []
     , crashed = Nothing
@@ -118,10 +124,12 @@ focusPoint model =
             )
 
 
+{-| Like `focusPoint`, but also returns the `Tile` at that point.
+-}
 focus : Model -> Maybe ( Point, Tile )
 focus model =
     let
-        (HexGrid _ dict) =
+        (HexGrid _ grid) =
             model.game.grid
     in
     focusPoint model
@@ -129,7 +137,26 @@ focus model =
             (\point ->
                 Maybe.map
                     (\tile -> ( point, tile ))
-                    (Dict.get point dict)
+                    (Dict.get point grid)
+            )
+
+
+{-| Like `focusPoint`, but returns the `Habitat` at that point.
+-}
+focusedHabitat : Model -> Maybe Habitat
+focusedHabitat model =
+    focus model
+        |> Maybe.andThen
+            (\( _, tile ) ->
+                case tile.fixed of
+                    Mountain (Just hab) ->
+                        Just hab
+
+                    Mountain Nothing ->
+                        Nothing
+
+                    Depths ->
+                        Nothing
             )
 
 

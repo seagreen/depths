@@ -32,7 +32,7 @@ type alias BoardInfo =
 viewBoard : Model -> Svg Msg
 viewBoard model =
     let
-        (HexGrid _ dict) =
+        (HexGrid _ grid) =
             model.game.grid
 
         layout : HexGrid.Layout
@@ -75,7 +75,7 @@ viewBoard model =
     in
     Svg.svg
         []
-        (List.map (renderPoint model boardInfo) (Dict.toList dict))
+        (List.map (renderPoint model boardInfo) (Dict.toList grid))
 
 
 getAbbreviation : Model -> Point -> Tile -> String

@@ -2,7 +2,6 @@ module Game.Type.Tile exposing (..)
 
 import Dict exposing (Dict)
 import Game.Type.Geology exposing (Geology(..))
-import Game.Type.Habitat exposing (Habitat)
 import Game.Type.Unit exposing (Unit)
 
 

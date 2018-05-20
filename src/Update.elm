@@ -2,13 +2,12 @@ module Update exposing (..)
 
 import Delay
 import Dict exposing (Dict)
-import Either exposing (Either(..))
 import Game exposing (Commands)
 import Game.State as Game exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
-import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
+import Game.Type.Id as Id exposing (Id(..), IdSeed(..), unId)
 import Game.Type.Player exposing (Player(..))
 import Game.Type.Turn exposing (Turn(..), unTurn)
 import Game.Type.Unit exposing (Unit)
@@ -48,9 +47,9 @@ type Msg
     | CancelMove Id
     | BuildOrder Buildable
     | StopBuilding
-    | NameEditorFull String
-    | NameEditorAbbreviation String
-    | NameEditorSubmit
+    | NameEditorFull Id String
+    | NameEditorAbbreviation Id String
+    | NameEditorSubmit Id
     | SplashScreen SplashScreenMsg
       -- Receive a message from the server
     | Protocol (Result String Protocol.Message)
@@ -143,45 +142,36 @@ update msg model =
                 model
                 ( stopBuilding model, Cmd.none )
 
-        NameEditorFull new ->
-            ( setHabitatName
-                (\name ->
-                    case name of
-                        Right _ ->
-                            name
-
-                        Left (Habitat.NameEditor editor) ->
-                            Left (Habitat.NameEditor { editor | full = new })
-                )
-                model
+        NameEditorFull habId new ->
+            let
+                set (Habitat.NameEditor name) =
+                    Habitat.NameEditor { name | full = new }
+            in
+            ( { model
+                | habitatNameEditors =
+                    Dict.update (unId habId) (Maybe.map set) model.habitatNameEditors
+              }
             , Cmd.none
             )
 
-        NameEditorAbbreviation new ->
-            ( setHabitatName
-                (\name ->
-                    case name of
-                        Right _ ->
-                            name
-
-                        Left (Habitat.NameEditor editor) ->
-                            Left (Habitat.NameEditor { editor | abbreviation = new })
-                )
-                model
+        NameEditorAbbreviation habId new ->
+            let
+                set (Habitat.NameEditor name) =
+                    Habitat.NameEditor { name | abbreviation = new }
+            in
+            ( { model
+                | habitatNameEditors =
+                    Dict.update (unId habId) (Maybe.map set) model.habitatNameEditors
+              }
             , Cmd.none
             )
 
-        NameEditorSubmit ->
-            ( setHabitatName
-                (\name ->
-                    case name of
-                        Right _ ->
-                            name
-
-                        Left (Habitat.NameEditor editor) ->
-                            Right editor
-                )
-                model
+        NameEditorSubmit habId ->
+            ( { model
+                | game = model.game
+                , habitatNameEditors =
+                    Dict.remove (unId habId) model.habitatNameEditors
+              }
             , Cmd.none
             )
 
@@ -555,36 +545,37 @@ newSelection model newPoint =
                         newPointOrId
 
 
-setHabitatName :
-    (Either Habitat.NameEditor Habitat.Name -> Either Habitat.NameEditor Habitat.Name)
-    -> Model
-    -> Model
-setHabitatName updateName model =
-    let
-        updatePoint tile =
-            case tile.fixed of
-                Mountain (Just hab) ->
-                    let
-                        newFixed =
-                            Mountain (Just { hab | name = updateName hab.name })
-                    in
-                    { tile | fixed = newFixed }
 
-                _ ->
-                    tile
-
-        oldGame =
-            model.game
-    in
-    case Model.focusPoint model of
-        Just point ->
-            { model
-                | game =
-                    { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
-            }
-
-        _ ->
-            model
+-- setHabitatName :
+--     (Either Habitat.NameEditor Habitat.Name -> Either Habitat.NameEditor Habitat.Name)
+--     -> Model
+--     -> Model
+-- setHabitatName updateName model =
+--     let
+--         updatePoint tile =
+--             case tile.fixed of
+--                 Mountain (Just hab) ->
+--                     let
+--                         newFixed =
+--                             Mountain (Just { hab | name = updateName hab.name })
+--                     in
+--                     { tile | fixed = newFixed }
+--
+--                 _ ->
+--                     tile
+--
+--         oldGame =
+--             model.game
+--     in
+--     case Model.focusPoint model of
+--         Just point ->
+--             { model
+--                 | game =
+--                     { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
+--             }
+--
+--         _ ->
+--             model
 
 
 stopBuilding : Model -> Model

@@ -56,9 +56,6 @@ view model =
 viewGame : Model -> Html Msg
 viewGame model =
     let
-        (HexGrid _ dict) =
-            model.game.grid
-
         game =
             model.game
 
