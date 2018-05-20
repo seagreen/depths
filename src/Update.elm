@@ -52,7 +52,7 @@ type Msg
     | NameEditorSubmit Id
     | SplashScreen SplashScreenMsg
       -- Receive a message from the server
-    | Protocol (Result String Protocol.Message)
+    | Protocol (Result String Protocol.NetworkMessage)
 
 
 {-| Messages that are only sent when the splash screen is visible.
@@ -230,8 +230,8 @@ startGame model =
 
 {-| Handle 'Protocol.Message'.
 -}
-updateProtocol : Protocol.Message -> Model -> ( Model, Cmd Msg )
-updateProtocol msg model =
+updateProtocol : Protocol.NetworkMessage -> Model -> ( Model, Cmd Msg )
+updateProtocol { topic, payload } model =
     let
         newGameModel : Random.Seed -> Model
         newGameModel seed =
@@ -243,43 +243,50 @@ updateProtocol msg model =
                 | gameStatus = InGame
                 , game = { game | randomSeed = seed }
             }
+
+        runUpdate : ( Model, Cmd Msg )
+        runUpdate =
+            case ( model.gameStatus, payload ) of
+                ( NotPlayingYet, _ ) ->
+                    Model.crash model "Recv when game state is NotPlayingYet"
+
+                ( WaitingForStart, JoinMessage ) ->
+                    let
+                        ourSeed : Random.Seed
+                        ourSeed =
+                            model.game.randomSeed
+
+                        startMsg : Protocol.Message
+                        startMsg =
+                            StartGameMessage { seed = ourSeed }
+                    in
+                    ( newGameModel ourSeed
+                    , Protocol.send model.server startMsg
+                    )
+
+                ( WaitingForStart, StartGameMessage { seed } ) ->
+                    let
+                        newModel =
+                            newGameModel seed
+                    in
+                    ( { newModel | player = Player2 }
+                    , Cmd.none
+                    )
+
+                ( InGame, TurnMessage { commands } ) ->
+                    opponentEndsTurn model commands
+
+                ( _, _ ) ->
+                    Model.crash model <|
+                        "Unexpected gameStatus/Msg combination "
+                            ++ toString model.gameStatus
+                            ++ " / "
+                            ++ toString payload
     in
-    case ( model.gameStatus, msg ) of
-        ( NotPlayingYet, _ ) ->
-            Model.crash model "Recv when game state is NotPlayingYet"
-
-        ( WaitingForStart, JoinMessage ) ->
-            let
-                ourSeed : Random.Seed
-                ourSeed =
-                    model.game.randomSeed
-
-                startMsg : Protocol.Message
-                startMsg =
-                    StartGameMessage { seed = ourSeed }
-            in
-            ( newGameModel ourSeed
-            , Protocol.send model.server startMsg
-            )
-
-        ( WaitingForStart, StartGameMessage { seed } ) ->
-            let
-                newModel =
-                    newGameModel seed
-            in
-            ( { newModel | player = Player2 }
-            , Cmd.none
-            )
-
-        ( InGame, TurnMessage { commands } ) ->
-            opponentEndsTurn model commands
-
-        ( _, _ ) ->
-            Model.crash model <|
-                "Unexpected gameStatus/Msg combination "
-                    ++ toString model.gameStatus
-                    ++ " / "
-                    ++ toString msg
+    if topic == model.server.room then
+        runUpdate
+    else
+        ( model, Cmd.none )
 
 
 unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
