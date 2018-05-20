@@ -484,7 +484,7 @@ updateSelection game oldSelection =
             Game.habitatDict game.grid
                 |> Dict.toList
                 |> (\habList ->
-                        case List.filter (\( _, hab ) -> hab.createdBy == id) habList of
+                        case List.filter (\( _, hab ) -> hab.id == id) habList of
                             [ ( point, _ ) ] ->
                                 Just (SelectedPoint point)
 

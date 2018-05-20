@@ -128,7 +128,10 @@ type Geology
 type alias Habitat =
     { name : Either HabitatEditor HabitatName
     , player : Player
-    , createdBy : Id
+
+    -- Carried over from the id of the colony sub that created
+    -- the habitat:
+    , id : Id
     , buildings : List Building
     , producing : Maybe Buildable
     , produced : Int
@@ -139,7 +142,7 @@ newHabitat : Player -> Id -> Habitat
 newHabitat player colonySubId =
     { name = Left emptyNameEditor
     , player = player
-    , createdBy = colonySubId
+    , id = colonySubId
     , buildings = [ PrefabHabitat ]
     , producing = Nothing
     , produced = 0
