@@ -5,6 +5,7 @@ import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Type.Player exposing (Player(..))
+import Game.Type.Tile as Tile exposing (Tile)
 import Game.Type.Turn exposing (Turn(..))
 import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
 import HexGrid exposing (Direction, HexGrid(..), Point)
@@ -35,13 +36,13 @@ init =
     { grid =
         HexGrid.fromList 6
             (Tile Dict.empty Depths)
-            [ ( ( -4, 1 ), emptyMountain )
-            , ( ( -1, -3 ), emptyMountain )
-            , ( ( 2, -4 ), emptyMountain )
-            , ( ( 3, -1 ), emptyMountain )
-            , ( ( 2, 2 ), emptyMountain )
-            , ( ( -3, 3 ), emptyMountain )
-            , ( ( -2, 4 ), emptyMountain )
+            [ ( ( -4, 1 ), Tile.emptyMountain )
+            , ( ( -1, -3 ), Tile.emptyMountain )
+            , ( ( 2, -4 ), Tile.emptyMountain )
+            , ( ( 3, -1 ), Tile.emptyMountain )
+            , ( ( 2, 2 ), Tile.emptyMountain )
+            , ( ( -3, 3 ), Tile.emptyMountain )
+            , ( ( -2, 4 ), Tile.emptyMountain )
             , ( ( -4, -2 )
               , Tile
                     (Dict.singleton
@@ -70,13 +71,17 @@ initDebug =
     { grid =
         HexGrid.fromList 6
             (Tile Dict.empty Depths)
-            [ ( ( -4, 1 ), Tile Dict.empty (Mountain (Just <| Habitat.new Player1 (Id 1))) )
-            , ( ( -1, -3 ), Tile Dict.empty (Mountain (Just <| Habitat.new Player2 (Id 2))) )
-            , ( ( 2, -4 ), emptyMountain )
-            , ( ( 3, -1 ), emptyMountain )
-            , ( ( 2, 2 ), emptyMountain )
-            , ( ( -3, 3 ), emptyMountain )
-            , ( ( -2, 4 ), emptyMountain )
+            [ ( ( -4, 1 )
+              , Tile Dict.empty (Mountain (Just <| Habitat.new Player1 (Id 1)))
+              )
+            , ( ( -1, -3 )
+              , Tile Dict.empty (Mountain (Just <| Habitat.new Player2 (Id 2)))
+              )
+            , ( ( 2, -4 ), Tile.emptyMountain )
+            , ( ( 3, -1 ), Tile.emptyMountain )
+            , ( ( 2, 2 ), Tile.emptyMountain )
+            , ( ( -3, 3 ), Tile.emptyMountain )
+            , ( ( -2, 4 ), Tile.emptyMountain )
             , ( ( -4, -2 )
               , Tile
                     (Dict.singleton
@@ -98,19 +103,6 @@ initDebug =
     , nextUnitId = IdSeed 3
     , randomSeed = Random.initialSeed 0
     }
-
-
-{-| Dict keys are the subs' Ids.
--}
-type alias Tile =
-    { units : Dict Int Unit
-    , fixed : Geology
-    }
-
-
-emptyMountain : Tile
-emptyMountain =
-    Tile Dict.empty (Mountain Nothing)
 
 
 habitatsForPlayer : Player -> Game -> List Habitat

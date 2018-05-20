@@ -14,7 +14,7 @@ import Game.Combat as Combat
         , BattleReport
         , Combatant(..)
         )
-import Game.State as Game exposing (Game, Tile)
+import Game.State as Game exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Geology as Geology exposing (Geology(..))

@@ -3,10 +3,11 @@ module Model exposing (..)
 import Dict exposing (Dict)
 import Game exposing (Commands)
 import Game.Combat exposing (BattleReport)
-import Game.State exposing (Game, Tile)
+import Game.State exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Type.Player exposing (Player(..))
+import Game.Type.Tile exposing (Tile)
 import HexGrid exposing (Direction, HexGrid(..), Point)
 import Protocol
 import Util

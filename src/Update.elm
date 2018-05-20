@@ -4,7 +4,7 @@ import Delay
 import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game exposing (Commands)
-import Game.State as Game exposing (Game, Tile)
+import Game.State as Game exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
