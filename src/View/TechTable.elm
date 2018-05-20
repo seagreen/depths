@@ -1,7 +1,7 @@
 module View.TechTable exposing (..)
 
-import Game.Building as Building exposing (Building)
-import Game.Unit as Unit exposing (Submarine)
+import Game.Type.Building as Building exposing (Building)
+import Game.Type.Unit as Unit exposing (Submarine)
 import Html exposing (Html)
 import Html.Attributes as Hattr
 

@@ -5,7 +5,7 @@ import Game.State as Game exposing (Game, Tile)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
-import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Events as Hevent

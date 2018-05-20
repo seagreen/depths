@@ -8,7 +8,6 @@ Notifications, help messages, unit descriptions, etc.
 
 import Either exposing (Either(..))
 import Game exposing (Outcome(..))
-import Game.Building as Building exposing (Building(..))
 import Game.Combat as Combat
     exposing
         ( BattleEvent(..)
@@ -17,9 +16,10 @@ import Game.Combat as Combat
         )
 import Game.State as Game exposing (Game, Tile)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
+import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
-import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)

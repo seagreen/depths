@@ -1,4 +1,4 @@
-module Game.Id exposing (..)
+module Game.Type.Id exposing (..)
 
 {-| Incrementally increasing IDs.
 -}

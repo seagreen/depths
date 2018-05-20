@@ -1,7 +1,7 @@
-module Game.Unit exposing (..)
+module Game.Type.Unit exposing (..)
 
-import Game.Building exposing (Building(..))
-import Game.Id exposing (Id(..))
+import Game.Type.Building exposing (Building(..))
+import Game.Type.Id exposing (Id(..))
 import Html exposing (Html)
 
 

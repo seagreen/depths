@@ -1,4 +1,4 @@
-module Game.Building exposing (..)
+module Game.Type.Building exposing (..)
 
 
 type alias Stats =

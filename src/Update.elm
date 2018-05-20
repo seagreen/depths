@@ -4,12 +4,12 @@ import Delay
 import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game exposing (Commands)
-import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.State as Game exposing (Game, Tile, Turn(..))
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
-import Game.Unit exposing (Player(..), Unit)
+import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
+import Game.Type.Unit exposing (Player(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Model
     exposing

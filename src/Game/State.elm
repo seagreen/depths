@@ -1,10 +1,10 @@
 module Game.State exposing (..)
 
 import Dict exposing (Dict)
-import Game.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
-import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
+import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (Direction, HexGrid(..), Point)
 import Random.Pcg as Random
 

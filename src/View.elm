@@ -2,7 +2,7 @@ module View exposing (view)
 
 import Game exposing (Outcome(..))
 import Game.State as Game exposing (Game, Tile)
-import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)

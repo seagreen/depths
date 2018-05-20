@@ -13,9 +13,9 @@ module Protocol
 
 import Dict exposing (Dict)
 import Game exposing (Commands)
-import Game.Building exposing (Building(..))
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
-import Game.Unit exposing (Submarine(..))
+import Game.Type.Building as Building exposing (Building(..))
+import Game.Type.Unit as Unit exposing (Submarine(..))
 import HexGrid exposing (Point)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
@@ -159,7 +159,7 @@ decodeBuilding =
     Decode.string
         |> Decode.andThen
             (\buildingStr ->
-                case Game.Building.fromString buildingStr of
+                case Building.fromString buildingStr of
                     Just building ->
                         Decode.succeed building
 
@@ -173,7 +173,7 @@ decodeSubmarine =
     Decode.string
         |> Decode.andThen
             (\submarineStr ->
-                case Game.Unit.fromString submarineStr of
+                case Unit.fromString submarineStr of
                     Just sub ->
                         Decode.succeed sub
 

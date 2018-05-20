@@ -1,10 +1,10 @@
 module Game.Type.Habitat exposing (..)
 
 import Either exposing (Either(..))
-import Game.Building as Building exposing (Building(..))
-import Game.Id as Id exposing (Id(..))
 import Game.Type.Buildable exposing (Buildable)
-import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Building as Building exposing (Building(..))
+import Game.Type.Id as Id exposing (Id(..))
+import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 
 
 type alias Habitat =

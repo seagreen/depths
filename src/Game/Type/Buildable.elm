@@ -1,7 +1,7 @@
 module Game.Type.Buildable exposing (..)
 
-import Game.Building as Building exposing (Building(..))
-import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Building as Building exposing (Building(..))
+import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 
 
 type Buildable
