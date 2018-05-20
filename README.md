@@ -24,6 +24,8 @@ Combat happens in four stages:
 
 `sensors` and `firepower` are chances out of 6, so a unit with `sensors` 2 and `firepower` 3 has a 1/3 change of detecting an opponent, and a 1/2 change of destroying a detected opponent. Units can destory opponents that were detected by other units. 
 
+`stealth` gives a chance to canel any detection on that unit this turn. Like other stats it's a chance out of 6.
+
 If there are no defending units or buildings with either `sensors` or `firepower`, then a "bombardment" occurs where the remaining buildings are automatically detected.
 
 # Install
