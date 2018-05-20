@@ -1,0 +1,5 @@
+language: generic
+sudo: false
+
+notifications:
+  webhooks: http://45.33.68.74:8040/depths
