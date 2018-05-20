@@ -1,6 +1,0 @@
-#!/bin/sh
-
-set -e
-
-elm-make src/Main.elm --output=./site/main.js --yes --warn --debug
-cp ./elm-stuff/exact-dependencies.json ./
