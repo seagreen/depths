@@ -1,6 +1,5 @@
 module Game.Type.Habitat exposing (..)
 
-import Either exposing (Either(..))
 import Game.Type.Buildable exposing (Buildable)
 import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Id as Id exposing (Id(..))
@@ -8,7 +7,7 @@ import Game.Type.Player exposing (Player(..))
 
 
 type alias Habitat =
-    { name : Either NameEditor Name
+    { name : Maybe Name
     , player : Player
 
     -- Carried over from the id of the colony sub that created
@@ -22,7 +21,7 @@ type alias Habitat =
 
 new : Player -> Id -> Habitat
 new player colonySubId =
-    { name = Left emptyNameEditor
+    { name = Nothing
     , player = player
     , id = colonySubId
     , buildings = [ PrefabHabitat ]
@@ -40,20 +39,20 @@ type alias Name =
 fullNameWithDefault : Habitat -> String
 fullNameWithDefault hab =
     case hab.name of
-        Left _ ->
+        Nothing ->
             "<New habitat>"
 
-        Right name ->
+        Just name ->
             name.full
 
 
 abbreviationWithDefault : Habitat -> String
 abbreviationWithDefault hab =
     case hab.name of
-        Left _ ->
+        Nothing ->
             "<N>"
 
-        Right name ->
+        Just name ->
             name.abbreviation
 
 

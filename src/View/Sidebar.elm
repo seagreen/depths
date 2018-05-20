@@ -6,7 +6,7 @@ Notifications, help messages, unit descriptions, etc.
 
 -}
 
-import Either exposing (Either(..))
+import Dict
 import Game exposing (Outcome(..))
 import Game.Combat as Combat
     exposing
@@ -19,6 +19,7 @@ import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
+import Game.Type.Id exposing (Id(..), unId)
 import Game.Type.Player as Player exposing (Player(..))
 import Game.Type.Turn exposing (Turn(..), unTurn)
 import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
@@ -58,15 +59,12 @@ viewSidebar model =
                             Html.div
                                 []
                                 [ viewHabitat model point hab
-                                , case hab.name of
-                                    Right _ ->
+                                , case Dict.get (unId hab.id) model.habitatNameEditors of
+                                    Nothing ->
                                         Html.text ""
 
-                                    Left editor ->
-                                        if hab.player == model.player then
-                                            viewHabitatNameForm editor
-                                        else
-                                            Html.text ""
+                                    Just editor ->
+                                        viewHabitatNameForm hab.id editor
                                 ]
                     , Html.div
                         []
@@ -390,12 +388,12 @@ productionForm model point hab =
         ]
 
 
-viewHabitatNameForm : Habitat.NameEditor -> Html Msg
-viewHabitatNameForm (Habitat.NameEditor editor) =
+viewHabitatNameForm : Id -> Habitat.NameEditor -> Html Msg
+viewHabitatNameForm habId (Habitat.NameEditor editor) =
     Html.div
         [ class "alert alert-warning" ]
         [ Html.form
-            [ Hevent.onSubmit NameEditorSubmit ]
+            [ Hevent.onSubmit (NameEditorSubmit habId) ]
             [ Html.h4
                 []
                 [ Html.b
@@ -411,7 +409,7 @@ viewHabitatNameForm (Habitat.NameEditor editor) =
                     [ class "form-control"
                     , Hattr.type_ "text"
                     , Hattr.id "habitatName"
-                    , Hevent.onInput NameEditorFull
+                    , Hevent.onInput (NameEditorFull habId)
                     , Hattr.value editor.full
                     ]
                     []
@@ -426,7 +424,7 @@ viewHabitatNameForm (Habitat.NameEditor editor) =
                     , Hattr.type_ "text"
                     , Hattr.maxlength 3
                     , Hattr.id "habitatAbbreviation"
-                    , Hevent.onInput NameEditorAbbreviation
+                    , Hevent.onInput (NameEditorAbbreviation habId)
                     , Hattr.value editor.abbreviation
                     ]
                     []

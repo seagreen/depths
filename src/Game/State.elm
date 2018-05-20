@@ -107,13 +107,17 @@ initDebug =
 
 habitatsForPlayer : Player -> Game -> List Habitat
 habitatsForPlayer player game =
-    habitatDict game.grid
+    let
+        (HexGrid _ grid) =
+            game.grid
+    in
+    habitatDict grid
         |> Dict.values
         |> List.filter (\hab -> hab.player == player)
 
 
-habitatDict : HexGrid Tile -> Dict Point Habitat
-habitatDict (HexGrid _ grid) =
+habitatDict : Dict Point Tile -> Dict Point Habitat
+habitatDict grid =
     let
         f : Point -> Tile -> Dict Point Habitat -> Dict Point Habitat
         f point tile acc =
@@ -149,13 +153,13 @@ habitatFromPoint point grid =
 
 
 updateHabitat : Point -> (Habitat -> Habitat) -> Dict Point Tile -> Dict Point Tile
-updateHabitat point update grid =
+updateHabitat point updateHab grid =
     let
-        updateHab : Tile -> Tile
-        updateHab tile =
+        updateHabitatAtTile : Tile -> Tile
+        updateHabitatAtTile tile =
             case tile.fixed of
                 Mountain (Just hab) ->
-                    { tile | fixed = Mountain (Just (update hab)) }
+                    { tile | fixed = Mountain (Just (updateHab hab)) }
 
                 Mountain Nothing ->
                     tile
@@ -163,7 +167,26 @@ updateHabitat point update grid =
                 Depths ->
                     tile
     in
-    Dict.update point (Maybe.map updateHab) grid
+    Dict.update point (Maybe.map updateHabitatAtTile) grid
+
+
+updateHabitatById : Id -> (Habitat -> Habitat) -> Dict Point Tile -> Dict Point Tile
+updateHabitatById habId updateHab grid =
+    let
+        target : Maybe ( Point, Habitat )
+        target =
+            grid
+                |> habitatDict
+                |> Dict.toList
+                |> List.filter (\( _, hab ) -> hab.id == habId)
+                |> List.head
+    in
+    case target of
+        Nothing ->
+            grid
+
+        Just ( point, _ ) ->
+            updateHabitat point updateHab grid
 
 
 findUnit : Id -> Dict Point Tile -> Maybe ( Point, Unit )

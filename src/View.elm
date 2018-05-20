@@ -3,7 +3,6 @@ module View exposing (view)
 import Game exposing (Outcome(..))
 import Game.Type.Player as Player exposing (Player(..))
 import Game.Type.Turn exposing (Turn(..), unTurn)
-import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
@@ -56,9 +55,6 @@ view model =
 viewGame : Model -> Html Msg
 viewGame model =
     let
-        (HexGrid _ dict) =
-            model.game.grid
-
         game =
             model.game
 

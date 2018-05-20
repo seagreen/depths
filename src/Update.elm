@@ -2,13 +2,12 @@ module Update exposing (..)
 
 import Delay
 import Dict exposing (Dict)
-import Either exposing (Either(..))
 import Game exposing (Commands)
 import Game.State as Game exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
-import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
+import Game.Type.Id as Id exposing (Id(..), IdSeed(..), unId)
 import Game.Type.Player exposing (Player(..))
 import Game.Type.Turn exposing (Turn(..), unTurn)
 import Game.Type.Unit exposing (Unit)
@@ -48,12 +47,12 @@ type Msg
     | CancelMove Id
     | BuildOrder Buildable
     | StopBuilding
-    | NameEditorFull String
-    | NameEditorAbbreviation String
-    | NameEditorSubmit
+    | NameEditorFull Id String
+    | NameEditorAbbreviation Id String
+    | NameEditorSubmit Id
     | SplashScreen SplashScreenMsg
       -- Receive a message from the server
-    | Protocol (Result String Protocol.Message)
+    | Protocol (Result String Protocol.NetworkMessage)
 
 
 {-| Messages that are only sent when the splash screen is visible.
@@ -143,45 +142,37 @@ update msg model =
                 model
                 ( stopBuilding model, Cmd.none )
 
-        NameEditorFull new ->
-            ( setHabitatName
-                (\name ->
-                    case name of
-                        Right _ ->
-                            name
-
-                        Left (Habitat.NameEditor editor) ->
-                            Left (Habitat.NameEditor { editor | full = new })
-                )
-                model
+        NameEditorFull habId new ->
+            ( setHabitatNameEditor model habId (\name -> { name | full = new })
             , Cmd.none
             )
 
-        NameEditorAbbreviation new ->
-            ( setHabitatName
-                (\name ->
-                    case name of
-                        Right _ ->
-                            name
-
-                        Left (Habitat.NameEditor editor) ->
-                            Left (Habitat.NameEditor { editor | abbreviation = new })
-                )
-                model
+        NameEditorAbbreviation habId new ->
+            ( setHabitatNameEditor model habId (\name -> { name | abbreviation = new })
             , Cmd.none
             )
 
-        NameEditorSubmit ->
-            ( setHabitatName
-                (\name ->
-                    case name of
-                        Right _ ->
-                            name
+        NameEditorSubmit habId ->
+            let
+                oldGame =
+                    model.game
 
-                        Left (Habitat.NameEditor editor) ->
-                            Right editor
-                )
-                model
+                (HexGrid a oldGrid) =
+                    oldGame.grid
+
+                newGrid =
+                    case Dict.get (unId habId) model.habitatNameEditors of
+                        Nothing ->
+                            oldGrid
+
+                        Just (Habitat.NameEditor new) ->
+                            Game.updateHabitatById habId (\hab -> { hab | name = Just new }) oldGrid
+            in
+            ( { model
+                | game = { oldGame | grid = HexGrid a newGrid }
+                , habitatNameEditors =
+                    Dict.remove (unId habId) model.habitatNameEditors
+              }
             , Cmd.none
             )
 
@@ -239,8 +230,8 @@ startGame model =
 
 {-| Handle 'Protocol.Message'.
 -}
-updateProtocol : Protocol.Message -> Model -> ( Model, Cmd Msg )
-updateProtocol msg model =
+updateProtocol : Protocol.NetworkMessage -> Model -> ( Model, Cmd Msg )
+updateProtocol { topic, payload } model =
     let
         newGameModel : Random.Seed -> Model
         newGameModel seed =
@@ -252,43 +243,50 @@ updateProtocol msg model =
                 | gameStatus = InGame
                 , game = { game | randomSeed = seed }
             }
+
+        runUpdate : ( Model, Cmd Msg )
+        runUpdate =
+            case ( model.gameStatus, payload ) of
+                ( NotPlayingYet, _ ) ->
+                    Model.crash model "Recv when game state is NotPlayingYet"
+
+                ( WaitingForStart, JoinMessage ) ->
+                    let
+                        ourSeed : Random.Seed
+                        ourSeed =
+                            model.game.randomSeed
+
+                        startMsg : Protocol.Message
+                        startMsg =
+                            StartGameMessage { seed = ourSeed }
+                    in
+                    ( newGameModel ourSeed
+                    , Protocol.send model.server startMsg
+                    )
+
+                ( WaitingForStart, StartGameMessage { seed } ) ->
+                    let
+                        newModel =
+                            newGameModel seed
+                    in
+                    ( { newModel | player = Player2 }
+                    , Cmd.none
+                    )
+
+                ( InGame, TurnMessage { commands } ) ->
+                    opponentEndsTurn model commands
+
+                ( _, _ ) ->
+                    Model.crash model <|
+                        "Unexpected gameStatus/Msg combination "
+                            ++ toString model.gameStatus
+                            ++ " / "
+                            ++ toString payload
     in
-    case ( model.gameStatus, msg ) of
-        ( NotPlayingYet, _ ) ->
-            Model.crash model "Recv when game state is NotPlayingYet"
-
-        ( WaitingForStart, JoinMessage ) ->
-            let
-                ourSeed : Random.Seed
-                ourSeed =
-                    model.game.randomSeed
-
-                startMsg : Protocol.Message
-                startMsg =
-                    StartGameMessage { seed = ourSeed }
-            in
-            ( newGameModel ourSeed
-            , Protocol.send model.server startMsg
-            )
-
-        ( WaitingForStart, StartGameMessage { seed } ) ->
-            let
-                newModel =
-                    newGameModel seed
-            in
-            ( { newModel | player = Player2 }
-            , Cmd.none
-            )
-
-        ( InGame, TurnMessage { commands } ) ->
-            opponentEndsTurn model commands
-
-        ( _, _ ) ->
-            Model.crash model <|
-                "Unexpected gameStatus/Msg combination "
-                    ++ toString model.gameStatus
-                    ++ " / "
-                    ++ toString msg
+    if topic == model.server.room then
+        runUpdate
+    else
+        ( model, Cmd.none )
 
 
 unlessTurnOver : Model -> ( Model, Cmd msg ) -> ( Model, Cmd msg )
@@ -410,13 +408,21 @@ runResolveTurn model enemyCommands =
                 )
                 model.game
     in
+    -- Be careful not to pass model.game to any of the function
+    -- that update UI state based on the new game state.
+    -- That's the old game state, the new game state is newGameState.
     ( { model
         | game = newGameState
+        , selection = updateSelection newGameState model.selection
+        , turnStatus = TurnLoading
         , plannedMoves = removeOrphanMoves newGameState laterMoves
         , buildOrders = Dict.empty
-        , turnStatus = TurnLoading
+        , habitatNameEditors =
+            addEditorsForNewHabitats
+                model.player
+                newGameState
+                model.habitatNameEditors
         , enemyCommands = Nothing
-        , selection = updateSelection newGameState model.selection
         , gameLog = reports ++ model.gameLog
       }
     , delayThenRemoveLoading
@@ -481,7 +487,12 @@ updateSelection game oldSelection =
 
         maybeBecameHabitat : Id -> Maybe Selection
         maybeBecameHabitat id =
-            Game.habitatDict game.grid
+            let
+                (HexGrid _ grid) =
+                    game.grid
+            in
+            grid
+                |> Game.habitatDict
                 |> Dict.toList
                 |> (\habList ->
                         case List.filter (\( _, hab ) -> hab.id == id) habList of
@@ -555,38 +566,6 @@ newSelection model newPoint =
                         newPointOrId
 
 
-setHabitatName :
-    (Either Habitat.NameEditor Habitat.Name -> Either Habitat.NameEditor Habitat.Name)
-    -> Model
-    -> Model
-setHabitatName updateName model =
-    let
-        updatePoint tile =
-            case tile.fixed of
-                Mountain (Just hab) ->
-                    let
-                        newFixed =
-                            Mountain (Just { hab | name = updateName hab.name })
-                    in
-                    { tile | fixed = newFixed }
-
-                _ ->
-                    tile
-
-        oldGame =
-            model.game
-    in
-    case Model.focusPoint model of
-        Just point ->
-            { model
-                | game =
-                    { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
-            }
-
-        _ ->
-            model
-
-
 stopBuilding : Model -> Model
 stopBuilding model =
     case Model.focusPoint model of
@@ -614,3 +593,47 @@ buildOrder model buildable =
 
                 Just hab ->
                     { model | buildOrders = Dict.insert point buildable model.buildOrders }
+
+
+setHabitatNameEditor : Model -> Id -> (Habitat.Name -> Habitat.Name) -> Model
+setHabitatNameEditor model habId updateName =
+    let
+        set (Habitat.NameEditor name) =
+            Habitat.NameEditor (updateName name)
+    in
+    { model
+        | habitatNameEditors =
+            Dict.update (unId habId) (Maybe.map set) model.habitatNameEditors
+    }
+
+
+addEditorsForNewHabitats :
+    Player
+    -> Game
+    -> Dict Int Habitat.NameEditor
+    -> Dict Int Habitat.NameEditor
+addEditorsForNewHabitats player game editors =
+    let
+        (HexGrid _ grid) =
+            game.grid
+
+        addIfNew :
+            Point
+            -> Habitat
+            -> Dict Int Habitat.NameEditor
+            -> Dict Int Habitat.NameEditor
+        addIfNew point hab editorsAcc =
+            case hab.name of
+                Just _ ->
+                    editorsAcc
+
+                Nothing ->
+                    if hab.player == player then
+                        Dict.update
+                            (unId hab.id)
+                            (Just << Maybe.withDefault Habitat.emptyNameEditor)
+                            editorsAcc
+                    else
+                        editorsAcc
+    in
+    Dict.foldl addIfNew editors (Game.habitatDict grid)

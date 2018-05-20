@@ -42,7 +42,6 @@ subscriptions model =
         listen =
             WebSocket.listen model.server.url
                 (Decode.decodeString Protocol.decodeNetworkMessage
-                    >> Result.map .payload
                     >> Update.Protocol
                 )
 
