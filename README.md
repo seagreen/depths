@@ -41,7 +41,7 @@ Or for live reload and debugging:
 * run the dev script in the root directory:
 
 ```sh
-./dev.sh`
+make dev
 ```
 
 * open `localhost:8000` in your browser
