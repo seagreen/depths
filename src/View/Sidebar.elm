@@ -150,7 +150,7 @@ displayEventIfVisible model event =
                             "a torpedo."
 
                         AttackSub ->
-                            "a nuclear torpedo."
+                            "a torpedo from an attack submarine."
 
                         _ ->
                             "submarine-based weapons."
