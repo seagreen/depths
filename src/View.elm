@@ -78,7 +78,12 @@ viewGame model =
             Html.p
                 []
                 [ Html.a
-                    [ Hattr.href "https://github.com/seagreen/fpg-depths#user-guide" ]
+                    [ Hattr.href "https://github.com/seagreen/fpg-depths#user-guide"
+
+                    -- Open the link in a new tab. This is usually bad practice, but we do it here
+                    -- because there isn't a way to reload a game once you leave.
+                    , Hattr.target "_blank"
+                    ]
                     -- Use label instead of button to prevent button from staying focused after
                     -- (a) right clicking it to open the link in a new window
                     -- or (b) clicking it and then hitting the back button.
@@ -88,7 +93,7 @@ viewGame model =
                         [ class "btn btn-default"
                         , Hattr.type_ "button"
                         ]
-                        [ Html.text "User Guide (on GitHub)" ]
+                        [ Html.text "Mechanics (on GitHub)" ]
                     ]
                 ]
 

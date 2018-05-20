@@ -10,12 +10,23 @@ Casual, single-player strategy game written in Elm.
 
 **Gameplay**: Combat only happens at habitats. Units not in combat are invisible to the opponent.
 
-To learn more you'll have to look at the source(!?). I suggest:
+Combat happens in four stages:
 
-* [src/Game/Unit.elm](./src/Game/Unit.elm)
-* [src/Game/Building.elm](./src/Game/Building.elm)
+1. Attackers with `sensors` try to detect defending combatants (fighting buildings and units).
 
-If you want to try adding your own units, install `elm-make` (`elmPackages.elm` in Nixpkgs) and run:
+2. Of those detected, attackers with `firepower` attempt to destroy them.
+
+3. Defenders with `sensors` try to detect attacking units.
+
+4. Of those detected, defenders with `firepower` attempt to destory them.
+
+1 and 2 happen at the same time as 3 and 4, so a defender whose destroyed still gets to contribute its `sensors` and `firepower` before it's removed from the board.
+
+`sensors` and `firepower` are chances out of 6, so a unit with `sensors` 2 and `firepower` 3 has a 1/3 change of detecting an opponent, and a 1/2 change of destroying a detected opponent. Units can destory opponents that were detected by other units. 
+
+If there are no defending units or buildings with either `sensors` or `firepower`, then a "bombardment" occurs where the remaining buildings are automatically detected.
+
+# Install
 
 ```sh
 elm-make src/Main.elm --output=./site/main.js --warn --yes
