@@ -1,3 +1,7 @@
+.PHONY: dev
+dev:
+	elm-live src/Main.elm --output=./site/main.js --warn --yes --debug --dir=./site
+
 .PHONY: build
 build: format build-without-formatting
 
