@@ -24,8 +24,7 @@ type alias Stats =
 
     -- Named "firepower" instead of "attack" to clarify that it
     -- works the same on both offence and defense.
-    , firepower :
-        Int
+    , firepower : Int
     }
 
 

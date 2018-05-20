@@ -91,6 +91,42 @@ main {
   border-color: #333; /* Less intense alternative to #000. */
   border-width: 2px;
 }
+.c-build-menu {
+  padding: 5px;
+  background-color: var(--color-accent);
+}
+
+.c-build-menu__header {
+  size: 20px;
+  font-weight: 700;
+  text-align: center;
+  color: white;
+  text-shadow: 1px 1px 0 black;
+}
+.c-build-menu__buildables > header {
+  color: white;
+  text-shadow: 1px 1px 0 black;
+
+}
+.c-build-menu__build-group {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+.c-build-menu__item {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  padding: 5px;
+  max-width: 150px;
+  color: black;
+}
+.c-build-menu__item header {
+  color: black;
+}
+.c-build-menu__item--clickable {
+  cursor: pointer;
+}
 
 /*
    SVG
