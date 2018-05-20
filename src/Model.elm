@@ -6,7 +6,7 @@ import Game.Combat exposing (BattleReport)
 import Game.State exposing (Game, Tile)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
-import Game.Type.Unit exposing (Player(..))
+import Game.Type.Player exposing (Player(..))
 import HexGrid exposing (Direction, HexGrid(..), Point)
 import Protocol
 import Util

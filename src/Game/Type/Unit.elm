@@ -2,22 +2,8 @@ module Game.Type.Unit exposing (..)
 
 import Game.Type.Building exposing (Building(..))
 import Game.Type.Id exposing (Id(..))
+import Game.Type.Player exposing (Player(..))
 import Html exposing (Html)
-
-
-type Player
-    = Player1
-    | Player2
-
-
-playerToString : Player -> String
-playerToString player =
-    case player of
-        Player1 ->
-            "Player 1"
-
-        Player2 ->
-            "Player 2"
 
 
 type alias Unit =

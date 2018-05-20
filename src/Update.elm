@@ -9,7 +9,8 @@ import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
-import Game.Type.Unit exposing (Player(..), Unit)
+import Game.Type.Player exposing (Player(..))
+import Game.Type.Unit exposing (Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Model
     exposing

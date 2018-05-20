@@ -4,7 +4,7 @@ import Either exposing (Either(..))
 import Game.Type.Buildable exposing (Buildable)
 import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Id as Id exposing (Id(..))
-import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Player exposing (Player(..))
 
 
 type alias Habitat =

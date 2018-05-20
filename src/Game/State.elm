@@ -4,7 +4,8 @@ import Dict exposing (Dict)
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
-import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Player exposing (Player(..))
+import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
 import HexGrid exposing (Direction, HexGrid(..), Point)
 import Random.Pcg as Random
 

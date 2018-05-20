@@ -2,7 +2,7 @@ module View exposing (view)
 
 import Game exposing (Outcome(..))
 import Game.State as Game exposing (Game, Tile)
-import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Player as Player exposing (Player(..))
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
@@ -70,7 +70,7 @@ viewGame model =
         viewPlayer =
             Html.p
                 []
-                [ Html.text <| Unit.playerToString model.currentPlayer
+                [ Html.text <| Player.niceString model.currentPlayer
                 ]
 
         viewUserGuideLink : Html msg

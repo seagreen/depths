@@ -19,7 +19,8 @@ import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
-import Game.Type.Unit as Unit exposing (Player(..), Submarine(..), Unit)
+import Game.Type.Player as Player exposing (Player(..))
+import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
@@ -83,7 +84,7 @@ displayOutcome game =
         Victory player ->
             Html.div
                 [ class "alert alert-success" ]
-                [ Html.text <| "Glorious victory to " ++ Unit.playerToString player ++ "!" ]
+                [ Html.text <| "Glorious victory to " ++ Player.niceString player ++ "!" ]
 
         Draw ->
             Html.div
