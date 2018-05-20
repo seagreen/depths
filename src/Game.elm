@@ -376,7 +376,7 @@ destroyHabitats game =
 
         habitats : Dict Point Habitat
         habitats =
-            Game.State.habitatDict game.grid
+            Game.State.habitatDict grid
 
         remove : Maybe Tile -> Maybe Tile
         remove =

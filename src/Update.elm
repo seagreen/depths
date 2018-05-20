@@ -143,32 +143,33 @@ update msg model =
                 ( stopBuilding model, Cmd.none )
 
         NameEditorFull habId new ->
-            let
-                set (Habitat.NameEditor name) =
-                    Habitat.NameEditor { name | full = new }
-            in
-            ( { model
-                | habitatNameEditors =
-                    Dict.update (unId habId) (Maybe.map set) model.habitatNameEditors
-              }
+            ( setHabitatNameEditor model habId (\name -> { name | full = new })
             , Cmd.none
             )
 
         NameEditorAbbreviation habId new ->
-            let
-                set (Habitat.NameEditor name) =
-                    Habitat.NameEditor { name | abbreviation = new }
-            in
-            ( { model
-                | habitatNameEditors =
-                    Dict.update (unId habId) (Maybe.map set) model.habitatNameEditors
-              }
+            ( setHabitatNameEditor model habId (\name -> { name | abbreviation = new })
             , Cmd.none
             )
 
         NameEditorSubmit habId ->
+            let
+                oldGame =
+                    model.game
+
+                (HexGrid a oldGrid) =
+                    oldGame.grid
+
+                newGrid =
+                    case Dict.get (unId habId) model.habitatNameEditors of
+                        Nothing ->
+                            oldGrid
+
+                        Just (Habitat.NameEditor new) ->
+                            Game.updateHabitatById habId (\hab -> { hab | name = Just new }) oldGrid
+            in
             ( { model
-                | game = model.game
+                | game = { oldGame | grid = HexGrid a newGrid }
                 , habitatNameEditors =
                     Dict.remove (unId habId) model.habitatNameEditors
               }
@@ -402,11 +403,15 @@ runResolveTurn model enemyCommands =
     in
     ( { model
         | game = newGameState
+        , selection = updateSelection newGameState model.selection
+        , turnStatus = TurnLoading
         , plannedMoves = removeOrphanMoves newGameState laterMoves
         , buildOrders = Dict.empty
-        , turnStatus = TurnLoading
+        , habitatNameEditors =
+            addEditorsForNewHabitats
+                model.game.grid
+                model.habitatNameEditors
         , enemyCommands = Nothing
-        , selection = updateSelection newGameState model.selection
         , gameLog = reports ++ model.gameLog
       }
     , delayThenRemoveLoading
@@ -471,7 +476,12 @@ updateSelection game oldSelection =
 
         maybeBecameHabitat : Id -> Maybe Selection
         maybeBecameHabitat id =
-            Game.habitatDict game.grid
+            let
+                (HexGrid _ grid) =
+                    game.grid
+            in
+            grid
+                |> Game.habitatDict
                 |> Dict.toList
                 |> (\habList ->
                         case List.filter (\( _, hab ) -> hab.id == id) habList of
@@ -545,39 +555,6 @@ newSelection model newPoint =
                         newPointOrId
 
 
-
--- setHabitatName :
---     (Either Habitat.NameEditor Habitat.Name -> Either Habitat.NameEditor Habitat.Name)
---     -> Model
---     -> Model
--- setHabitatName updateName model =
---     let
---         updatePoint tile =
---             case tile.fixed of
---                 Mountain (Just hab) ->
---                     let
---                         newFixed =
---                             Mountain (Just { hab | name = updateName hab.name })
---                     in
---                     { tile | fixed = newFixed }
---
---                 _ ->
---                     tile
---
---         oldGame =
---             model.game
---     in
---     case Model.focusPoint model of
---         Just point ->
---             { model
---                 | game =
---                     { oldGame | grid = HexGrid.update point updatePoint model.game.grid }
---             }
---
---         _ ->
---             model
-
-
 stopBuilding : Model -> Model
 stopBuilding model =
     case Model.focusPoint model of
@@ -605,3 +582,20 @@ buildOrder model buildable =
 
                 Just hab ->
                     { model | buildOrders = Dict.insert point buildable model.buildOrders }
+
+
+setHabitatNameEditor : Model -> Id -> (Habitat.Name -> Habitat.Name) -> Model
+setHabitatNameEditor model habId updateName =
+    let
+        set (Habitat.NameEditor name) =
+            Habitat.NameEditor (updateName name)
+    in
+    { model
+        | habitatNameEditors =
+            Dict.update (unId habId) (Maybe.map set) model.habitatNameEditors
+    }
+
+
+addEditorsForNewHabitats : HexGrid Tile -> Dict Int Habitat.NameEditor -> Dict Int Habitat.NameEditor
+addEditorsForNewHabitats =
+    Debug.crash "foo"
