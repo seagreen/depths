@@ -20,6 +20,7 @@ import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Player as Player exposing (Player(..))
+import Game.Type.Turn exposing (Turn(..), unTurn)
 import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
@@ -100,7 +101,7 @@ displayBattleReports model =
     let
         occuredLastTurn : BattleReport -> Bool
         occuredLastTurn entry =
-            Game.unTurn entry.turn == Game.unTurn model.game.turn - 1
+            unTurn entry.turn == unTurn model.game.turn - 1
     in
     Html.div
         []
@@ -484,7 +485,7 @@ viewUnit selection unit =
 startingHelpMessage : Model -> Html Msg
 startingHelpMessage model =
     if
-        Game.unTurn model.game.turn
+        unTurn model.game.turn
             == 1
             && (case model.selection of
                     Just (SelectedId _) ->

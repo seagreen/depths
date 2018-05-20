@@ -5,6 +5,7 @@ import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Type.Player exposing (Player(..))
+import Game.Type.Turn exposing (Turn(..))
 import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
 import HexGrid exposing (Direction, HexGrid(..), Point)
 import Random.Pcg as Random
@@ -97,15 +98,6 @@ initDebug =
     , nextUnitId = IdSeed 3
     , randomSeed = Random.initialSeed 0
     }
-
-
-type Turn
-    = Turn Int
-
-
-unTurn : Turn -> Int
-unTurn (Turn n) =
-    n
 
 
 {-| Dict keys are the subs' Ids.

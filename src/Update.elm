@@ -4,12 +4,13 @@ import Delay
 import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game exposing (Commands)
-import Game.State as Game exposing (Game, Tile, Turn(..))
+import Game.State as Game exposing (Game, Tile)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Type.Player exposing (Player(..))
+import Game.Type.Turn exposing (Turn(..), unTurn)
 import Game.Type.Unit exposing (Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Model
@@ -395,7 +396,7 @@ runResolveTurn model enemyCommands =
 
                     foo =
                         Debug.log
-                            (toString (Game.unTurn model.game.turn)
+                            (toString (unTurn model.game.turn)
                                 ++ " "
                                 ++ toString cmds
                             )

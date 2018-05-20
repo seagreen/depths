@@ -11,13 +11,14 @@ Types that are part of the game's state are imported from `Game.State`.
 
 import Dict exposing (Dict)
 import Game.Combat exposing (..)
-import Game.State exposing (Game, Tile, Turn(..))
+import Game.State exposing (Game, Tile)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
 import Game.Type.Player exposing (Player(..))
+import Game.Type.Turn exposing (Turn(..), unTurn)
 import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Random.Pcg as Random
@@ -60,7 +61,7 @@ type Outcome
 
 outcome : Game -> Outcome
 outcome game =
-    if Game.State.unTurn game.turn < 20 then
+    if unTurn game.turn < 20 then
         --HACK:  This is bork
         Ongoing
     else
@@ -488,4 +489,4 @@ completeBuilding building tile hab =
 
 incrementTurn : Game -> Game
 incrementTurn game =
-    { game | turn = Turn (Game.State.unTurn game.turn + 1) }
+    { game | turn = Turn (unTurn game.turn + 1) }

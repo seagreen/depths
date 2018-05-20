@@ -1,8 +1,8 @@
 module View exposing (view)
 
 import Game exposing (Outcome(..))
-import Game.State as Game exposing (Game, Tile)
 import Game.Type.Player as Player exposing (Player(..))
+import Game.Type.Turn exposing (Turn(..), unTurn)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
@@ -98,7 +98,7 @@ viewGame model =
                 []
                 [ Html.text "Turn "
                 , badge
-                    [ Html.text (toString (Game.unTurn model.game.turn)) ]
+                    [ Html.text (toString (unTurn model.game.turn)) ]
                 ]
     in
     Html.div
