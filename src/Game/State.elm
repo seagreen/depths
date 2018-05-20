@@ -1,9 +1,9 @@
 module Game.State exposing (..)
 
 import Dict exposing (Dict)
-import Either exposing (Either(..))
-import Game.Building as Building exposing (Building(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
+import Game.Type.Geology as Geology exposing (Geology(..))
+import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (Direction, HexGrid(..), Point)
 import Random.Pcg as Random
@@ -68,8 +68,8 @@ initDebug =
     { grid =
         HexGrid.fromList 6
             (Tile Dict.empty Depths)
-            [ ( ( -4, 1 ), Tile Dict.empty (Mountain (Just <| newHabitat Player1 (Id 1))) )
-            , ( ( -1, -3 ), Tile Dict.empty (Mountain (Just <| newHabitat Player2 (Id 2))) )
+            [ ( ( -4, 1 ), Tile Dict.empty (Mountain (Just <| Habitat.new Player1 (Id 1))) )
+            , ( ( -1, -3 ), Tile Dict.empty (Mountain (Just <| Habitat.new Player2 (Id 2))) )
             , ( ( 2, -4 ), emptyMountain )
             , ( ( 3, -1 ), emptyMountain )
             , ( ( 2, 2 ), emptyMountain )
@@ -118,55 +118,6 @@ type alias Tile =
 emptyMountain : Tile
 emptyMountain =
     Tile Dict.empty (Mountain Nothing)
-
-
-type Geology
-    = Depths
-    | Mountain (Maybe Habitat)
-
-
-type alias Habitat =
-    { name : Either HabitatEditor HabitatName
-    , player : Player
-
-    -- Carried over from the id of the colony sub that created
-    -- the habitat:
-    , id : Id
-    , buildings : List Building
-    , producing : Maybe Buildable
-    , produced : Int
-    }
-
-
-newHabitat : Player -> Id -> Habitat
-newHabitat player colonySubId =
-    { name = Left emptyNameEditor
-    , player = player
-    , id = colonySubId
-    , buildings = [ PrefabHabitat ]
-    , producing = Nothing
-    , produced = 0
-    }
-
-
-habitatFullName : Habitat -> String
-habitatFullName hab =
-    case hab.name of
-        Left _ ->
-            "<New habitat>"
-
-        Right name ->
-            name.full
-
-
-habitatAbbreviation : Habitat -> String
-habitatAbbreviation hab =
-    case hab.name of
-        Left _ ->
-            "<N>"
-
-        Right name ->
-            name.abbreviation
 
 
 habitatsForPlayer : Player -> Game -> List Habitat
@@ -228,54 +179,6 @@ updateHabitat point update grid =
                     tile
     in
     Dict.update point (Maybe.map updateHab) grid
-
-
-type alias HabitatName =
-    { full : String
-    , abbreviation : String
-    }
-
-
-type HabitatEditor
-    = HabitatEditor HabitatName
-
-
-unHabitatEditor : HabitatEditor -> HabitatName
-unHabitatEditor (HabitatEditor editor) =
-    editor
-
-
-emptyNameEditor : HabitatEditor
-emptyNameEditor =
-    HabitatEditor
-        { full = ""
-        , abbreviation = ""
-        }
-
-
-type Buildable
-    = BuildSubmarine Submarine
-    | BuildBuilding Building
-
-
-name : Buildable -> String
-name buildable =
-    case buildable of
-        BuildSubmarine sub ->
-            (Unit.stats sub).name
-
-        BuildBuilding building ->
-            (Building.stats building).name
-
-
-cost : Buildable -> Int
-cost buildable =
-    case buildable of
-        BuildSubmarine sub ->
-            (Unit.stats sub).cost
-
-        BuildBuilding building ->
-            (Building.stats building).cost
 
 
 findUnit : Id -> Dict Point Tile -> Maybe ( Point, Unit )

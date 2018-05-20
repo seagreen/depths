@@ -13,17 +13,10 @@ import Dict exposing (Dict)
 import Game.Building as Building exposing (Building(..))
 import Game.Combat exposing (..)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
-import Game.State
-    exposing
-        ( Buildable(..)
-        , Game
-        , Geology(..)
-        , Habitat
-        , HabitatEditor(..)
-        , HabitatName
-        , Tile
-        , Turn(..)
-        )
+import Game.State exposing (Game, Tile, Turn(..))
+import Game.Type.Buildable as Buildable exposing (Buildable(..))
+import Game.Type.Geology as Geology exposing (Geology(..))
+import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Random.Pcg as Random
@@ -164,7 +157,7 @@ moveUnit oldPoint unit newPoint grid =
 
         establishHabitat : Tile -> Tile
         establishHabitat tile =
-            { tile | fixed = Mountain (Just (Game.State.newHabitat unit.player unit.id)) }
+            { tile | fixed = Mountain (Just (Habitat.new unit.player unit.id)) }
 
         newTile : Tile -> Tile
         newTile tile =
@@ -255,7 +248,7 @@ resolveSingleBattle turn tile =
 
                                         _ ->
                                             { turn = turn
-                                            , habitat = Game.State.habitatFullName hab
+                                            , habitat = Habitat.fullNameWithDefault hab
                                             , events = newEvents
                                             }
                                                 :: oldReports
@@ -433,7 +426,7 @@ resolveProduction tile =
                     State.state tile
 
                 Just producing ->
-                    if newProduced < Game.State.cost producing then
+                    if newProduced < Buildable.cost producing then
                         let
                             newHabitat =
                                 { hab | produced = newProduced }

@@ -1,16 +1,7 @@
 module View exposing (view)
 
 import Game exposing (Outcome(..))
-import Game.State as Game
-    exposing
-        ( Buildable(..)
-        , Game
-        , Geology(..)
-        , Habitat
-        , HabitatEditor(..)
-        , HabitatName
-        , Tile
-        )
+import Game.State as Game exposing (Game, Tile)
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)

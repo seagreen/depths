@@ -1,16 +1,10 @@
 module View.Board exposing (..)
 
 import Dict exposing (Dict)
-import Game.State as Game
-    exposing
-        ( Buildable(..)
-        , Game
-        , Geology(..)
-        , Habitat
-        , HabitatEditor(..)
-        , HabitatName
-        , Tile
-        )
+import Game.State as Game exposing (Game, Tile)
+import Game.Type.Buildable as Buildable exposing (Buildable(..))
+import Game.Type.Geology as Geology exposing (Geology(..))
+import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
@@ -88,7 +82,7 @@ getAbbreviation model point tile =
     case Game.habitatFromTile tile of
         Just hab ->
             if canSeeHabitat model point hab then
-                Game.habitatAbbreviation hab
+                Habitat.abbreviationWithDefault hab
             else
                 ""
 
@@ -196,15 +190,15 @@ getRemainingProduction model point hab =
     case ( hab.producing, Dict.get point model.buildOrders ) of
         ( Just producing, Just buildOrder ) ->
             if buildOrder == producing then
-                Just (Game.cost buildOrder - hab.produced)
+                Just (Buildable.cost buildOrder - hab.produced)
             else
-                Just (Game.cost buildOrder)
+                Just (Buildable.cost buildOrder)
 
         ( Just producing, Nothing ) ->
-            Just (Game.cost producing - hab.produced)
+            Just (Buildable.cost producing - hab.produced)
 
         ( Nothing, Just buildOrder ) ->
-            Just (Game.cost buildOrder)
+            Just (Buildable.cost buildOrder)
 
         ( Nothing, Nothing ) ->
             Nothing

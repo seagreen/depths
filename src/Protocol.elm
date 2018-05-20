@@ -14,7 +14,7 @@ module Protocol
 import Dict exposing (Dict)
 import Game exposing (Commands)
 import Game.Building exposing (Building(..))
-import Game.State exposing (Buildable(..))
+import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Unit exposing (Submarine(..))
 import HexGrid exposing (Point)
 import Json.Decode as Decode exposing (Decoder, Value)

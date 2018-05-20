@@ -15,16 +15,10 @@ import Game.Combat as Combat
         , BattleReport
         , Combatant(..)
         )
-import Game.State as Game
-    exposing
-        ( Buildable(..)
-        , Game
-        , Geology(..)
-        , Habitat
-        , HabitatEditor(..)
-        , HabitatName
-        , Tile
-        )
+import Game.State as Game exposing (Game, Tile)
+import Game.Type.Buildable as Buildable exposing (Buildable(..))
+import Game.Type.Geology as Geology exposing (Geology(..))
+import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
@@ -187,7 +181,7 @@ displayEventIfVisible model event =
                         []
                         [ Html.text <|
                             "Our "
-                                ++ Game.name (Combat.buildableFromCombatant detector)
+                                ++ Buildable.name (Combat.buildableFromCombatant detector)
                                 ++ (case detected of
                                         CMUnit sub ->
                                             " detected an enemy "
@@ -209,7 +203,7 @@ displayEventIfVisible model event =
                         []
                         [ Html.text <|
                             "Our "
-                                ++ Game.name (Combat.buildableFromCombatant destroyer)
+                                ++ Buildable.name (Combat.buildableFromCombatant destroyer)
                                 ++ " destroyed an enemy unit or structure."
                         ]
             else if Combat.combatantPlayer destroyed == model.currentPlayer then
@@ -218,7 +212,7 @@ displayEventIfVisible model event =
                         []
                         [ Html.text <|
                             "Our "
-                                ++ Game.name (Combat.buildableFromCombatant destroyed)
+                                ++ Buildable.name (Combat.buildableFromCombatant destroyed)
                                 ++ " was destroyed by enemy action."
                         ]
             else
@@ -238,7 +232,7 @@ viewHabitat model point hab =
                     []
                     [ Html.b
                         []
-                        [ Html.text <| Game.habitatFullName hab ]
+                        [ Html.text <| Habitat.fullNameWithDefault hab ]
                     ]
                 , productionForm model point hab
                 , Html.p
@@ -271,7 +265,7 @@ viewHabitat model point hab =
                     []
                     [ Html.b
                         []
-                        [ Html.text <| "Location: " ++ Game.habitatFullName hab ]
+                        [ Html.text <| "Location: " ++ Habitat.fullNameWithDefault hab ]
                     ]
                 ]
     in
@@ -394,8 +388,8 @@ productionForm model point hab =
         ]
 
 
-viewHabitatNameForm : HabitatEditor -> Html Msg
-viewHabitatNameForm (HabitatEditor editor) =
+viewHabitatNameForm : Habitat.NameEditor -> Html Msg
+viewHabitatNameForm (Habitat.NameEditor editor) =
     Html.div
         [ class "alert alert-warning" ]
         [ Html.form

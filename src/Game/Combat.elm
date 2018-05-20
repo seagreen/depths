@@ -3,17 +3,10 @@ module Game.Combat exposing (..)
 import Dict exposing (Dict)
 import Game.Building as Building exposing (Building(..))
 import Game.Id as Id exposing (Id(..), IdSeed(..))
-import Game.State
-    exposing
-        ( Buildable(..)
-        , Game
-        , Geology(..)
-        , Habitat
-        , HabitatEditor(..)
-        , HabitatName
-        , Tile
-        , Turn(..)
-        )
+import Game.State exposing (Game, Tile, Turn(..))
+import Game.Type.Buildable as Buildable exposing (Buildable(..))
+import Game.Type.Geology as Geology exposing (Geology(..))
+import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Unit as Unit exposing (Player(..), Submarine(..), Unit)
 import Random.Pcg as Random
 import Random.Pcg.List as RandomList

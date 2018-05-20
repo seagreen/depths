@@ -5,17 +5,10 @@ import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Game exposing (Commands)
 import Game.Id as Id exposing (Id(..), IdSeed(..))
-import Game.State as Game
-    exposing
-        ( Buildable(..)
-        , Game
-        , Geology(..)
-        , Habitat
-        , HabitatEditor(..)
-        , HabitatName
-        , Tile
-        , Turn(..)
-        )
+import Game.State as Game exposing (Game, Tile, Turn(..))
+import Game.Type.Buildable as Buildable exposing (Buildable(..))
+import Game.Type.Geology as Geology exposing (Geology(..))
+import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Unit exposing (Player(..), Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Model
@@ -155,8 +148,8 @@ update msg model =
                         Right _ ->
                             name
 
-                        Left (HabitatEditor editor) ->
-                            Left (HabitatEditor { editor | full = new })
+                        Left (Habitat.NameEditor editor) ->
+                            Left (Habitat.NameEditor { editor | full = new })
                 )
                 model
             , Cmd.none
@@ -169,8 +162,8 @@ update msg model =
                         Right _ ->
                             name
 
-                        Left (HabitatEditor editor) ->
-                            Left (HabitatEditor { editor | abbreviation = new })
+                        Left (Habitat.NameEditor editor) ->
+                            Left (Habitat.NameEditor { editor | abbreviation = new })
                 )
                 model
             , Cmd.none
@@ -183,7 +176,7 @@ update msg model =
                         Right _ ->
                             name
 
-                        Left (HabitatEditor editor) ->
+                        Left (Habitat.NameEditor editor) ->
                             Right editor
                 )
                 model
@@ -556,7 +549,7 @@ newSelection model newPoint =
 
 
 setHabitatName :
-    (Either HabitatEditor HabitatName -> Either HabitatEditor HabitatName)
+    (Either Habitat.NameEditor Habitat.Name -> Either Habitat.NameEditor Habitat.Name)
     -> Model
     -> Model
 setHabitatName updateName model =
