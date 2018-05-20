@@ -80,7 +80,7 @@ update msg model =
         Enter ->
             case model.gameStatus of
                 Model.NotPlayingYet ->
-                    ( model, Cmd.none )
+                    startGame model
 
                 Model.WaitingForStart ->
                     ( model, Cmd.none )
@@ -221,15 +221,20 @@ updateSplashScreen msg model =
         Connect ->
             case model.gameStatus of
                 NotPlayingYet ->
-                    ( { model | gameStatus = WaitingForStart }
-                    , Protocol.send model.server Protocol.JoinMessage
-                    )
+                    startGame model
 
                 WaitingForStart ->
                     Model.crash model "Connect Msg when model.GameType = WaitingForStart"
 
                 InGame ->
                     Model.crash model "Connect Msg when model.GameType = InGame"
+
+
+startGame : Model -> ( Model, Cmd msg )
+startGame model =
+    ( { model | gameStatus = WaitingForStart }
+    , Protocol.send model.server Protocol.JoinMessage
+    )
 
 
 {-| Handle 'Protocol.Message'.
