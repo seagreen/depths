@@ -408,13 +408,20 @@ runResolveTurn model enemyCommands =
                 )
                 model.game
     in
+    -- Be careful not to pass model.game to any of the function
+    -- that update UI state based on the new game state.
+    -- That's the old game state, the new game state is newGameState.
     ( { model
         | game = newGameState
         , selection = updateSelection newGameState model.selection
         , turnStatus = TurnLoading
         , plannedMoves = removeOrphanMoves newGameState laterMoves
         , buildOrders = Dict.empty
-        , habitatNameEditors = addEditorsForNewHabitats model
+        , habitatNameEditors =
+            addEditorsForNewHabitats
+                model.player
+                newGameState
+                model.habitatNameEditors
         , enemyCommands = Nothing
         , gameLog = reports ++ model.gameLog
       }
@@ -600,11 +607,15 @@ setHabitatNameEditor model habId updateName =
     }
 
 
-addEditorsForNewHabitats : Model -> Dict Int Habitat.NameEditor
-addEditorsForNewHabitats model =
+addEditorsForNewHabitats :
+    Player
+    -> Game
+    -> Dict Int Habitat.NameEditor
+    -> Dict Int Habitat.NameEditor
+addEditorsForNewHabitats player game editors =
     let
         (HexGrid _ grid) =
-            model.game.grid
+            game.grid
 
         addIfNew :
             Point
@@ -617,7 +628,7 @@ addEditorsForNewHabitats model =
                     editorsAcc
 
                 Nothing ->
-                    if hab.player == model.player then
+                    if hab.player == player then
                         Dict.update
                             (unId hab.id)
                             (Just << Maybe.withDefault Habitat.emptyNameEditor)
@@ -625,4 +636,4 @@ addEditorsForNewHabitats model =
                     else
                         editorsAcc
     in
-    Dict.foldl addIfNew model.habitatNameEditors (Game.habitatDict grid)
+    Dict.foldl addIfNew editors (Game.habitatDict grid)
