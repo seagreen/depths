@@ -44,7 +44,7 @@ viewBoard model =
             let
                 friendlyUnits : Dict Int (List Point)
                 friendlyUnits =
-                    Game.friendlyUnitDict model.currentPlayer (Util.unHexGrid model.game.grid)
+                    Game.friendlyUnitDict model.player (Util.unHexGrid model.game.grid)
                         |> Dict.map (\_ _ -> [])
             in
             Dict.intersect model.plannedMoves friendlyUnits
@@ -88,7 +88,7 @@ getAbbreviation model point tile =
                 ""
 
         Nothing ->
-            case Game.friendlyUnits model.currentPlayer tile of
+            case Game.friendlyUnits model.player tile of
                 [] ->
                     ""
 
@@ -143,7 +143,7 @@ renderPoint model bi ( point, tile ) =
                     ""
 
                 Mountain (Just hab) ->
-                    if hab.player == model.currentPlayer then
+                    if hab.player == model.player then
                         case getRemainingProduction bi.model point hab of
                             Just remaining ->
                                 toString remaining
@@ -227,7 +227,7 @@ viewPolygon model tile friendlyPlannedMoves corners point =
                 case tile.fixed of
                     Depths ->
                         if Just point == Model.focusPoint model then
-                            case Game.friendlyUnits model.currentPlayer tile of
+                            case Game.friendlyUnits model.player tile of
                                 [] ->
                                     White
 
@@ -303,8 +303,8 @@ tileText centerX centerY upperText lowerText =
 {-| Does the current player have a ship at the given point?
 -}
 hasShipAtPoint : Model -> Point -> Bool
-hasShipAtPoint { currentPlayer, game } point =
-    Game.friendlyUnitDict currentPlayer (Util.unHexGrid game.grid)
+hasShipAtPoint { player, game } point =
+    Game.friendlyUnitDict player (Util.unHexGrid game.grid)
         |> Dict.values
         |> List.filter ((==) point)
         |> not
@@ -313,7 +313,7 @@ hasShipAtPoint { currentPlayer, game } point =
 
 canSeeHabitat : Model -> Point -> Habitat -> Bool
 canSeeHabitat model point hab =
-    hab.player == model.currentPlayer || hasShipAtPoint model point
+    hab.player == model.player || hasShipAtPoint model point
 
 
 onRightClick : msg -> Html.Attribute msg

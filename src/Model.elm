@@ -27,11 +27,16 @@ type Screen
 
 
 type alias Model =
-    { game : Game
+    { server : Protocol.Server
+    , game : Game
     , gameStatus : GameType
+
+    -- Whether the user of this computer controls Player1 or Player2.
+    , player : Player
     , screen : Screen
-    , plannedMoves :
-        Dict Int (List Point)
+    , selection : Maybe Selection
+    , turnStatus : TurnStatus
+    , plannedMoves : Dict Int (List Point)
 
     -- Keys are unit IDs.
     --
@@ -40,14 +45,8 @@ type alias Model =
     -- Unfortunately since habitats are defined and stored in the Game part
     -- of the code they don't know about UI things like build orders.
     , buildOrders : Dict Point Buildable
-    , turnStatus : TurnStatus
     , enemyCommands : Maybe Commands
-    , selection : Maybe Selection
     , gameLog : List BattleReport
-
-    -- The player controlling the UI:
-    , currentPlayer : Player
-    , server : Protocol.Server
 
     -- Using this instead of Debug.crash because the latter disables
     -- the debugger (see: https://github.com/elm-lang/core/issues/953):
@@ -57,20 +56,20 @@ type alias Model =
 
 init : Model
 init =
-    { game = Game.State.init
-    , gameStatus = NotPlayingYet
-    , screen = Board
-    , plannedMoves = Dict.empty
-    , buildOrders = Dict.empty
-    , turnStatus = TurnInProgress
-    , enemyCommands = Nothing
-    , selection = Nothing
-    , gameLog = []
-    , currentPlayer = Player1
-    , server =
+    { server =
         { url = "ws://45.33.68.74:16000"
         , room = "hello"
         }
+    , game = Game.State.init
+    , gameStatus = NotPlayingYet
+    , player = Player1
+    , screen = Board
+    , selection = Nothing
+    , turnStatus = TurnInProgress
+    , plannedMoves = Dict.empty
+    , buildOrders = Dict.empty
+    , enemyCommands = Nothing
+    , gameLog = []
     , crashed = Nothing
     }
 

@@ -276,7 +276,7 @@ updateProtocol msg model =
                 newModel =
                     newGameModel seed
             in
-            ( { newModel | currentPlayer = Player2 }
+            ( { newModel | player = Player2 }
             , Cmd.none
             )
 
@@ -529,7 +529,7 @@ newSelection model newPoint =
                                 Just (SelectedPoint newPoint)
 
                             _ ->
-                                case List.head (Game.friendlyUnits model.currentPlayer tile) of
+                                case List.head (Game.friendlyUnits model.player tile) of
                                     Nothing ->
                                         Just (SelectedPoint newPoint)
 

@@ -63,7 +63,7 @@ viewSidebar model =
                                         Html.text ""
 
                                     Left editor ->
-                                        if hab.player == model.currentPlayer then
+                                        if hab.player == model.player then
                                             viewHabitatNameForm editor
                                         else
                                             Html.text ""
@@ -72,7 +72,7 @@ viewSidebar model =
                         []
                         (List.map
                             (viewUnit model.selection)
-                            (Game.friendlyUnits model.currentPlayer tile)
+                            (Game.friendlyUnits model.player tile)
                         )
                     ]
         , startingHelpMessage model
@@ -164,20 +164,20 @@ displayEventIfVisible model event =
                             "habitat-based weapons."
 
         actor combatant =
-            if Combat.combatantPlayer combatant == model.currentPlayer then
+            if Combat.combatantPlayer combatant == model.player then
                 "Our "
             else
                 "Enemy "
 
         acted combatant =
-            if Combat.combatantPlayer combatant == model.currentPlayer then
+            if Combat.combatantPlayer combatant == model.player then
                 "our "
             else
                 "an enemy "
     in
     case event of
         DetectionEvent { detector, detected } ->
-            if Combat.combatantPlayer detector == model.currentPlayer then
+            if Combat.combatantPlayer detector == model.player then
                 Just <|
                     Html.li
                         []
@@ -199,7 +199,7 @@ displayEventIfVisible model event =
                 Nothing
 
         DestructionEvent { destroyer, destroyed } ->
-            if Combat.combatantPlayer destroyer == model.currentPlayer then
+            if Combat.combatantPlayer destroyer == model.player then
                 Just <|
                     Html.li
                         []
@@ -208,7 +208,7 @@ displayEventIfVisible model event =
                                 ++ Buildable.name (Combat.buildableFromCombatant destroyer)
                                 ++ " destroyed an enemy unit or structure."
                         ]
-            else if Combat.combatantPlayer destroyed == model.currentPlayer then
+            else if Combat.combatantPlayer destroyed == model.player then
                 Just <|
                     Html.li
                         []
@@ -271,7 +271,7 @@ viewHabitat model point hab =
                     ]
                 ]
     in
-    if hab.player == model.currentPlayer then
+    if hab.player == model.player then
         friendlyHabitat
     else if Board.hasShipAtPoint model point then
         enemyHabitat

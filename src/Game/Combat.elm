@@ -1,7 +1,6 @@
 module Game.Combat exposing (..)
 
 import Dict exposing (Dict)
-import Game.State exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Geology as Geology exposing (Geology(..))

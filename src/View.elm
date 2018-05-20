@@ -70,7 +70,7 @@ viewGame model =
         viewPlayer =
             Html.p
                 []
-                [ Html.text <| Player.niceString model.currentPlayer
+                [ Html.text <| Player.niceString model.player
                 ]
 
         viewUserGuideLink : Html msg
