@@ -1,3 +1,6 @@
-elm-make src/Main.elm --output=./site/main.js --warn --debug
+#!/bin/sh
+
+set -e
+
 elm-format ./src --yes
-cp ./elm-stuff/exact-dependencies.json ./
+./buildWithoutFormatting

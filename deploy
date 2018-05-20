@@ -10,4 +10,4 @@ rsync \
   --checksum \
   --exclude='.git/' \
   ./site/ \
-  root@45.33.68.74:/root/depths
+  root@45.33.68.74:/root/depths/site
