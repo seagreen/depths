@@ -32,6 +32,7 @@ import String
 import Update exposing (Msg(..))
 import Util exposing (badge, label_, onChange)
 import View.Board as Board
+import View.BuildMenu exposing (buildMenu, statsView)
 
 
 viewSidebar : Model -> Html Msg
@@ -234,7 +235,7 @@ viewHabitat model point hab =
                         []
                         [ Html.text <| Habitat.fullNameWithDefault hab ]
                     ]
-                , productionForm model point hab
+                , buildMenu model point hab
                 , Html.p
                     []
                     [ Html.text "Production: "
@@ -275,117 +276,6 @@ viewHabitat model point hab =
         enemyHabitat
     else
         Html.text ""
-
-
-productionForm : Model -> Point -> Habitat -> Html Msg
-productionForm model point hab =
-    let
-        costFromBuildable : Buildable -> Int
-        costFromBuildable buildable =
-            case buildable of
-                BuildSubmarine sub ->
-                    Unit.stats sub |> .cost
-
-                BuildBuilding building ->
-                    Building.stats building |> .cost
-
-        option : Maybe Buildable -> Html Msg
-        option buildable =
-            let
-                buildableStr =
-                    Maybe.map
-                        (\buildable ->
-                            case buildable of
-                                BuildSubmarine sub ->
-                                    toString sub
-
-                                BuildBuilding building ->
-                                    toString building
-                        )
-                        buildable
-                        |> Maybe.withDefault "<None>"
-            in
-            Html.option
-                (if buildable == hab.producing then
-                    [ Hattr.selected True, Hattr.value buildableStr ]
-                 else
-                    [ Hattr.value buildableStr ]
-                )
-                [ Html.text <|
-                    case buildable of
-                        Nothing ->
-                            buildableStr
-
-                        Just buildable ->
-                            buildableStr ++ " (" ++ toString (costFromBuildable buildable) ++ ")"
-                ]
-
-        msgFromString : String -> Msg
-        msgFromString s =
-            if s == "<None>" then
-                StopBuilding
-            else
-                case Building.fromString s of
-                    Just building ->
-                        BuildOrder (BuildBuilding building)
-
-                    Nothing ->
-                        case Unit.fromString s of
-                            Nothing ->
-                                NoOp
-
-                            Just sub ->
-                                BuildOrder (BuildSubmarine sub)
-    in
-    Html.form
-        [ class "form-inline"
-        , Hattr.name "foo"
-        ]
-        [ Html.div
-            [ class "form-group" ]
-            [ Html.label
-                [ Hattr.for "constructing" ]
-                [ Html.text <|
-                    "Constructing"
-                        ++ (case Board.getRemainingProduction model point hab of
-                                Nothing ->
-                                    ""
-
-                                Just toGo ->
-                                    " (" ++ toString toGo ++ " production to go" ++ ")"
-                           )
-                        -- Non-breaking space to separate the label from the box.
-                        -- The Bootstrap examples have this separation
-                        -- automatically, not sure what I'm doing wrong.
-                        ++ ": "
-                ]
-
-            -- TODO: This should be using Html.on "change" instead of using strings
-            , Html.select
-                [ class "form-control"
-                , Hattr.id "constructing"
-                , onChange msgFromString
-                ]
-                [ option Nothing
-                , case Unit.buildable hab.buildings of
-                    [] ->
-                        Html.text ""
-
-                    unitChoices ->
-                        Html.optgroup
-                            [ label_ "Units" ]
-                            (List.map (option << Just << BuildSubmarine) unitChoices)
-                , case Building.buildable hab.buildings of
-                    [] ->
-                        Html.text ""
-
-                    buildingChoices ->
-                        Html.optgroup
-                            [ label_ "Buildings" ]
-                            (List.map (option << Just << BuildBuilding) buildingChoices)
-                ]
-            ]
-        ]
 
 
 viewHabitatNameForm : Id -> Habitat.NameEditor -> Html Msg
@@ -459,24 +349,7 @@ viewUnit selection unit =
                 [ Html.text stats.name ]
             ]
         , Maybe.withDefault (Html.text "") (Unit.helpText unit.class)
-        , Html.p
-            []
-            [ Html.text "Sensors: "
-            , badge
-                [ Html.text <| toString stats.sensors ]
-            ]
-        , Html.p
-            []
-            [ Html.text "Stealth: "
-            , badge
-                [ Html.text <| toString stats.stealth ]
-            ]
-        , Html.p
-            []
-            [ Html.text "Firepower: "
-            , badge
-                [ Html.text <| toString stats.firepower ]
-            ]
+        , statsView (BuildSubmarine unit.class)
         ]
 
 
