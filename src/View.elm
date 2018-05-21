@@ -7,82 +7,16 @@ import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
 import Model exposing (GameType(..), Model, Screen(..), Selection(..), TurnStatus(..))
-import Update exposing (Msg(..), SplashScreenMsg(..))
+import Update exposing (Msg(..), SplashScreenMsg)
 import Util exposing (badge, label_, onChange)
 import View.Board as Board
+import View.Lobby as Lobby
 import View.Sidebar as Sidebar
 import View.TechTable as TechTable
 
 
 view : Model -> Html Msg
 view model =
-    let
-        joinGame : Html SplashScreenMsg
-        joinGame =
-            Html.main_ [ class "splash" ]
-                [ Html.div [ class "c-join" ]
-                    [ Html.header []
-                        [ Html.span [] [ Html.text "Connect to " ]
-                        , Html.span [ class "c-join__title" ]
-                            [ Html.text "The Depths" ]
-                        ]
-                    , Html.div [ class "form" ]
-                        [ Html.div [ class "form-group" ]
-                            [ Html.label
-                                [ Hattr.for "server"
-                                , class "control-label"
-                                ]
-                                [ Html.text "Server Address" ]
-                            , Html.input
-                                [ Hattr.placeholder "server"
-                                , Hattr.value model.server.url
-                                , Hevent.onInput SetServerUrl
-                                , Hattr.id "server"
-                                , class "form-control"
-                                ]
-                                []
-                            ]
-                        , Html.div [ class "form-group" ]
-                            [ Html.label
-                                [ Hattr.for "room"
-                                , class "control-label"
-                                ]
-                                [ Html.text "Room ID" ]
-                            , Html.input
-                                [ Hattr.placeholder "Room"
-                                , Hattr.value model.server.room
-                                , Hevent.onInput SetRoom
-                                , Hattr.id "room"
-                                , class "form-control"
-                                ]
-                                []
-                            ]
-                        , Html.div [ class "form-group" ]
-                            [ Html.button
-                                [ Hevent.onClick Connect
-                                , class "btn btn-primary c-join__connect"
-                                ]
-                                [ Html.text "Prepare to Dive" ]
-                            ]
-                        ]
-                    ]
-                , Html.div [ class "c-sub-splash" ]
-                    [ Html.img [ Hattr.src "./assets/sub1.svg" ] [] ]
-                ]
-
-        waiting : Html Msg
-        waiting =
-            Html.main_ [ class "c-waiting-for-player" ]
-                [ Html.div [ class "c-waiting-for-player__text" ]
-                    [ Html.text "Waiting for other player..." ]
-                , Html.div [ Hattr.id "bubbles" ] []
-                , Html.div [ class "bubble x1" ] []
-                , Html.div [ class "bubble x2" ] []
-                , Html.div [ class "bubble x3" ] []
-                , Html.div [ class "bubble x4" ] []
-                , Html.div [ class "bubble x5" ] []
-                ]
-    in
     case model.crashed of
         Just crashMessage ->
             Html.text ("Crashed: " ++ crashMessage)
@@ -90,10 +24,10 @@ view model =
         Nothing ->
             case model.gameStatus of
                 NotPlayingYet ->
-                    Html.map SplashScreen joinGame
+                    Html.map SplashScreen (Lobby.lobby model.server)
 
                 WaitingForStart ->
-                    waiting
+                    Html.map never Lobby.waitingForPlayer
 
                 InGame ->
                     Html.div [] [ viewGame model ]
