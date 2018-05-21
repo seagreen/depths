@@ -12,7 +12,7 @@ import State exposing (State(..))
 
 badge : List (Html msg) -> Html msg
 badge =
-    Html.span [ Hattr.class "badge" ]
+    Html.span [ Hattr.class "badge badge-secondary" ]
 
 
 {-| <https://github.com/elm-lang/html/issues/136>

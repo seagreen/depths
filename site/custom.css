@@ -1,20 +1,45 @@
 :root {
   --bg: #2F4172;
   --color: #226666;
-  --color-accent: #378B2E;
+  --color-accent: #061439;
 }
 
 
+body {
+  background-color: var(--bg);
+
+}
 main {
-  height: 100vh;
-  width: 100vw;
+  width: 100%;
   padding: 5px;
+  background-color: var(--bg);
+  overflow: hidden;
+}
+
+
+.c-tech-table {
+  background: white;
+}
+
+.c-title {
+  font-size: 40px;
+  text-shadow: 1px 1px 0 black;
+}
+
+.c-game-info {
+  width: 150px;
+  padding: 5px;
+  color: white;
+  background-color: var(--color-accent);
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .splash, .c-waiting-for-player {
   color: white;
   text-shadow: 1px 1px 0 black;
-  background-color: var(--bg);
 }
 
 .c-sub-splash {
@@ -52,18 +77,14 @@ main {
   text-align: center;
 }
 
-.c-join__title {
+.c-join__title, .c-title {
   color: var(--color);
 }
 
-/* Prevent a horizontal scrollbar */
-.row {
-  margin-right: 0px;
-}
-
-/* Bootstrap bold form labels are too much. */
-label {
-  font-weight: normal;
+.c-end-turn-button {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .alert.focused {

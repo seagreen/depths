@@ -3,81 +3,43 @@ module View.TechTable exposing (..)
 import Game.Type.Building as Building exposing (Building)
 import Game.Type.Unit as Unit exposing (Submarine)
 import Html exposing (Html)
-import Html.Attributes as Hattr
+import Html.Attributes as Hattr exposing (class)
 
 
 view : Html msg
 view =
-    Html.div
-        []
-        [ Html.h2
+    Html.main_
+        [ class "c-tech-table table-responsive" ]
+        [ Html.header
             []
             [ Html.text "Submarines" ]
-        , Html.table
-            [ Hattr.class "table table-bordered table-striped"
-            ]
+        , Html.table [ class "table table-bordered table-striped" ]
             [ Html.thead []
-                [ Html.tr
-                    []
-                    [ Html.th
-                        []
-                        [ Html.text "Name" ]
-                    , Html.th
-                        []
-                        [ Html.text "Cost" ]
-                    , Html.th
-                        []
-                        [ Html.text "Prerequisites" ]
-                    , Html.th
-                        []
-                        [ Html.text "Sensors" ]
-                    , Html.th
-                        []
-                        [ Html.text "Firepower" ]
-                    , Html.th
-                        []
-                        [ Html.text "Stealth" ]
-                    , Html.th
-                        []
-                        [ Html.text "Move" ]
+                [ Html.tr []
+                    [ Html.th [] [ Html.text "Name" ]
+                    , Html.th [] [ Html.text "Cost" ]
+                    , Html.th [] [ Html.text "Prerequisites" ]
+                    , Html.th [] [ Html.text "Sensors" ]
+                    , Html.th [] [ Html.text "Firepower" ]
+                    , Html.th [] [ Html.text "Stealth" ]
+                    , Html.th [] [ Html.text "Move" ]
                     ]
                 ]
-            , Html.tbody
-                []
-                (List.map viewSubmarine Unit.all)
+            , Html.tbody [] (List.map viewSubmarine Unit.all)
             ]
-        , Html.h2
-            []
-            [ Html.text "Buildings" ]
-        , Html.table
-            [ Hattr.class "table table-bordered table-striped"
-            ]
+        , Html.header [] [ Html.text "Buildings" ]
+        , Html.table [ class "table table-bordered table-striped" ]
             [ Html.thead []
-                [ Html.tr
-                    []
-                    [ Html.th
-                        []
-                        [ Html.text "Name" ]
-                    , Html.th
-                        []
-                        [ Html.text "Cost" ]
-                    , Html.th
-                        []
-                        [ Html.text "Prerequisites" ]
-                    , Html.th
-                        []
-                        [ Html.text "Sensors" ]
-                    , Html.th
-                        []
-                        [ Html.text "Firepower" ]
-                    , Html.th
-                        []
-                        [ Html.text "Production bonus" ]
+                [ Html.tr []
+                    [ Html.th [] [ Html.text "Name" ]
+                    , Html.th [] [ Html.text "Cost" ]
+                    , Html.th [] [ Html.text "Prerequisites" ]
+                    , Html.th [] [ Html.text "Sensors" ]
+                    , Html.th [] [ Html.text "Firepower" ]
+                    , Html.th [] [ Html.text "Production bonus" ]
                     ]
                 ]
-            , Html.tbody
-                []
-                (List.map viewBuilding Building.all)
+            , Html.tbody [] (List.map viewBuilding Building.all)
             ]
         ]
 
@@ -90,27 +52,16 @@ viewSubmarine submarine =
     in
     Html.tr
         []
-        [ Html.td
-            []
-            [ Html.text stats.name ]
-        , Html.td
-            []
-            [ Html.text (toString stats.cost) ]
-        , Html.td
-            []
-            [ Html.text (String.join ", " (List.map toString stats.prerequisites)) ]
-        , Html.td
-            []
-            [ Html.text (toString stats.sensors) ]
-        , Html.td
-            []
-            [ Html.text (toString stats.firepower) ]
-        , Html.td
-            []
-            [ Html.text (toString stats.stealth) ]
-        , Html.td
-            []
-            [ Html.text (toString stats.speed) ]
+        [ Html.td [] [ Html.text stats.name ]
+        , Html.td [] [ Html.text (toString stats.cost) ]
+        , Html.td []
+            [ Html.text
+                (String.join ", " (List.map toString stats.prerequisites))
+            ]
+        , Html.td [] [ Html.text (toString stats.sensors) ]
+        , Html.td [] [ Html.text (toString stats.firepower) ]
+        , Html.td [] [ Html.text (toString stats.stealth) ]
+        , Html.td [] [ Html.text (toString stats.speed) ]
         ]
 
 
@@ -128,26 +79,16 @@ viewBuilding building =
                 Nothing ->
                     ( "", "" )
     in
-    Html.tr
-        []
-        [ Html.td
-            []
-            [ Html.text stats.name ]
-        , Html.td
-            []
-            [ Html.text (toString stats.cost) ]
-        , Html.td
-            []
-            [ Html.text (String.join ", " (List.map toString stats.prerequisites)) ]
-        , Html.td
-            []
-            [ Html.text sensors ]
-        , Html.td
-            []
-            [ Html.text firepower ]
-        , Html.td
-            []
-            [ Html.text (showIfNonZero stats.productionBonus) ]
+    Html.tr []
+        [ Html.td [] [ Html.text stats.name ]
+        , Html.td [] [ Html.text (toString stats.cost) ]
+        , Html.td []
+            [ Html.text
+                (String.join ", " (List.map toString stats.prerequisites))
+            ]
+        , Html.td [] [ Html.text sensors ]
+        , Html.td [] [ Html.text firepower ]
+        , Html.td [] [ Html.text (showIfNonZero stats.productionBonus) ]
         ]
 
 
