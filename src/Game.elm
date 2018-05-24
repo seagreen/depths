@@ -242,23 +242,14 @@ resolveSingleBattle turn tile =
                             let
                                 ( ( newEvents, newTile ), newSeed ) =
                                     State.run oldSeed (resolve tile hab)
-
-                                newReports : List BattleReport
-                                newReports =
-                                    case newEvents of
-                                        [] ->
-                                            oldReports
-
-                                        _ ->
-                                            { turn = turn
-                                            , habitat = Habitat.fullNameWithDefault hab
-                                            , events = newEvents
-                                            }
-                                                :: oldReports
                             in
                             ( newTile
                             , ( newSeed
-                              , newReports
+                              , { turn = turn
+                                , habitat = hab
+                                , events = newEvents
+                                }
+                                    :: oldReports
                               )
                             )
 

@@ -114,24 +114,47 @@ displayReport model report =
     let
         visibleEvents : List (Html Msg)
         visibleEvents =
-            List.filterMap (displayEventIfVisible model) report.events
-                -- Show events from oldest to newest.
+            report.events
+                |> List.filterMap (displayEventIfVisible model)
+                -- Show events from oldest to newest:
                 |> List.reverse
-    in
-    case visibleEvents of
-        [] ->
-            Html.text ""
 
-        _ ->
+        viewReport : List (Html Msg) -> Html Msg
+        viewReport contents =
             Html.div
                 [ class "alert alert-danger" ]
-                [ Html.h4
+                (Html.h4
                     []
                     [ Html.b
                         []
-                        [ Html.text <| "Combat log: " ++ report.habitat ]
+                        [ Html.text <|
+                            "Combat log: "
+                                ++ Habitat.fullNameWithDefault report.habitat
+                        ]
                     ]
-                , Html.ol
+                    :: contents
+                )
+    in
+    case visibleEvents of
+        -- If we didn't score any sensor or firepower hits,
+        -- and our opponent didn't score any firepower hits:
+        [] ->
+            -- If we we on the defense we don't even get to know there were enemies here:
+            if report.habitat.player == model.player then
+                Html.text ""
+            else
+                -- If we were on offense we at least know we tried:
+                viewReport
+                    [ Html.p
+                        []
+                        [ Html.text
+                            "We searched the sea floor, but couldn't find any targets."
+                        ]
+                    ]
+
+        _ ->
+            viewReport
+                [ Html.ol
                     []
                     visibleEvents
                 ]
@@ -266,7 +289,7 @@ viewHabitat model point hab =
                     []
                     [ Html.b
                         []
-                        [ Html.text <| "Location: " ++ Habitat.fullNameWithDefault hab ]
+                        [ Html.text <| "Enemy habitat: " ++ Habitat.fullNameWithDefault hab ]
                     ]
                 ]
     in

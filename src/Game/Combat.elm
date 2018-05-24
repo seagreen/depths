@@ -17,7 +17,7 @@ import State exposing (State(..))
 
 type alias BattleReport =
     { turn : Turn
-    , habitat : String
+    , habitat : Habitat
     , events : List BattleEvent
     }
 
