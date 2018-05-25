@@ -65,7 +65,7 @@ init =
         { url = "ws://45.33.68.74:16000"
         , room = "hello"
         }
-    , game = Game.State.init
+    , game = Game.State.initDebug
     , gameStatus = NotPlayingYet
     , player = Player1
     , screen = Board
