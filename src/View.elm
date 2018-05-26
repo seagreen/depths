@@ -1,13 +1,12 @@
 module View exposing (view)
 
 import Game exposing (Outcome(..))
-import Game.Type.Player as Player exposing (Player(..))
 import Game.Type.Turn exposing (Turn(..), unTurn)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
 import Model exposing (GameType(..), Model, Screen(..), Selection(..), TurnStatus(..))
-import Update exposing (Msg(..), SplashScreenMsg)
+import Update exposing (Msg(..))
 import View.Board as Board
 import View.Lobby as Lobby
 import View.Sidebar as Sidebar
@@ -35,16 +34,9 @@ view model =
 viewGame : Model -> Html Msg
 viewGame model =
     let
-        game =
-            model.game
-
         viewTitle : Html msg
         viewTitle =
             Html.header [ class "c-title" ] [ Html.text "The Depths" ]
-
-        viewPlayer : Html msg
-        viewPlayer =
-            Html.span [] [ Html.text <| Player.niceString model.player ]
 
         viewUserGuideLink : Html msg
         viewUserGuideLink =
@@ -62,49 +54,32 @@ viewGame model =
                     --
                     -- Idea from: https://stackoverflow.com/a/34051869
                     [ Html.label
-                        [ class "btn btn-secondary"
-                        , Hattr.type_ "button"
-                        ]
+                        [ class "btn btn-secondary", Hattr.type_ "button" ]
                         [ Html.text "Mechanics (on GitHub)" ]
                     ]
                 ]
 
-        viewTurnNumber : Html msg
-        viewTurnNumber =
-            Html.span [ class "badge badge-pill badge-info" ]
-                [ Html.text <| "Turn " ++ toString (unTurn model.game.turn) ]
-
-        viewGameInfo : Html msg
+        viewGameInfo : Html Msg
         viewGameInfo =
-            Html.div [ class "c-game-info" ] [ viewPlayer, viewTurnNumber ]
+            Html.div [ class "c-end-turn" ]
+                [ Html.span [ class "c-end-turn__number" ]
+                    [ Html.text <| "Turn " ++ toString (unTurn model.game.turn) ]
+                , endTurnButton model
+                ]
     in
-    Html.main_
-        []
+    Html.main_ []
         [ viewTitle
-        , endTurnButton model
-        , viewUserGuideLink
-        , changeScreenButton model.screen
+        , viewGameInfo
+        , Html.div [ class "c-docs" ]
+            [ viewUserGuideLink, changeScreenButton model.screen ]
         , case model.screen of
             TechTable ->
                 TechTable.view
 
             Board ->
-                Html.div
-                    []
-                    [ Html.div
-                        [ class "row" ]
-                        [ Html.div
-                            [ class "col-lg-5" ]
-                            [ viewGameInfo
-                            , Sidebar.viewSidebar model
-                            ]
-                        , Html.div
-                            [ class "col-lg-7" ]
-                            [ Html.div
-                                [ class "text-center" ]
-                                [ Board.viewBoard model ]
-                            ]
-                        ]
+                Html.div [ class "row" ]
+                    [ Html.div [ class "col-lg-5" ] [ Sidebar.viewSidebar model ]
+                    , Html.div [ class "col-lg-7" ] [ Board.viewBoard model ]
                     ]
         ]
 
@@ -120,8 +95,8 @@ changeScreenButton screen =
                 TechTable ->
                     ( Board, "Board" )
     in
-    Html.p []
-        [ Html.label
+    Html.div []
+        [ Html.button
             [ class "btn btn-secondary"
             , Hattr.type_ "button"
             , Hevent.onClick (ChangeScreen newScreen)
@@ -132,10 +107,6 @@ changeScreenButton screen =
 
 endTurnButton : Model -> Html Msg
 endTurnButton model =
-    let
-        classBase =
-            "btn c-end-turn-button "
-    in
     case Game.outcome model.game of
         Victory _ ->
             Html.text ""
@@ -148,7 +119,7 @@ endTurnButton model =
                 TurnLoading ->
                     Html.button
                         [ Hattr.type_ "button"
-                        , class (classBase ++ "btn-warning btn-lg")
+                        , class "btn btn-warning btn-lg"
                         , Hattr.disabled True
                         ]
                         [ Html.text "Loading" ]
@@ -157,14 +128,14 @@ endTurnButton model =
                     Html.button
                         [ Hevent.onClick EndTurnButton
                         , Hattr.type_ "button"
-                        , class (classBase ++ "btn-primary btn-lg")
+                        , class "btn btn-primary btn-lg"
                         ]
                         [ Html.text "End turn" ]
 
                 TurnComplete ->
                     Html.button
                         [ Hattr.type_ "button"
-                        , class (classBase ++ "btn-secondary btn-lg")
+                        , class "btn btn-secondary btn-lg"
                         , Hattr.disabled True
                         ]
                         [ Html.text "(Waiting)" ]

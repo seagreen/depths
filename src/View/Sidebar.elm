@@ -17,7 +17,7 @@ import Game.Combat as Combat
 import Game.State as Game exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
-import Game.Type.Geology as Geology exposing (Geology(..))
+import Game.Type.Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id exposing (Id(..), unId)
 import Game.Type.Player as Player exposing (Player(..))
@@ -30,15 +30,14 @@ import Html.Events as Hevent
 import Model exposing (GameType(..), Model, Selection(..))
 import String
 import Update exposing (Msg(..))
-import Util exposing (badge, label_, onChange)
+import Util exposing (badge)
 import View.Board as Board
 import View.BuildMenu exposing (buildMenu, statsView)
 
 
 viewSidebar : Model -> Html Msg
 viewSidebar model =
-    Html.div
-        []
+    Html.div [ class "c-sidebar" ]
         [ displayOutcome model.game
         , displayBattleReports model
         , case Model.focus model of
@@ -46,8 +45,7 @@ viewSidebar model =
                 Html.text ""
 
             Just ( point, tile ) ->
-                Html.div
-                    []
+                Html.div []
                     [ case tile.fixed of
                         Depths ->
                             Html.text ""
@@ -57,18 +55,19 @@ viewSidebar model =
 
                         Mountain (Just hab) ->
                             -- can only build on mountains
-                            Html.div
-                                []
+                            Html.div []
                                 [ viewHabitat model point hab
-                                , case Dict.get (unId hab.id) model.habitatNameEditors of
+                                , case
+                                    Dict.get (unId hab.id)
+                                        model.habitatNameEditors
+                                  of
                                     Nothing ->
                                         Html.text ""
 
                                     Just editor ->
                                         viewHabitatNameForm hab.id editor
                                 ]
-                    , Html.div
-                        []
+                    , Html.div []
                         (List.map
                             (viewUnit model.selection)
                             (Game.friendlyUnits model.player tile)
@@ -83,12 +82,16 @@ displayOutcome game =
     case Game.outcome game of
         Victory player ->
             Html.div
-                [ class "alert alert-success" ]
-                [ Html.text <| "Glorious victory to " ++ Player.niceString player ++ "!" ]
+                [ class "c-outcome alert alert-success" ]
+                [ Html.text <|
+                    "Glorious victory to "
+                        ++ Player.niceString player
+                        ++ "!"
+                ]
 
         Draw ->
             Html.div
-                [ class "alert alert-danger" ]
+                [ class "c-outcome alert alert-danger" ]
                 [ Html.text "Draws are just losses on both sides." ]
 
         Ongoing ->
@@ -121,16 +124,11 @@ displayReport model report =
 
         viewReport : List (Html Msg) -> Html Msg
         viewReport contents =
-            Html.div
-                [ class "alert alert-danger" ]
-                (Html.h4
-                    []
-                    [ Html.b
-                        []
-                        [ Html.text <|
-                            "Combat log: "
-                                ++ Habitat.fullNameWithDefault report.habitat
-                        ]
+            Html.div [ class "c-battle-report alert alert-danger" ]
+                (Html.header []
+                    [ Html.text <|
+                        "Combat log: "
+                            ++ Habitat.fullNameWithDefault report.habitat
                     ]
                     :: contents
                 )
@@ -139,73 +137,33 @@ displayReport model report =
         -- If we didn't score any sensor or firepower hits,
         -- and our opponent didn't score any firepower hits:
         [] ->
-            -- If we we on the defense we don't even get to know there were enemies here:
+            -- If we we on the defense we don't even get to know there were
+            --  enemies here:
             if report.habitat.player == model.player then
                 Html.text ""
             else
                 -- If we were on offense we at least know we tried:
                 viewReport
-                    [ Html.p
-                        []
-                        [ Html.text
-                            "We searched the sea floor, but couldn't find any targets."
-                        ]
+                    [ Html.text
+                        "We searched the sea floor, but couldn't find any targets."
                     ]
 
         _ ->
             viewReport
-                [ Html.ol
-                    []
-                    visibleEvents
-                ]
+                [ Html.ol [] visibleEvents ]
 
 
 displayEventIfVisible : Model -> BattleEvent -> Maybe (Html Msg)
 displayEventIfVisible model event =
-    let
-        attackDescription : Combatant -> String
-        attackDescription combatant =
-            case combatant of
-                CMUnit sub ->
-                    case sub.class of
-                        DieselSub ->
-                            "a torpedo."
-
-                        AttackSub ->
-                            "a torpedo from an attack submarine."
-
-                        _ ->
-                            "submarine-based weapons."
-
-                CMBuilding _ building ->
-                    case building of
-                        TorpedoTube ->
-                            "habitat-launched torpedoes."
-
-                        _ ->
-                            "habitat-based weapons."
-
-        actor combatant =
-            if Combat.combatantPlayer combatant == model.player then
-                "Our "
-            else
-                "Enemy "
-
-        acted combatant =
-            if Combat.combatantPlayer combatant == model.player then
-                "our "
-            else
-                "an enemy "
-    in
     case event of
         DetectionEvent { detector, detected } ->
             if Combat.combatantPlayer detector == model.player then
                 Just <|
-                    Html.li
-                        []
+                    Html.li []
                         [ Html.text <|
                             "Our "
-                                ++ Buildable.name (Combat.buildableFromCombatant detector)
+                                ++ Buildable.name
+                                    (Combat.buildableFromCombatant detector)
                                 ++ (case detected of
                                         CMUnit sub ->
                                             " detected an enemy "
@@ -227,7 +185,8 @@ displayEventIfVisible model event =
                         []
                         [ Html.text <|
                             "Our "
-                                ++ Buildable.name (Combat.buildableFromCombatant destroyer)
+                                ++ Buildable.name
+                                    (Combat.buildableFromCombatant destroyer)
                                 ++ " destroyed an enemy unit or structure."
                         ]
             else if Combat.combatantPlayer destroyed == model.player then
@@ -250,24 +209,20 @@ viewHabitat model point hab =
         friendlyHabitat =
             Html.div
                 [ Hevent.onClick (SelectTile point)
-                , class "alert alert-success"
+                , class "c-habitat c-habitat--friendly"
                 ]
-                [ Html.h4
-                    []
-                    [ Html.b
-                        []
-                        [ Html.text <| Habitat.fullNameWithDefault hab ]
-                    ]
+                [ Html.header
+                    [ class "c-habitat__name" ]
+                    [ Html.text <| Habitat.fullNameWithDefault hab ]
                 , buildMenu model point hab
-                , Html.p
-                    []
+                , Html.div [ class "c-habitat__production" ]
                     [ Html.text "Production: "
                     , badge
-                        [ Html.text <| toString (Building.production hab.buildings)
+                        [ Html.text <|
+                            toString (Building.production hab.buildings)
                         ]
                     ]
-                , Html.p
-                    []
+                , Html.div [ class "c-habitat__buildings" ]
                     [ Html.text <|
                         "Buildings: "
                             ++ (hab.buildings
@@ -283,13 +238,12 @@ viewHabitat model point hab =
         enemyHabitat =
             Html.div
                 [ Hevent.onClick (SelectTile point)
-                , class "alert alert-warning"
+                , class "c-habitat c-habitat--enemy"
                 ]
-                [ Html.h4
-                    []
-                    [ Html.b
-                        []
-                        [ Html.text <| "Enemy habitat: " ++ Habitat.fullNameWithDefault hab ]
+                [ Html.header []
+                    [ Html.text <|
+                        "Enemy habitat: "
+                            ++ Habitat.fullNameWithDefault hab
                     ]
                 ]
     in
@@ -304,19 +258,12 @@ viewHabitat model point hab =
 viewHabitatNameForm : Id -> Habitat.NameEditor -> Html Msg
 viewHabitatNameForm habId (Habitat.NameEditor editor) =
     Html.div
-        [ class "alert alert-warning" ]
+        [ class "c-habitat-name-form alert alert-info" ]
         [ Html.form
             [ Hevent.onSubmit (NameEditorSubmit habId) ]
-            [ Html.h4
-                []
-                [ Html.b
-                    []
-                    [ Html.text "Name Habitat" ]
-                ]
-            , Html.div
-                [ class "form-group" ]
-                [ Html.label
-                    [ Hattr.for "habitatName" ]
+            [ Html.header [] [ Html.text "Name Habitat" ]
+            , Html.div [ class "form-group" ]
+                [ Html.label [ Hattr.for "habitatName" ]
                     [ Html.text "Full name:" ]
                 , Html.input
                     [ class "form-control"
@@ -327,23 +274,21 @@ viewHabitatNameForm habId (Habitat.NameEditor editor) =
                     ]
                     []
                 ]
-            , Html.div
-                [ class "form-group" ]
+            , Html.div [ class "form-group" ]
                 [ Html.label
-                    [ Hattr.for "habitatAbbreviation" ]
+                    [ Hattr.for "habitat-abbreviation" ]
                     [ Html.text "Abbreviation (1-3 letters):" ]
                 , Html.input
                     [ class "form-control"
                     , Hattr.type_ "text"
                     , Hattr.maxlength 3
-                    , Hattr.id "habitatAbbreviation"
+                    , Hattr.id "habitat-abbreviation"
                     , Hevent.onInput (NameEditorAbbreviation habId)
                     , Hattr.value editor.abbreviation
                     ]
                     []
                 ]
-            , Html.button
-                [ Hattr.type_ "submit" ]
+            , Html.button [ Hattr.type_ "submit" ]
                 [ Html.text "Found" ]
             ]
         ]
@@ -357,20 +302,13 @@ viewUnit selection unit =
     in
     Html.div
         [ Hevent.onClick (SelectUnit unit.id)
-        , class <|
-            "alert alert-success"
-                ++ (if Just (SelectedId unit.id) == selection then
-                        " focused"
-                    else
-                        ""
-                   )
-        ]
-        [ Html.h4
-            []
-            [ Html.b
-                []
-                [ Html.text stats.name ]
+        , Hattr.classList
+            [ ( "c-sidebar__unit", True )
+            , ( "alert alert-success", True )
+            , ( "focused", Just (SelectedId unit.id) == selection )
             ]
+        ]
+        [ Html.header [] [ Html.text stats.name ]
         , Maybe.withDefault (Html.text "") (Unit.helpText unit.class)
         , statsView (BuildSubmarine unit.class)
         ]
@@ -378,19 +316,22 @@ viewUnit selection unit =
 
 startingHelpMessage : Model -> Html Msg
 startingHelpMessage model =
-    if
-        unTurn model.game.turn
-            == 1
-            && (case model.selection of
-                    Just (SelectedId _) ->
-                        False
+    let
+        isFirstTurn =
+            unTurn model.game.turn == 1
 
-                    _ ->
-                        True
-               )
-    then
+        -- assume the first unit is selected
+        unitIsSelected =
+            case model.selection of
+                Just (SelectedId _) ->
+                    True
+
+                _ ->
+                    False
+    in
+    if isFirstTurn && not unitIsSelected then
         Html.div
-            [ class "alert alert-info" ]
+            [ class "c-starting-help-message alert alert-info" ]
             [ Html.text "Click the 'CS' tile to select your first unit." ]
     else
         Html.text ""

@@ -2,8 +2,8 @@ module View.BuildMenu exposing (buildMenu, statsView)
 
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
-import Game.Type.Habitat as Habitat exposing (Habitat)
-import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
+import Game.Type.Habitat exposing (Habitat)
+import Game.Type.Unit as Unit exposing (Submarine(..))
 import HexGrid exposing (Point)
 import Html as H exposing (Html)
 import Html.Attributes as Hattr exposing (class)
@@ -15,7 +15,7 @@ import View.Board exposing (getRemainingProduction)
 
 buildMenu : Model -> Point -> Habitat -> Html Msg
 buildMenu model point hab =
-    H.div [ class "c-build-menu card" ]
+    H.div [ class "c-build-menu" ]
         [ H.header [ class "c-build-menu__header" ] [ H.text "Build Menu" ]
         , currentJob model point hab
         , warnAbandon hab
@@ -110,8 +110,7 @@ buildItemView isClickable buildable =
 
         attrs =
             [ Hattr.classList
-                [ ( "card", True )
-                , ( "c-build-menu__item", True )
+                [ ( "c-build-menu__item", True )
                 , ( "c-build-menu__item--clickable", isClickable )
                 , ( "shadow p-3 mb-5 bg-white rounded", isClickable )
                 ]
@@ -124,8 +123,8 @@ buildItemView isClickable buildable =
                    )
     in
     H.div attrs
-        [ H.header [ class "card-title" ] [ H.text (Buildable.name buildable) ]
-        , H.div [ class "card-img-top" ] [ H.text icon ]
+        [ H.header [ class "" ] [ H.text (Buildable.name buildable) ]
+        , H.div [ class "" ] [ H.text icon ]
         , statsView buildable
         ]
 
