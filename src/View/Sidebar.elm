@@ -27,7 +27,7 @@ import HexGrid exposing (HexGrid(..), Point)
 import Html exposing (Html)
 import Html.Attributes as Hattr exposing (class)
 import Html.Events as Hevent
-import Model exposing (GameType(..), Model, Selection(..))
+import Model exposing (GameType(..), Model, Selection(..), TurnStatus(..))
 import String
 import Update exposing (Msg(..))
 import Util exposing (badge)
@@ -65,7 +65,7 @@ viewSidebar model =
                                         Html.text ""
 
                                     Just editor ->
-                                        viewHabitatNameForm hab.id editor
+                                        viewHabitatNameForm model.turnStatus hab.id editor
                                 ]
                     , Html.div []
                         (List.map
@@ -255,8 +255,15 @@ viewHabitat model point hab =
         Html.text ""
 
 
-viewHabitatNameForm : Id -> Habitat.NameEditor -> Html Msg
-viewHabitatNameForm habId (Habitat.NameEditor editor) =
+viewHabitatNameForm : TurnStatus -> Id -> Habitat.NameEditor -> Html Msg
+viewHabitatNameForm turnStatus habId (Habitat.NameEditor editor) =
+    let
+        submitButton : Html Msg
+        submitButton =
+            Html.button
+                [ Hattr.type_ "submit" ]
+                [ Html.text "Found" ]
+    in
     Html.div
         [ class "c-habitat-name-form alert alert-info" ]
         [ Html.form
@@ -288,8 +295,15 @@ viewHabitatNameForm habId (Habitat.NameEditor editor) =
                     ]
                     []
                 ]
-            , Html.button [ Hattr.type_ "submit" ]
-                [ Html.text "Found" ]
+            , case turnStatus of
+                TurnLoading ->
+                    submitButton
+
+                TurnInProgress ->
+                    submitButton
+
+                TurnComplete ->
+                    Html.text ""
             ]
         ]
 
