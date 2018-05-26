@@ -48,8 +48,15 @@ type alias Model =
     -- of the code they don't know about UI things like build orders.
     , buildOrders : Dict Point Buildable
 
+    -- Habitats you haven't named yet.
+    --
     -- Int is the habitat ID.
     , habitatNameEditors : Dict Int Habitat.NameEditor
+
+    -- Habitats you named this turn.
+    --
+    -- Int is the habitat ID.
+    , habitatNamings : Dict Int Habitat.Name
     , enemyCommands : Maybe Commands
     , gameLog : List BattleReport
 
@@ -74,6 +81,7 @@ init =
     , plannedMoves = Dict.empty
     , buildOrders = Dict.empty
     , habitatNameEditors = Dict.empty
+    , habitatNamings = Dict.empty
     , enemyCommands = Nothing
     , gameLog = []
     , crashed = Nothing

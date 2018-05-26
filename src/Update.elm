@@ -10,7 +10,6 @@ import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..), unId)
 import Game.Type.Player exposing (Player(..))
-import Game.Type.Turn exposing (Turn(..), unTurn)
 import Game.Type.Unit exposing (Unit)
 import HexGrid exposing (HexGrid(..), Point)
 import Model
@@ -153,27 +152,18 @@ update msg model =
             , Cmd.none
             )
 
-        NameEditorSubmit habId ->
-            let
-                oldGame =
-                    model.game
+        NameEditorSubmit (Id habId) ->
+            ( case Dict.get habId model.habitatNameEditors of
+                Nothing ->
+                    model
 
-                (HexGrid a oldGrid) =
-                    oldGame.grid
-
-                newGrid =
-                    case Dict.get (unId habId) model.habitatNameEditors of
-                        Nothing ->
-                            oldGrid
-
-                        Just (Habitat.NameEditor new) ->
-                            Game.updateHabitatById habId (\hab -> { hab | name = Just new }) oldGrid
-            in
-            ( { model
-                | game = { oldGame | grid = HexGrid a newGrid }
-                , habitatNameEditors =
-                    Dict.remove (unId habId) model.habitatNameEditors
-              }
+                Just (Habitat.NameEditor new) ->
+                    { model
+                        | habitatNameEditors =
+                            Dict.remove habId model.habitatNameEditors
+                        , habitatNamings =
+                            Dict.insert habId new model.habitatNamings
+                    }
             , Cmd.none
             )
 
@@ -314,9 +304,11 @@ youEndTurn model =
             Protocol.send
                 model.server
                 (TurnMessage
+                    -- This is what you send over to your opponent.
                     { commands =
                         { moves = immediateMoves
                         , buildOrders = model.buildOrders
+                        , habitatNamings = model.habitatNamings
                         }
                     }
                 )
@@ -384,29 +376,26 @@ runResolveTurn model enemyCommands =
         ( immediateMoves, laterMoves ) =
             splitPlannedMoves model.plannedMoves
 
+        mergedMoves : Dict Int Point
         mergedMoves =
             Dict.union immediateMoves enemyCommands.moves
 
+        mergedBuildOrders : Dict Point Buildable
         mergedBuildOrders =
             Dict.union model.buildOrders enemyCommands.buildOrders
 
+        mergedHabitatNamings : Dict Int Habitat.Name
+        mergedHabitatNamings =
+            Dict.union model.habitatNamings enemyCommands.habitatNamings
+
         ( reports, newGameState ) =
             Game.resolveTurn
-                (let
-                    cmds =
-                        { moves = mergedMoves
-                        , buildOrders = mergedBuildOrders
-                        }
-
-                    foo =
-                        Debug.log
-                            (toString (unTurn model.game.turn)
-                                ++ " "
-                                ++ toString cmds
-                            )
-                 in
-                 cmds
-                )
+                -- This is the combination of you and your opponents moves
+                -- that's used to roll over into the next turn.
+                { moves = mergedMoves
+                , buildOrders = mergedBuildOrders
+                , habitatNamings = mergedHabitatNamings
+                }
                 model.game
     in
     -- Be careful not to pass model.game to any of the function
@@ -423,6 +412,7 @@ runResolveTurn model enemyCommands =
                 model.player
                 newGameState
                 model.habitatNameEditors
+        , habitatNamings = Dict.empty
         , enemyCommands = Nothing
         , gameLog = reports ++ model.gameLog
       }

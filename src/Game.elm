@@ -39,7 +39,8 @@ resolveTurn commands game =
 
         Ongoing ->
             game
-                |> resolveBuildOrders commands.buildOrders
+                |> nameHabitats commands.habitatNamings
+                >> resolveBuildOrders commands.buildOrders
                 >> resolveMoves commands.moves
                 >> resolveBattles
                 >> Tuple.mapSecond
@@ -85,6 +86,27 @@ outcome game =
 --------------------------------------------------
 -- Subfunctions of `resolveTurn`.
 --------------------------------------------------
+
+
+nameHabitats : Dict Int Habitat.Name -> Game -> Game
+nameHabitats namings beforeGame =
+    let
+        name : Int -> Habitat.Name -> Game -> Game
+        name habId newName game =
+            let
+                (HexGrid a oldGrid) =
+                    game.grid
+
+                newGrid : Dict Point Tile
+                newGrid =
+                    Game.State.updateHabitatById
+                        (Id habId)
+                        (\hab -> { hab | name = Just newName })
+                        oldGrid
+            in
+            { game | grid = HexGrid a newGrid }
+    in
+    Dict.foldr name beforeGame namings
 
 
 resolveBuildOrders : Dict Point Buildable -> Game -> Game

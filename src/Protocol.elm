@@ -15,6 +15,7 @@ import Dict exposing (Dict)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
 import Game.Type.Commands exposing (Commands)
+import Game.Type.Habitat as Habitat
 import Game.Type.Unit as Unit exposing (Submarine(..))
 import HexGrid exposing (Point)
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -109,10 +110,11 @@ decodeTurnMessage =
     let
         decodeCommands : Decoder Commands
         decodeCommands =
-            Decode.map2
+            Decode.map3
                 Commands
                 decodeMoves
                 decodeBuildOrders
+                decodeHabitatNamings
 
         decodeMoves : Decoder (Dict Int Point)
         decodeMoves =
@@ -129,6 +131,11 @@ decodeTurnMessage =
         decodePoint : Decoder Point
         decodePoint =
             decodePair Decode.int Decode.int
+
+        decodeHabitatNamings : Decoder (Dict Int Habitat.Name)
+        decodeHabitatNamings =
+            Decode.field "habitat_namings"
+                (decodeDictFromArray Decode.int decodeHabitatName)
     in
     Decode.map
         (\commands -> TurnMessage { commands = commands })
@@ -180,6 +187,14 @@ decodeSubmarine =
                     Nothing ->
                         Decode.fail ("Unknown submarine: " ++ submarineStr)
             )
+
+
+decodeHabitatName : Decoder Habitat.Name
+decodeHabitatName =
+    Decode.map2
+        Habitat.Name
+        (Decode.field "full" Decode.string)
+        (Decode.field "abbreviation" Decode.string)
 
 
 
@@ -286,6 +301,7 @@ encodeTurnMessage commands =
     Encode.object
         [ ( "moves", encodeMoves commands.moves )
         , ( "build_orders", encodeBuildOrders commands.buildOrders )
+        , ( "habitat_namings", encodeHabitatNamings commands.habitatNamings )
         ]
 
 
@@ -297,6 +313,11 @@ encodeMoves =
 encodeBuildOrders : Dict Point Buildable -> Value
 encodeBuildOrders =
     encodeDictAsArray encodePoint encodeBuildable
+
+
+encodeHabitatNamings : Dict Int Habitat.Name -> Value
+encodeHabitatNamings =
+    encodeDictAsArray Encode.int encodeHabitatName
 
 
 encodeBuildable : Buildable -> Value
@@ -328,6 +349,14 @@ encodeBuildable buildable =
 encodePoint : Point -> Value
 encodePoint =
     encodePair Encode.int Encode.int
+
+
+encodeHabitatName : Habitat.Name -> Value
+encodeHabitatName name =
+    Encode.object
+        [ ( "full", Encode.string name.full )
+        , ( "abbreviation", Encode.string name.abbreviation )
+        ]
 
 
 
