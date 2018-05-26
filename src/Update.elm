@@ -2,9 +2,10 @@ module Update exposing (..)
 
 import Delay
 import Dict exposing (Dict)
-import Game exposing (Commands)
+import Game
 import Game.State as Game exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
+import Game.Type.Commands exposing (Commands)
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..), unId)

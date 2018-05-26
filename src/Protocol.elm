@@ -12,9 +12,9 @@ module Protocol
 -}
 
 import Dict exposing (Dict)
-import Game exposing (Commands)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
+import Game.Type.Commands exposing (Commands)
 import Game.Type.Unit as Unit exposing (Submarine(..))
 import HexGrid exposing (Point)
 import Json.Decode as Decode exposing (Decoder, Value)

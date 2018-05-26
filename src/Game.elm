@@ -14,6 +14,7 @@ import Game.Combat exposing (..)
 import Game.State exposing (Game)
 import Game.Type.Buildable as Buildable exposing (Buildable(..))
 import Game.Type.Building as Building exposing (Building(..))
+import Game.Type.Commands exposing (Commands)
 import Game.Type.Geology as Geology exposing (Geology(..))
 import Game.Type.Habitat as Habitat exposing (Habitat)
 import Game.Type.Id as Id exposing (Id(..), IdSeed(..))
@@ -78,14 +79,6 @@ outcome game =
 
             _ ->
                 Ongoing
-
-
-{-| The keys in `moves` are the IDs of units.
--}
-type alias Commands =
-    { moves : Dict Int Point
-    , buildOrders : Dict Point Buildable
-    }
 
 
 
