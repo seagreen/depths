@@ -28,7 +28,24 @@ view model =
                     Html.map never Lobby.waitingForPlayer
 
                 InGame ->
-                    Html.div [] [ viewGame model ]
+                    let
+                        -- HACK: When you name a habitat it doesn't get into
+                        -- the game State until both you and your opponent
+                        -- have moved and the game rolls over to the next turn.
+                        --
+                        -- However, we want the new name to show up on your board
+                        -- immediately.
+                        --
+                        -- So when we view the board we update its habitat names
+                        -- with the ones you've set this turn.
+                        modelWithUpdatedHabs : Model
+                        modelWithUpdatedHabs =
+                            { model
+                                | game =
+                                    Game.nameHabitats model.habitatNamings model.game
+                            }
+                    in
+                    Html.div [] [ viewGame modelWithUpdatedHabs ]
 
 
 viewGame : Model -> Html Msg
