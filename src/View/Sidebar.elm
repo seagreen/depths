@@ -266,7 +266,7 @@ viewHabitatNameForm turnStatus habId (Habitat.NameEditor editor) =
     in
     Html.div
         [ class "c-habitat-name-form alert alert-info" ]
-        [ Html.form
+        [ Html.div
             [ Hevent.onSubmit (NameEditorSubmit habId) ]
             [ Html.header [] [ Html.text "Name Habitat" ]
             , Html.div [ class "form-group" ]
