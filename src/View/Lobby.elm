@@ -58,8 +58,6 @@ lobby server =
                     ]
                 ]
             ]
-        , Html.div [ class "c-sub-splash" ]
-            [ Html.img [ Hattr.src "./assets/sub1.svg" ] [] ]
         ]
 
 

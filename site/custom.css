@@ -36,17 +36,6 @@ main {
   justify-content: space-between;
 }
 
-.c-sub-splash {
-  overflow: hidden;
-  width: 100%;
-}
-.c-sub-splash img {
-  animation-duration: 10s;
-  animation-name: slideAcross;
-  position: relative;
-  animation-iteration-count: infinite;
-}
-
 .c-join {
   width: 80%;
   margin-left: auto;
@@ -229,14 +218,5 @@ g {
   }
   100% {
     margin-left: 50px;
-  }
-}
-
-@keyframes slideAcross {
-  0% {
-    left: -500px;
-  }
-  100% {
-    left: 4000px;
   }
 }
