@@ -1,18 +1,21 @@
 :root {
-  --bg: #2f4172;
+  --bg: #21252b;
   --color: #226666;
   --color-accent: #061439;
 }
 
+* {
+  font-family: "Cinzel", serif;
+}
 body {
-  background-color: black;
+  background-color: var(--bg);
   /** default text color */
   color: white;
 }
 main {
   width: 100%;
   padding: 5px;
-  background-color: black;
+  background-color: var(--bg);
   overflow: hidden;
 }
 
@@ -92,11 +95,11 @@ main {
   justify-content: space-between;
   max-width: 350px;
 }
+
 .c-build-menu {
   padding: 15px;
-  background-color: var(--color-accent);
+  background-color: #ffffff40;
   overflow-y: auto;
-  overflow-x: hidden;
   max-height: 500px;
 }
 
@@ -112,14 +115,18 @@ main {
 .c-build-menu__build-group {
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  width: 100%;
 }
 .c-build-menu__item {
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  max-width: 160px;
+  max-width: 170px;
   color: black;
+  margin-right: 40px;
+  margin-top: 5px;
+}
+.c-build-menu__item:nth-child(1) {
+  margin-left: 0;
 }
 .c-build-menu__item header {
   color: black;
@@ -136,10 +143,6 @@ svg {
   width: 750px;
   height: 600px;
   overflow: hidden;
-}
-
-text {
-  font-family: monospace;
 }
 
 polygon {
@@ -219,4 +222,53 @@ g {
   100% {
     margin-left: 50px;
   }
+}
+
+/** Buildable tooltips **/
+.c-stats-tip {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  padding: 5px;
+}
+
+.c-stat-badge i {
+  margin-right: 2px;
+}
+
+.tooltip-container {
+  position: relative;
+  display: inline;
+}
+.tooltip-container .tooltip {
+  color: #ffffff;
+  background: #000000;
+  text-align: center;
+  visibility: hidden;
+  position: absolute;
+  bottom: 160%;
+  left: 50%;
+  width: 180px;
+  margin-left: -90px; /** 1/2 the width */
+  border-radius: 6px;
+  font-size: 20px;
+}
+
+/** Make the arrow */
+.tooltip-container .tooltip:after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -8px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid #000000;
+  border-right: 8px solid transparent;
+  border-left: 8px solid transparent;
+}
+.tooltip-container:hover .tooltip {
+  visibility: visible;
+  opacity: 0.8;
+  z-index: 999;
 }
