@@ -12,7 +12,7 @@ import Game.Type.Turn exposing (Turn(..))
 import Game.Type.Unit as Unit exposing (Submarine(..), Unit)
 import Random.Pcg as Random
 import Random.Pcg.List as RandomList
-import State exposing (State(..))
+import State
 
 
 type alias BattleReport =
@@ -96,105 +96,129 @@ combatantFirepower combatant =
 
 {-| Returns the Combatants that scored sensor hits.
 -}
-countSensorHits : List Combatant -> State Random.Seed (List Combatant)
-countSensorHits searcherList =
+countSensorHits :
+    List Combatant
+    -> Random.Seed
+    -> ( List Combatant, Random.Seed )
+countSensorHits searcherList seed0 =
     let
-        rollSensors : Combatant -> State Random.Seed (Maybe Combatant)
+        rollSensors :
+            Combatant
+            -> Random.Seed
+            -> ( Maybe Combatant, Random.Seed )
         rollSensors searcher =
-            State <|
-                Random.step <|
-                    Random.map
-                        (\n ->
-                            if n <= combatantSensors searcher then
-                                Just searcher
-                            else
-                                Nothing
-                        )
-                        (Random.int 1 6)
+            Random.step <|
+                Random.map
+                    (\n ->
+                        if n <= combatantSensors searcher then
+                            Just searcher
+                        else
+                            Nothing
+                    )
+                    (Random.int 1 6)
+
+        ( combatants, seed1 ) =
+            State.traverse rollSensors searcherList seed0
     in
-    State.map
-        (List.filterMap identity)
-        (State.traverse rollSensors searcherList)
+    ( List.filterMap identity combatants, seed1 )
 
 
 {-| `List Buildable` are the ships and buildings that scored sensor hits.
 -}
-detectedCombatants : List Combatant -> List Combatant -> State Random.Seed (List Detection)
+detectedCombatants :
+    List Combatant
+    -> List Combatant
+    -> Random.Seed
+    -> ( List Detection, Random.Seed )
 detectedCombatants finderList lurkerList =
-    State <|
-        Random.step <|
-            Random.map2
-                (List.map2
-                    (\finder lurker ->
-                        { detector = finder
-                        , detected = lurker
-                        }
-                    )
+    Random.step <|
+        Random.map2
+            (List.map2
+                (\finder lurker ->
+                    { detector = finder
+                    , detected = lurker
+                    }
                 )
-                (RandomList.shuffle finderList)
-                (RandomList.shuffle lurkerList)
+            )
+            (RandomList.shuffle finderList)
+            (RandomList.shuffle lurkerList)
 
 
 {-| A successful stealth roll makes a unit immune to detection.
 -}
-canceledByStealth : List Detection -> State Random.Seed (List Detection)
-canceledByStealth detectionList =
+canceledByStealth :
+    List Detection
+    -> Random.Seed
+    -> ( List Detection, Random.Seed )
+canceledByStealth detectionList seed0 =
     let
-        rollStealth : Detection -> State Random.Seed (Maybe Detection)
+        rollStealth :
+            Detection
+            -> Random.Seed
+            -> ( Maybe Detection, Random.Seed )
         rollStealth detection =
-            State <|
-                Random.step <|
-                    Random.map
-                        (\n ->
-                            if n <= combatantStealth detection.detected then
-                                Nothing
-                            else
-                                Just detection
-                        )
-                        (Random.int 1 6)
+            Random.step <|
+                Random.map
+                    (\n ->
+                        if n <= combatantStealth detection.detected then
+                            Nothing
+                        else
+                            Just detection
+                    )
+                    (Random.int 1 6)
+
+        ( detection, seed1 ) =
+            State.traverse rollStealth detectionList seed0
     in
-    State.map
-        (List.filterMap identity)
-        (State.traverse rollStealth detectionList)
+    ( List.filterMap identity detection, seed1 )
 
 
 {-| The returned list is the ships and buildings that scored weapon hits.
 -}
-countFirepowerHits : List Combatant -> State Random.Seed (List Combatant)
-countFirepowerHits combatantList =
+countFirepowerHits :
+    List Combatant
+    -> Random.Seed
+    -> ( List Combatant, Random.Seed )
+countFirepowerHits combatantList seed0 =
     let
-        rollFirepower : Combatant -> State Random.Seed (Maybe Combatant)
+        rollFirepower :
+            Combatant
+            -> Random.Seed
+            -> ( Maybe Combatant, Random.Seed )
         rollFirepower combatant =
-            State <|
-                Random.step <|
-                    Random.map
-                        (\n ->
-                            if n <= combatantFirepower combatant then
-                                Just combatant
-                            else
-                                Nothing
-                        )
-                        (Random.int 1 6)
-    in
-    State.map
-        (List.filterMap identity)
-        (State.traverse rollFirepower combatantList)
-
-
-destroyedByFirepower : List Combatant -> List Combatant -> State Random.Seed (List Destruction)
-destroyedByFirepower shooterHits targetList =
-    State <|
-        Random.step <|
-            Random.map2
-                (List.map2
-                    (\shooter target ->
-                        { destroyer = shooter
-                        , destroyed = target
-                        }
+            Random.step <|
+                Random.map
+                    (\n ->
+                        if n <= combatantFirepower combatant then
+                            Just combatant
+                        else
+                            Nothing
                     )
+                    (Random.int 1 6)
+
+        ( combatants, seed1 ) =
+            State.traverse rollFirepower combatantList seed0
+    in
+    ( List.filterMap identity combatants, seed1 )
+
+
+destroyedByFirepower :
+    List Combatant
+    -> List Combatant
+    -> Random.Seed
+    -> ( List Destruction, Random.Seed )
+destroyedByFirepower shooterHits targetList =
+    Random.step <|
+        Random.map2
+            (List.map2
+                (\shooter target ->
+                    { destroyer = shooter
+                    , destroyed = target
+                    }
                 )
-                (RandomList.shuffle shooterHits)
-                (RandomList.shuffle targetList)
+            )
+            (RandomList.shuffle shooterHits)
+            (RandomList.shuffle targetList)
 
 
 {-| Takes the searches and the units being searched for.
@@ -205,28 +229,30 @@ Returns the units found.
 detectedInCombat :
     List Combatant
     -> List Combatant
-    -> State Random.Seed (List Detection)
-detectedInCombat searchers lurkers =
-    State <|
-        \oldSeed ->
-            State.run oldSeed
-                (countSensorHits searchers
-                    |> State.andThen (\searcherHits -> detectedCombatants searcherHits lurkers)
-                    |> State.andThen canceledByStealth
-                )
+    -> Random.Seed
+    -> ( List Detection, Random.Seed )
+detectedInCombat searchers lurkers seed0 =
+    let
+        ( searcherHits, seed1 ) =
+            countSensorHits searchers seed0
+
+        ( detected, seed2 ) =
+            detectedCombatants searcherHits lurkers seed1
+    in
+    canceledByStealth detected seed2
 
 
 destroyedInCombat :
     List Combatant
     -> List Combatant
-    -> State Random.Seed (List Destruction)
-destroyedInCombat shooters targets =
-    State <|
-        \oldSeed ->
-            State.run oldSeed
-                (countFirepowerHits shooters
-                    |> State.andThen (\hits -> destroyedByFirepower hits targets)
-                )
+    -> Random.Seed
+    -> ( List Destruction, Random.Seed )
+destroyedInCombat shooters targets seed0 =
+    let
+        ( hits, seed1 ) =
+            countFirepowerHits shooters seed0
+    in
+    destroyedByFirepower hits targets seed1
 
 
 removeDestroyed : List Destruction -> Tile -> Tile

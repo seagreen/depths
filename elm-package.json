@@ -15,7 +15,6 @@
         "elm-lang/keyboard": "1.0.1 <= v < 2.0.0",
         "elm-lang/svg": "2.0.0 <= v < 3.0.0",
         "elm-lang/websocket": "1.0.2 <= v < 2.0.0",
-        "folkertdev/elm-state": "3.0.0 <= v < 4.0.0",
         "kress95/random-pcg-extra": "1.0.1 <= v < 2.0.0",
         "mgold/elm-random-pcg": "5.0.2 <= v < 6.0.0"
     },
