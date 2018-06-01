@@ -3,8 +3,6 @@ module Game.Type.Id exposing (..)
 {-| Incrementally increasing IDs.
 -}
 
-import State exposing (State(..))
-
 
 type Id
     = Id Int
@@ -24,6 +22,6 @@ unIdSeed (IdSeed n) =
     n
 
 
-next : State IdSeed Id
-next =
-    State (\(IdSeed n) -> ( Id n, IdSeed (n + 1) ))
+next : IdSeed -> ( Id, IdSeed )
+next (IdSeed n) =
+    ( Id n, IdSeed (n + 1) )
