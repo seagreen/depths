@@ -100,19 +100,11 @@ viewBuildChoices currentBuildings =
 buildItemView : Bool -> Buildable -> Html Msg
 buildItemView isClickable buildable =
     let
-        icon =
-            case buildable of
-                BuildSubmarine _ ->
-                    "🚢"
-
-                BuildBuilding _ ->
-                    "🏭"
-
         attrs =
             [ Hattr.classList
                 [ ( "c-build-menu__item", True )
                 , ( "c-build-menu__item--clickable", isClickable )
-                , ( "shadow p-3 mb-5 bg-white rounded", isClickable )
+                , ( "btn btn-light", True )
                 ]
             ]
                 -- conditionally add the BuildOrder click handler
@@ -121,16 +113,93 @@ buildItemView isClickable buildable =
                     else
                         []
                    )
+
+        name =
+            Buildable.name buildable
     in
     H.div attrs
-        [ H.header [ class "" ] [ H.text (Buildable.name buildable) ]
-        , H.div [ class "" ] [ H.text icon ]
-        , statsView buildable
+        [ H.div [ class "tooltip-container" ]
+            [ H.text name
+            , buildableToolTip buildable
+            ]
         ]
 
 
 type alias StatTuple =
     ( String, Int )
+
+
+buildableToolTip : Buildable -> Html Msg
+buildableToolTip buildable =
+    let
+        statStrs : List StatTuple
+        statStrs =
+            case buildable of
+                BuildSubmarine sub ->
+                    let
+                        { cost, speed, sensors, stealth, firepower } =
+                            Unit.stats sub
+                    in
+                    [ ( "Cost", cost )
+                    , ( "Speed", speed )
+                    , ( "Sensors", sensors )
+                    , ( "Stealth", stealth )
+                    , ( "Firepower", firepower )
+                    ]
+
+                BuildBuilding building ->
+                    let
+                        { cost, productionBonus, combatStats } =
+                            Building.stats building
+
+                        combatStatStrs =
+                            case combatStats of
+                                Nothing ->
+                                    []
+
+                                Just { sensors, firepower } ->
+                                    [ ( "Sensors", sensors )
+                                    , ( "Firepower", firepower )
+                                    ]
+                    in
+                    [ ( "Cost", cost )
+                    , ( "Production Bonus", productionBonus )
+                    ]
+                        ++ combatStatStrs
+
+        statBadge : StatTuple -> Html Msg
+        statBadge ( field, num ) =
+            let
+                fieldIcon : String
+                fieldIcon =
+                    case field of
+                        "Cost" ->
+                            "fab fa-bitcoin"
+
+                        "Speed" ->
+                            "fas fa-tachometer-alt"
+
+                        "Sensors" ->
+                            "fas fa-broadcast-tower"
+
+                        "Stealth" ->
+                            "fa fa-user-secret"
+
+                        "Firepower" ->
+                            "fas fa-fire"
+
+                        "Production Bonus" ->
+                            "fas fa-parachute-box"
+
+                        _ ->
+                            ""
+            in
+            H.span [ class "c-stat-badge" ]
+                [ H.i [ class fieldIcon ] []
+                , H.text (toString num)
+                ]
+    in
+    H.span [ class "c-stats-tip tooltip" ] (List.map statBadge statStrs)
 
 
 statsView : Buildable -> Html Msg
