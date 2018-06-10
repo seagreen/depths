@@ -249,15 +249,16 @@ viewHabitat model point hab =
                         "Enemy habitat: "
                             ++ Habitat.fullNameWithDefault hab
                     ]
-                , viewBuildings
+                , if Board.hasShipAtPoint model point then
+                    viewBuildings
+                  else
+                    Html.text ""
                 ]
     in
     if hab.player == model.player then
         friendlyHabitat
-    else if Board.hasShipAtPoint model point then
-        enemyHabitat
     else
-        Html.text ""
+        enemyHabitat
 
 
 viewHabitatNameForm : TurnStatus -> Id -> Habitat.NameEditor -> Html Msg
