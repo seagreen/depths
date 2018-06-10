@@ -205,6 +205,19 @@ displayEventIfVisible model event =
 viewHabitat : Model -> Point -> Habitat -> Html Msg
 viewHabitat model point hab =
     let
+        viewBuildings : Html Msg
+        viewBuildings =
+            Html.div [ class "c-habitat__buildings" ]
+                [ Html.text <|
+                    "Buildings: "
+                        ++ (hab.buildings
+                                |> List.reverse
+                                |> List.map toString
+                                |> List.intersperse ", "
+                                |> String.concat
+                           )
+                ]
+
         friendlyHabitat : Html Msg
         friendlyHabitat =
             Html.div
@@ -222,16 +235,7 @@ viewHabitat model point hab =
                             toString (Building.production hab.buildings)
                         ]
                     ]
-                , Html.div [ class "c-habitat__buildings" ]
-                    [ Html.text <|
-                        "Buildings: "
-                            ++ (hab.buildings
-                                    |> List.reverse
-                                    |> List.map toString
-                                    |> List.intersperse ", "
-                                    |> String.concat
-                               )
-                    ]
+                , viewBuildings
                 ]
 
         enemyHabitat : Html Msg
@@ -245,6 +249,7 @@ viewHabitat model point hab =
                         "Enemy habitat: "
                             ++ Habitat.fullNameWithDefault hab
                     ]
+                , viewBuildings
                 ]
     in
     if hab.player == model.player then
