@@ -82,10 +82,7 @@ getAbbreviation : Model -> Point -> Tile -> String
 getAbbreviation model point tile =
     case Game.habitatFromTile tile of
         Just hab ->
-            if canSeeHabitat model point hab then
-                Habitat.abbreviationWithDefault hab
-            else
-                ""
+            Habitat.abbreviationWithDefault hab
 
         Nothing ->
             case Game.friendlyUnits model.player tile of
