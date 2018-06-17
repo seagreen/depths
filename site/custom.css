@@ -119,6 +119,10 @@ main {
   flex-wrap: wrap;
   width: 100%;
 }
+
+.c-build-menu__warning {
+  margin-top: 10px;
+}
 .c-build-menu__item {
   max-width: 170px;
   color: black;

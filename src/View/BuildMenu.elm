@@ -27,7 +27,7 @@ warnAbandon : Habitat -> Html Msg
 warnAbandon hab =
     case hab.producing of
         Just buildable ->
-            H.div [ class "alert alert-warning" ]
+            H.div [ class "alert alert-warning c-build-menu__warning" ]
                 [ H.text
                     ("Warning!: Queueing up a build will abandon and destroy your unfinished "
                         ++ Buildable.name buildable
@@ -104,7 +104,7 @@ buildItemView isClickable buildable =
             [ Hattr.classList
                 [ ( "c-build-menu__item", True )
                 , ( "c-build-menu__item--clickable", isClickable )
-                , ( "btn btn-light", True )
+                , ( "btn btn-light", isClickable )
                 ]
             ]
                 -- conditionally add the BuildOrder click handler
@@ -119,7 +119,12 @@ buildItemView isClickable buildable =
     in
     H.div attrs
         [ H.div [ class "tooltip-container" ]
-            [ H.text name
+            [ H.text
+                (if isClickable then
+                    name
+                 else
+                    name ++ " in progress"
+                )
             , buildableToolTip buildable
             ]
         ]
